@@ -3,15 +3,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
+import {
+  DEFAULT_DDAY_GOAL,
+  isValidDdayDate,
+  loadPrimaryDdayGoal,
+  savePrimaryDdayGoal,
+} from "../../utils/dday";
 
 const DAILY_GOAL_KEY = "daily_goal_seconds";
 const WEEKLY_GOAL_KEY = "weekly_goal_seconds";
@@ -45,18 +53,23 @@ export default function GoalSettingsScreen() {
   const [dailyGoal, setDailyGoal] = useState(dailyOptions[2].value);
   const [weeklyGoal, setWeeklyGoal] = useState(weeklyOptions[1].value);
   const [streakGoal, setStreakGoal] = useState(streakOptions[1].value);
+  const [ddayTitle, setDdayTitle] = useState(DEFAULT_DDAY_GOAL.title);
+  const [ddayDate, setDdayDate] = useState(DEFAULT_DDAY_GOAL.targetDate);
 
   useEffect(() => {
     const load = async () => {
-      const [daily, weekly, streak] = await Promise.all([
+      const [daily, weekly, streak, dday] = await Promise.all([
         AsyncStorage.getItem(DAILY_GOAL_KEY),
         AsyncStorage.getItem(WEEKLY_GOAL_KEY),
         AsyncStorage.getItem(STREAK_GOAL_KEY),
+        loadPrimaryDdayGoal(),
       ]);
 
       if (daily) setDailyGoal(Number(daily));
       if (weekly) setWeeklyGoal(Number(weekly));
       if (streak) setStreakGoal(Number(streak));
+      setDdayTitle(dday.title);
+      setDdayDate(dday.targetDate);
     };
 
     load();
@@ -69,6 +82,26 @@ export default function GoalSettingsScreen() {
   ) => {
     setter(value);
     await AsyncStorage.setItem(key, String(value));
+  };
+
+  const saveDday = async () => {
+    const title = ddayTitle.trim();
+    const targetDate = ddayDate.trim();
+
+    if (title.length < 1) {
+      Alert.alert("입력 확인", "D-Day 목표 이름을 입력해주세요.");
+      return;
+    }
+
+    if (!isValidDdayDate(targetDate)) {
+      Alert.alert("날짜 확인", "날짜는 YYYY-MM-DD 형식으로 입력해주세요.");
+      return;
+    }
+
+    await savePrimaryDdayGoal({ title, targetDate });
+    setDdayTitle(title);
+    setDdayDate(targetDate);
+    Alert.alert("저장 완료", "메인 화면 D-Day가 변경됐어요.");
   };
 
   return (
@@ -107,6 +140,34 @@ export default function GoalSettingsScreen() {
           onSelect={(value) => saveNumber(STREAK_GOAL_KEY, value, setStreakGoal)}
           styles={s}
         />
+
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>대표 D-Day</Text>
+          <Text style={s.sectionDesc}>메인 화면 오늘의 목표 카드에 표시됩니다.</Text>
+
+          <Text style={s.inputLabel}>목표 이름</Text>
+          <TextInput
+            value={ddayTitle}
+            onChangeText={setDdayTitle}
+            placeholder="수능"
+            placeholderTextColor={C.subtle}
+            style={s.input}
+          />
+
+          <Text style={s.inputLabel}>목표 날짜</Text>
+          <TextInput
+            value={ddayDate}
+            onChangeText={setDdayDate}
+            placeholder="2026-11-19"
+            placeholderTextColor={C.subtle}
+            keyboardType="numbers-and-punctuation"
+            style={s.input}
+          />
+
+          <TouchableOpacity style={s.saveButton} onPress={saveDday} activeOpacity={0.84}>
+            <Text style={s.saveButtonText}>D-Day 저장</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -247,6 +308,38 @@ const createStyles = (C: MonoTheme) => {
       color: C.text,
       fontSize: 14,
       fontWeight: "700",
+    },
+    inputLabel: {
+      color: C.muted,
+      fontSize: 11,
+      fontWeight: "700",
+      marginBottom: 7,
+      marginTop: 4,
+    },
+    input: {
+      minHeight: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: C.border,
+      backgroundColor: C.surfaceAlt,
+      color: C.text,
+      fontSize: 14,
+      fontWeight: "600",
+      paddingHorizontal: 13,
+      marginBottom: 12,
+    },
+    saveButton: {
+      minHeight: 50,
+      borderRadius: 14,
+      backgroundColor: C.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 2,
+    },
+    saveButtonText: {
+      color: C.inverse,
+      fontSize: 14,
+      fontWeight: "800",
     },
   });
 

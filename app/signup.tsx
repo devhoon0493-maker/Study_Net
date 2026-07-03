@@ -34,6 +34,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const googleWebClientId = "713632998369-g276ekeqbra47uag5lttt8i5fb766mft.apps.googleusercontent.com";
 const googleAndroidClientId = "713632998369-kplb0uk05k8peh43s48l6guidgn27pl5.apps.googleusercontent.com";
 const googleIosClientId = googleWebClientId;
+const userTypes = ["초등학생", "중학생", "고등학생", "대학생", "취준생", "직장인"];
 
 const getSignupErrorMessage = (code?: string) => {
   switch (code) {
@@ -59,6 +60,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [userType, setUserType] = useState(userTypes[2]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -75,8 +77,9 @@ export default function SignupScreen() {
       name.trim().length >= 2 &&
       emailRegex.test(email.trim()) &&
       password.length >= 6 &&
-      password === confirmPassword,
-    [confirmPassword, email, name, password],
+      password === confirmPassword &&
+      !!userType,
+    [confirmPassword, email, name, password, userType],
   );
 
   const saveUserProfile = async (profile: {
@@ -116,13 +119,13 @@ export default function SignupScreen() {
             name: user.displayName || fallbackName,
             email: user.email || "",
             image: user.photoURL || null,
-            userType: "Google 회원",
+            userType,
             createdAt: Date.now(),
           });
 
           router.replace("/main");
         } catch (error) {
-          console.log("Google signup error:", error);
+          console.warn("Google signup error:", error);
           setErrorMsg("Google 회원가입에 실패했어요. 다시 시도해주세요.");
         } finally {
           setGoogleLoading(false);
@@ -134,7 +137,7 @@ export default function SignupScreen() {
     };
 
     handleGoogleResponse();
-  }, [response, router]);
+  }, [response, router, userType]);
 
   const handleSignup = async () => {
     if (loading) return;
@@ -171,7 +174,7 @@ export default function SignupScreen() {
         name: trimmedName,
         email: trimmedEmail,
         image: null,
-        userType: "일반 회원",
+        userType,
         createdAt: Date.now(),
       };
 
@@ -192,7 +195,7 @@ export default function SignupScreen() {
       setErrorMsg("");
       await promptAsync();
     } catch (error) {
-      console.log("Google prompt error:", error);
+      console.warn("Google prompt error:", error);
       setErrorMsg("Google 회원가입을 시작하지 못했어요.");
       setGoogleLoading(false);
     }
@@ -295,6 +298,29 @@ export default function SignupScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleSignup}
               />
+            </View>
+
+            <View style={s.typeSection}>
+              <Text style={s.typeLabel}>사용자 유형</Text>
+              <View style={s.typeGrid}>
+                {userTypes.map((type) => {
+                  const active = userType === type;
+
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      style={[s.typeChip, active && s.typeChipActive]}
+                      onPress={() => {
+                        setUserType(type);
+                        setErrorMsg("");
+                      }}
+                      activeOpacity={0.82}
+                    >
+                      <Text style={[s.typeChipText, active && s.typeChipTextActive]}>{type}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
             {errorMsg ? (
@@ -466,6 +492,45 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  typeSection: {
+    marginBottom: 12,
+  },
+  typeLabel: {
+    color: "#000",
+    fontSize: 12,
+    fontWeight: "900",
+    marginBottom: 8,
+  },
+  typeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  typeChip: {
+    minHeight: 38,
+    flexBasis: "30%",
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderBottomWidth: 3,
+    borderColor: "#000",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingHorizontal: 8,
+  },
+  typeChipActive: {
+    backgroundColor: "#000",
+  },
+  typeChipText: {
+    color: "#000",
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  typeChipTextActive: {
+    color: "#fff",
+  },
   errorRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -508,6 +573,7 @@ const s = StyleSheet.create({
     fontWeight: "900",
   },
   divider: {
+    display: "none",
     flexDirection: "row",
     alignItems: "center",
     marginTop: 24,
@@ -529,6 +595,7 @@ const s = StyleSheet.create({
     fontWeight: "800",
   },
   providerRow: {
+    display: "none",
     flexDirection: "row",
     gap: 10,
   },

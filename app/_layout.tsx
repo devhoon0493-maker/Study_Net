@@ -28,14 +28,6 @@ function RootStack() {
       />
 
       {/* 메인 탭 */}
-      <Stack.Screen
-        name="(tabs)"
-        options={{
-          animation: "slide_from_right",
-          contentStyle: { backgroundColor: theme.bg },
-        }}
-      />
-
       {/* 모달 */}
       <Stack.Screen
         name="modal"

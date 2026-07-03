@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { sendPasswordResetEmail } from "firebase/auth";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +14,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { auth } from "../utils/firebaseConfig";
+
 const RESEND_SECONDS = 60;
 
 export default function PasswordResetFriendly() {
@@ -21,6 +24,7 @@ export default function PasswordResetFriendly() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
 
   /* 완료 화면 애니메이션 */
   const doneFade = useRef(new Animated.Value(0)).current;
@@ -38,27 +42,57 @@ export default function PasswordResetFriendly() {
   const formatTimer = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  const handleSend = () => {
+  const getResetErrorMessage = (code?: string) => {
+    switch (code) {
+      case "auth/invalid-email":
+        return "이메일 형식이 올바르지 않아요.";
+      case "auth/user-not-found":
+      case "auth/invalid-credential":
+        return "가입된 계정을 찾지 못했어요.";
+      case "auth/too-many-requests":
+        return "요청이 너무 많아요. 잠시 후 다시 시도해주세요.";
+      case "auth/network-request-failed":
+        return "네트워크 연결을 확인해주세요.";
+      default:
+        return "재설정 메일을 보내지 못했어요. 잠시 후 다시 시도해주세요.";
+    }
+  };
+
+  const playSentAnimation = () => {
+    Animated.parallel([
+      Animated.timing(doneFade, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(doneScale, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
+    ]).start();
+  };
+
+  const handleSend = async () => {
     if (!isEmailValid || loading) return;
-    setLoading(true);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
       setLoading(false);
       setSent(true);
       setTimer(RESEND_SECONDS);
-      Animated.parallel([
-        Animated.timing(doneFade, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(doneScale, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
-      ]).start();
-    }, 1800);
+      playSentAnimation();
+    } catch (error: any) {
+      setLoading(false);
+      setErrorMsg(getResetErrorMessage(error?.code));
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (timer > 0 || loading) return;
-    setLoading(true);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
       setLoading(false);
       setTimer(RESEND_SECONDS);
-    }, 1800);
+    } catch (error: any) {
+      setLoading(false);
+      setErrorMsg(getResetErrorMessage(error?.code));
+    }
   };
 
   /* ── 발송 완료 화면 ── */
@@ -80,10 +114,10 @@ export default function PasswordResetFriendly() {
             />
           </View>
 
-          <Text style={styles.mainTitle}>메일을 보냈어요! 📬</Text>
+          <Text style={styles.mainTitle}>재설정 메일을 보냈어요!</Text>
           <Text style={styles.subText}>
             <Text style={{ color: "#000", fontWeight: "700" }}>{email}</Text>
-            {"\n"}으로 임시 링크를 발송했어요.{"\n"}
+            {"\n"}으로 비밀번호 재설정 링크를 보냈어요.{"\n"}
             스팸 메일함도 꼭 확인해 주세요!
           </Text>
 
@@ -135,10 +169,10 @@ export default function PasswordResetFriendly() {
           />
         </View>
 
-        <Text style={styles.mainTitle}>이메일 인증</Text>
+        <Text style={styles.mainTitle}>비밀번호 재설정</Text>
         <Text style={styles.subText}>
           입력하신 주소로{" "}
-          <Text style={{ color: "#000", fontWeight: "700" }}>임시 링크</Text>를
+          <Text style={{ color: "#000", fontWeight: "700" }}>비밀번호 재설정 링크</Text>를
           보내드려요.{"\n"}
           스팸 메일함도 꼭 확인해 주세요!
         </Text>
@@ -178,6 +212,10 @@ export default function PasswordResetFriendly() {
           </Text>
         )}
 
+        {errorMsg ? (
+          <Text style={styles.errorText}>{errorMsg}</Text>
+        ) : null}
+
         <TouchableOpacity
           style={[styles.sendBtn, (!isEmailValid || loading) && styles.sendBtnDisabled]}
           onPress={handleSend}
@@ -187,7 +225,7 @@ export default function PasswordResetFriendly() {
             <ActivityIndicator color="#000" size="small" />
           ) : (
             <Text style={[styles.sendBtnText, !isEmailValid && styles.sendBtnTextDisabled]}>
-              인증 메일 발송하기
+              재설정 메일 보내기
             </Text>
           )}
         </TouchableOpacity>
@@ -285,6 +323,14 @@ const styles = StyleSheet.create({
   hintText: { fontSize: 12, fontWeight: "500", alignSelf: "flex-start", marginBottom: 16, marginLeft: 4 },
   hintOk: { color: "#000" },
   hintErr: { color: "#000" },
+  errorText: {
+    color: "#000",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: -6,
+    marginBottom: 12,
+    textAlign: "center",
+  },
 
   sendBtn: {
     width: "100%",

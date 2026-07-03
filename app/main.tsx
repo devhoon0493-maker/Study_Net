@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   createContext,
   useCallback,
@@ -19,46 +19,68 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
+import {
+  DEFAULT_DDAY_GOAL,
+  formatDdayCount,
+  formatDdayDate,
+  getDdayCount,
+  loadPrimaryDdayGoal,
+  type DdayGoal,
+} from "../utils/dday";
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const createLegacyTheme = (theme: MonoTheme) => ({
+const createHomeTheme = (theme: MonoTheme) => ({
   bg: theme.bg,
   surface: theme.surface,
   surfaceAlt: theme.surfaceAlt,
-  surfaceElevated: theme.surface,
+  surfaceElevated: theme.elevated,
   border: theme.border,
-  accent: theme.text,
-  accentLight: theme.text,
-  accentSoft: theme.surface,
-  success: theme.text,
-  successSoft: theme.surface,
+  borderSoft: theme.borderSoft,
+  primary: theme.primary,
+  primarySoft: theme.primarySoft,
+  success: theme.success,
+  successSoft: theme.successSoft,
+  warning: theme.warning,
+  warningSoft: theme.warningSoft,
+  danger: theme.danger,
+  dangerSoft: theme.dangerSoft,
+  live: theme.live,
+  liveSoft: theme.liveSoft,
   textPrimary: theme.text,
-  textSecondary: theme.text,
-  textTertiary: theme.text,
-  glow: theme.surface,
+  textSecondary: theme.muted,
+  textTertiary: theme.subtle,
+  shadow: theme.shadow,
+  inverse: theme.inverse,
 });
 
-type LegacyTheme = ReturnType<typeof createLegacyTheme>;
+type HomeTheme = ReturnType<typeof createHomeTheme>;
+
+type StoredSession = {
+  subject: string;
+  seconds: number;
+  date: string | number | Date;
+};
+
+type WeeklyDay = {
+  key: string;
+  label: string;
+  seconds: number;
+};
+
+type SubjectShare = {
+  subject: string;
+  seconds: number;
+  color: string;
+};
 
 const KEY_ACTIVE = "active_session";
 
-const DEFAULT_DDAY_ITEMS = [
-  { title: "수능", targetDate: "2026-11-19" },
-  { title: "중간고사", targetDate: "2026-10-12" },
-  { title: "토익", targetDate: "2026-07-26" },
-];
+const SUBJECT_COLORS = ["#4F46E5", "#10B981", "#F59E0B", "#EF4444", "#7C3AED"];
 
-const DEFAULT_FRIEND_STATUSES = [
-  { name: "김민준", subject: "수학", status: "studying", minutes: 42 },
-  { name: "이지우", subject: "휴식", status: "resting", minutes: 8 },
-  { name: "박서연", subject: "영어", status: "offline", minutes: 0 },
-];
-
-// ─── Date utility ─────────────────────────────────────────────────────────────
 const toDateKey = (date: Date): string =>
   [
     date.getFullYear(),
@@ -66,7 +88,51 @@ const toDateKey = (date: Date): string =>
     String(date.getDate()).padStart(2, "0"),
   ].join("-");
 
-// ─── Session Context ──────────────────────────────────────────────────────────
+const formatClock = (seconds: number) => {
+  const safe = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  const s = safe % 60;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+};
+
+const formatCompactDuration = (seconds: number) => {
+  const safe = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}시간 ${m}분`;
+  if (h > 0) return `${h}시간`;
+  if (m > 0) return `${m}분`;
+  return "0분";
+};
+
+const formatStatDuration = (seconds: number) => {
+  const safe = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}시간`;
+  if (m > 0) return `${m}분`;
+  return "0분";
+};
+
+const formatStudyDate = (date: string | number | Date) =>
+  new Date(date).toLocaleDateString("ko-KR", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const getWeekStart = (date: Date) => {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = next.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  next.setDate(next.getDate() + diff);
+  return next;
+};
+
 interface ActiveSessionData {
   subject: string;
   startEpoch: number;
@@ -116,10 +182,9 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
     tickRef.current = setInterval(() => {
       if (sessionRef.current) {
-        setElapsed(
-          Math.floor((Date.now() - sessionRef.current.startEpoch) / 1000)
-        );
+        setElapsed(Math.floor((Date.now() - sessionRef.current.startEpoch) / 1000));
       }
+
       pollCount.current += 1;
       if (pollCount.current % 5 === 0) {
         refresh();
@@ -133,21 +198,16 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ session, elapsed, hasActiveSession: !!session, refresh }),
-    [session, elapsed, refresh]
+    [elapsed, refresh, session],
   );
 
-  return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
-// ─── ActiveSessionBanner ──────────────────────────────────────────────────────
 function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) {
   const router = useRouter();
   const { theme } = useMonoTheme();
-  const C = useMemo(() => createLegacyTheme(theme), [theme]);
+  const C = useMemo(() => createHomeTheme(theme), [theme]);
   const bs = useMemo(() => createBannerStyles(C), [C]);
   const { session, elapsed } = useContext(SessionContext);
   const slideAnim = useRef(new Animated.Value(100)).current;
@@ -164,26 +224,10 @@ function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) {
 
   if (!session) return null;
 
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const fmt = (total: number) => {
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    return `${pad(h)}:${pad(m)}:${pad(s)}`;
-  };
-
-  const percent = Math.min(
-    Math.round((elapsed / session.goalSeconds) * 100),
-    100
-  );
+  const percent = Math.min(Math.round((elapsed / session.goalSeconds) * 100), 100);
 
   return (
-    <Animated.View
-      style={[
-        bs.banner,
-        { bottom: bottomOffset, transform: [{ translateY: slideAnim }] },
-      ]}
-    >
+    <Animated.View style={[bs.banner, { bottom: bottomOffset, transform: [{ translateY: slideAnim }] }]}>
       <View style={bs.progressTrack}>
         <View style={[bs.progressFill, { width: `${percent}%` }]} />
       </View>
@@ -192,14 +236,14 @@ function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) {
           <View style={bs.liveDot} />
           <View>
             <Text style={bs.subject}>{session.subject}</Text>
-            <Text style={bs.time}>{fmt(elapsed)}</Text>
+            <Text style={bs.time}>{formatClock(elapsed)}</Text>
           </View>
         </View>
         <View style={bs.right}>
           <Text style={bs.percent}>{percent}%</Text>
           <TouchableOpacity
             style={bs.resumeBtn}
-            activeOpacity={0.8}
+            activeOpacity={0.82}
             onPress={() =>
               router.push({
                 pathname: "/study",
@@ -207,12 +251,7 @@ function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) {
               })
             }
           >
-            <Ionicons
-              name="play"
-              size={11}
-              color="#000"
-              style={{ marginRight: 4 }}
-            />
+            <Ionicons name="play" size={11} color={C.primary} style={{ marginRight: 4 }} />
             <Text style={bs.resumeText}>돌아가기</Text>
           </TouchableOpacity>
         </View>
@@ -221,13 +260,102 @@ function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) {
   );
 }
 
-// ─── MainScreenInner ──────────────────────────────────────────────────────────
+function ProgressRing({
+  percent,
+  todaySeconds,
+  dailyGoal,
+  C,
+}: {
+  percent: number;
+  todaySeconds: number;
+  dailyGoal: number;
+  C: HomeTheme;
+}) {
+  const radius = 51;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.min(Math.max(percent, 0), 1);
+
+  return (
+    <View style={stylesStatic.ringBox}>
+      <Svg width={136} height={136} viewBox="0 0 136 136">
+        <Circle cx="68" cy="68" r={radius} stroke={C.borderSoft} strokeWidth={8} fill="none" />
+        <Circle
+          cx="68"
+          cy="68"
+          r={radius}
+          stroke={progress >= 1 ? C.success : C.primary}
+          strokeWidth={8}
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - progress)}
+          strokeLinecap="round"
+          rotation="-90"
+          origin="68, 68"
+        />
+      </Svg>
+      <View style={stylesStatic.ringCenter}>
+        <Text style={[stylesStatic.ringLabel, { color: C.textSecondary }]}>오늘 공부 시간</Text>
+        <Text style={[stylesStatic.ringValue, { color: C.textPrimary }]}>{formatClock(todaySeconds).slice(0, 5)}</Text>
+        <Text style={[stylesStatic.ringGoal, { color: C.textSecondary }]}>/ {formatCompactDuration(dailyGoal)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function SubjectDonut({
+  items,
+  total,
+  C,
+}: {
+  items: SubjectShare[];
+  total: number;
+  C: HomeTheme;
+}) {
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <View style={stylesStatic.donutBox}>
+      <Svg width={92} height={92} viewBox="0 0 92 92">
+        <Circle cx="46" cy="46" r={radius} stroke={C.surfaceAlt} strokeWidth={11} fill="none" />
+        {items.length === 0 ? null : items.map((item) => {
+          const share = item.seconds / Math.max(total, 1);
+          const dashOffset = -offset * circumference;
+          offset += share;
+
+          return (
+            <Circle
+              key={item.subject}
+              cx="46"
+              cy="46"
+              r={radius}
+              stroke={item.color}
+              strokeWidth={11}
+              fill="none"
+              strokeDasharray={`${share * circumference} ${circumference}`}
+              strokeDashoffset={dashOffset}
+              strokeLinecap="round"
+              rotation="-90"
+              origin="46, 46"
+            />
+          );
+        })}
+      </Svg>
+      <View style={stylesStatic.donutCenter}>
+        <Text style={[stylesStatic.donutValue, { color: C.textPrimary }]}>{Math.round(total / 3600)}</Text>
+        <Text style={[stylesStatic.donutLabel, { color: C.textSecondary }]}>시간</Text>
+      </View>
+    </View>
+  );
+}
+
 function MainScreenInner() {
   const router = useRouter();
   const { added } = useLocalSearchParams();
   const { theme } = useMonoTheme();
   const insets = useSafeAreaInsets();
-  const C = useMemo(() => createLegacyTheme(theme), [theme]);
+  const C = useMemo(() => createHomeTheme(theme), [theme]);
   const styles = useMemo(() => createStyles(C), [C]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
 
@@ -238,10 +366,11 @@ function MainScreenInner() {
     refresh: refreshSession,
   } = useContext(SessionContext);
 
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<StoredSession[]>([]);
   const [savedSeconds, setSavedSeconds] = useState(0);
   const [streak, setStreak] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(60 * 60 * 3);
+  const [ddayGoal, setDdayGoal] = useState<DdayGoal>(DEFAULT_DDAY_GOAL);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -251,22 +380,20 @@ function MainScreenInner() {
       const savedGoal = await AsyncStorage.getItem("daily_goal_seconds");
       if (savedGoal) setDailyGoal(Number(savedGoal));
 
-      const raw = await AsyncStorage.getItem("study_sessions");
-      const list: any[] = raw ? JSON.parse(raw) : [];
+      setDdayGoal(await loadPrimaryDdayGoal());
 
-      // [FIX] subject가 없는 깨진 데이터 필터링
-      const validList = list.filter((s) => s && s.subject);
+      const raw = await AsyncStorage.getItem("study_sessions");
+      const list: StoredSession[] = raw ? JSON.parse(raw) : [];
+      const validList = list.filter((item) => item && item.subject);
       setSessions(validList);
 
       const todayKey = toDateKey(new Date());
       const todaySum = validList
-        .filter((s) => toDateKey(new Date(s.date)) === todayKey)
-        .reduce((sum, s) => sum + s.seconds, 0);
+        .filter((item) => toDateKey(new Date(item.date)) === todayKey)
+        .reduce((sum, item) => sum + item.seconds, 0);
       setSavedSeconds(todaySum);
 
-      const uniqueDays = Array.from(
-        new Set(validList.map((s) => toDateKey(new Date(s.date))))
-      )
+      const uniqueDays = Array.from(new Set(validList.map((item) => toDateKey(new Date(item.date)))))
         .sort()
         .reverse();
 
@@ -281,11 +408,18 @@ function MainScreenInner() {
         }
       }
       setStreak(count);
-    } catch (e) {
-      console.error("데이터 로드 실패", e);
+    } catch (error) {
+      console.error("데이터 로드 실패", error);
       setLoadError("데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
     }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSessions();
+      refreshSession();
+    }, [loadSessions, refreshSession]),
+  );
 
   useEffect(() => {
     loadSessions();
@@ -294,322 +428,269 @@ function MainScreenInner() {
 
   const todaySeconds = savedSeconds + liveExtra;
   const percent = Math.min(todaySeconds / dailyGoal, 1);
-  const remain = Math.max(dailyGoal - todaySeconds, 0);
-  const goalDone = todaySeconds >= dailyGoal;
+  const totalSeconds = sessions.reduce((sum, item) => sum + item.seconds, 0);
 
-  const formatTime = (s: number) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${pad(h)}:${pad(m)}:${pad(sec)}`;
-  };
+  const byDate = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of sessions) {
+      const key = toDateKey(new Date(item.date));
+      map[key] = (map[key] ?? 0) + item.seconds;
+    }
+    return map;
+  }, [sessions]);
 
-  const formatRemain = (s: number) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    if (h > 0) return `${h}시간 ${m}분`;
-    return `${m}분`;
-  };
+  const goalDays = Object.values(byDate).filter((seconds) => seconds >= dailyGoal).length;
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const recentSessions = useMemo(
+    () => [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3),
+    [sessions],
+  );
 
-  const accentColor = goalDone ? C.success : C.accent;
-  const accentLightColor = goalDone ? "#000" : C.accentLight;
+  const weeklyStats = useMemo<WeeklyDay[]>(() => {
+    const labels = ["월", "화", "수", "목", "금", "토", "일"];
+    const start = getWeekStart(new Date());
 
-  const ringR = 30;
-  const ringCirc = 2 * Math.PI * ringR;
-  const ddayItems = DEFAULT_DDAY_ITEMS.map((item) => {
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const target = new Date(`${item.targetDate}T00:00:00`).getTime();
-    const daysLeft = Math.ceil((target - start) / (1000 * 60 * 60 * 24));
-    return { ...item, daysLeft };
-  });
-  const studyingFriends = DEFAULT_FRIEND_STATUSES.filter((friend) => friend.status === "studying").length;
+    return labels.map((label, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      const key = toDateKey(date);
+      return {
+        key,
+        label,
+        seconds: byDate[key] ?? 0,
+      };
+    });
+  }, [byDate]);
 
-  const greet = () => {
-    const h = today.getHours();
-    if (h < 12) return "좋은 아침이에요";
-    if (h < 18) return "집중하는 오후네요";
-    return "오늘도 수고했어요";
+  const weeklyMax = Math.max(...weeklyStats.map((item) => item.seconds), 1);
+
+  const subjectShares = useMemo<SubjectShare[]>(() => {
+    const map: Record<string, number> = {};
+    for (const item of sessions) {
+      map[item.subject] = (map[item.subject] ?? 0) + item.seconds;
+    }
+
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([subject, seconds], index) => ({
+        subject,
+        seconds,
+        color: SUBJECT_COLORS[index % SUBJECT_COLORS.length],
+      }));
+  }, [sessions]);
+
+  const subjectTotal = subjectShares.reduce((sum, item) => sum + item.seconds, 0);
+
+  const goalLabel = formatCompactDuration(dailyGoal);
+  const ddayLeft = getDdayCount(ddayGoal.targetDate);
+  const ddayText = formatDdayCount(ddayLeft);
+  const ddayDate = formatDdayDate(ddayGoal.targetDate);
+  const notificationCount = 3;
+
+  const goStudy = () => {
+    if (activeSession) {
+      router.push({
+        pathname: "/study",
+        params: { subject: activeSession.subject },
+      });
+      return;
+    }
+
+    router.push("/subject-select");
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+    <View style={styles.screen}>
+      <StatusBar barStyle={theme.statusBar} backgroundColor={C.bg} />
 
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greetText}>{greet()}</Text>
-            <Text style={styles.appName}>StudyNet</Text>
+      <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <View style={styles.logoMark}>
+            <Ionicons name="book-outline" size={34} color={C.primary} />
           </View>
-          <TouchableOpacity
-            style={styles.settingBtn}
-            onPress={() => router.push("/setting")}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={18}
-              color={C.textSecondary}
-            />
-          </TouchableOpacity>
+          <View>
+            <Text style={styles.appName}>StudyNet</Text>
+            <Text style={styles.headerSub}>오늘도 성장하는 하루 되세요! 💪</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.notificationButton} onPress={() => router.push("/setting")} activeOpacity={0.82}>
+          <Ionicons name="notifications-outline" size={20} color={C.textPrimary} />
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>{notificationCount}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomSpace + (hasActiveSession ? 120 : 34) },
+        ]}
+      >
+        {loadError ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={15} color={C.danger} />
+            <Text style={styles.errorText}>{loadError}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroEyebrow}>오늘의 목표</Text>
+
+              <TouchableOpacity
+                style={styles.ddayEditorial}
+                onPress={() => router.push("/setting/goals")}
+                activeOpacity={0.82}
+              >
+                <Text style={styles.ddayKicker}>{ddayGoal.title}까지</Text>
+                <View style={styles.ddayLine}>
+                  <Text style={styles.ddayBig}>{ddayText}</Text>
+                  <View style={styles.ddayDateRow}>
+                    <Text style={styles.ddayDate}>{ddayDate}</Text>
+                    <Ionicons name="create-outline" size={12} color={C.textTertiary} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.goalInline}>
+                <Ionicons name="time-outline" size={13} color={C.primary} />
+                <Text style={styles.goalInlineText}>오늘 목표 {goalLabel}</Text>
+              </View>
+
+              <View style={styles.heroProgressRow}>
+                <View style={styles.heroProgressTrack}>
+                  <View style={[styles.heroProgressFill, { width: `${percent * 100}%` }]} />
+                </View>
+                <Text style={styles.heroProgressText}>{Math.round(percent * 100)}%</Text>
+              </View>
+
+              <TouchableOpacity style={styles.heroButton} onPress={goStudy} activeOpacity={0.86}>
+                <Text style={styles.heroButtonText}>공부 시작하기</Text>
+                <View style={styles.heroButtonIcon}>
+                  <Ionicons name="play" size={14} color={C.primary} />
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.heroVisual}>
+              <ProgressRing percent={percent} todaySeconds={todaySeconds} dailyGoal={dailyGoal} C={C} />
+              <View style={styles.streakBadge}>
+                <Ionicons name="flame" size={15} color={C.live} />
+                <Text style={styles.streakBadgeText}>연속 {streak}일째!</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <Text style={styles.dateText}>{dateStr}</Text>
+        <View style={styles.statGrid}>
+          <StatCard icon="time-outline" label="총 공부 시간" value={formatStatDuration(totalSeconds)} hint="누적" tone="primary" styles={styles} C={C} />
+          <StatCard icon="checkmark-circle-outline" label="완료한 목표" value={`${goalDays}개`} hint="목표 달성" tone="success" styles={styles} C={C} />
+          <StatCard icon="trophy-outline" label="집중 세션" value={`${sessions.length}회`} hint="세션" tone="warning" styles={styles} C={C} />
+          <StatCard
+            icon="analytics-outline"
+            label="목표 달성률"
+            value={`${Math.round(percent * 100)}%`}
+            hint={`목표 ${goalLabel}`}
+            tone="success"
+            progress={percent}
+            styles={styles}
+            C={C}
+          />
+        </View>
 
-          {loadError && (
-            <View style={styles.errorBanner}>
-              <Ionicons
-                name="alert-circle-outline"
-                size={14}
-                color="#000"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.errorText}>{loadError}</Text>
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>최근 공부 기록</Text>
+            <TouchableOpacity onPress={() => router.push("/calendar")} activeOpacity={0.78}>
+              <Text style={styles.sectionLink}>전체 보기 〉</Text>
+            </TouchableOpacity>
+          </View>
+
+          {recentSessions.length === 0 ? (
+            <View style={styles.emptyBlock}>
+              <Ionicons name="book-outline" size={24} color={C.textTertiary} />
+              <Text style={styles.emptyTitle}>아직 공부 기록이 없어요.</Text>
+              <Text style={styles.emptyText}>공부를 시작하면 최근 기록이 여기에 표시돼요.</Text>
             </View>
+          ) : (
+            recentSessions.map((session, index) => (
+              <View key={`${session.date}-${index}`} style={[styles.recentRow, index > 0 && styles.recentRowBorder]}>
+                <View style={[styles.recentIcon, { backgroundColor: `${SUBJECT_COLORS[index % SUBJECT_COLORS.length]}18` }]}>
+                  <Ionicons name="book-outline" size={17} color={SUBJECT_COLORS[index % SUBJECT_COLORS.length]} />
+                </View>
+                <View style={styles.recentBody}>
+                  <Text style={styles.recentSubject} numberOfLines={1}>{session.subject}</Text>
+                  <Text style={styles.recentDate}>{session.subject}</Text>
+                </View>
+                <View style={styles.recentRight}>
+                  <Text style={styles.recentDuration}>{formatCompactDuration(session.seconds)}</Text>
+                  <Text style={styles.recentTime} numberOfLines={1}>{formatStudyDate(session.date)}</Text>
+                </View>
+                <Ionicons name="checkmark-circle" size={21} color={C.success} style={styles.recentCheck} />
+              </View>
+            ))
           )}
+        </View>
 
-          <View style={styles.focusCard}>
-            <View style={styles.focusGlow} />
-
-            <View style={styles.focusCardHeader}>
-              <Text style={styles.focusCardLabel}>TODAY FOCUS</Text>
-              {goalDone && (
-                <View style={styles.goalBadge}>
-                  <Ionicons
-                    name="checkmark"
-                    size={10}
-                    color={C.success}
-                    style={{ marginRight: 3 }}
-                  />
-                  <Text style={styles.goalBadgeText}>목표 달성</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.focusMain}>
-              <View style={styles.focusLeft}>
-                <Text style={styles.focusTime}>
-                  {formatTime(todaySeconds)}
-                </Text>
-                <Text style={styles.focusRemain}>
-                  {goalDone
-                    ? "오늘 목표를 완료했어요"
-                    : `목표까지 ${formatRemain(remain)}`}
-                </Text>
-                <Text style={styles.motivation}>오늘도 꾸준히 성장중 ✨</Text>
-              </View>
-
-              <View style={styles.ringWrap}>
-                <Svg width={82} height={82} viewBox="0 0 82 82">
-                  <Defs>
-                    <LinearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
-                      <Stop offset="0%" stopColor={accentColor} />
-                      <Stop offset="100%" stopColor={accentLightColor} />
-                    </LinearGradient>
-                  </Defs>
-                  <Circle
-                    cx="41"
-                    cy="41"
-                    r={ringR}
-                    stroke="#fff"
-                    strokeWidth={4}
-                    fill="none"
-                  />
-                  <Circle
-                    cx="41"
-                    cy="41"
-                    r={ringR}
-                    stroke="url(#rg)"
-                    strokeWidth={4}
-                    fill="none"
-                    strokeDasharray={ringCirc}
-                    strokeDashoffset={ringCirc * (1 - percent)}
-                    strokeLinecap="round"
-                    rotation="-90"
-                    origin="41, 41"
-                  />
-                </Svg>
-                <View style={styles.ringInner}>
-                  <Text style={[styles.ringPercent, { color: accentLightColor }]}>
-                    {Math.round(percent * 100)}%
-                  </Text>
-                  <Text style={styles.ringLabel}>달성</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${percent * 100}%`,
-                    backgroundColor: "#000",
-                  },
-                ]}
-              />
-            </View>
-
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{streak}일</Text>
-                <Text style={styles.statLabel}>연속 학습</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{sessions.length}회</Text>
-                <Text style={styles.statLabel}>총 세션</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: accentLightColor }]}>
-                  {Math.round(percent * 100)}%
-                </Text>
-                <Text style={styles.statLabel}>달성률</Text>
-              </View>
-            </View>
-
-            <View style={styles.btnRow}>
-              {hasActiveSession ? (
-                <>
-                  <TouchableOpacity
-                    style={[styles.startBtn, { backgroundColor: "#fff" }]}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      if (activeSession) {
-                        router.push({
-                          pathname: "/study",
-                          params: { subject: activeSession.subject },
-                        });
-                      }
-                    }}
-                  >
-                    <Ionicons
-                      name="play"
-                      size={15}
-                      color="#000"
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.startBtnText}>돌아가기</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.resetBtn}
-                    activeOpacity={0.75}
-                    onPress={() => router.push("/subject-select")}
-                  >
-                    <Ionicons name="add" size={20} color={C.textSecondary} />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.startBtn}
-                    activeOpacity={0.85}
-                    onPress={() => router.push("/subject-select")}
-                  >
-                    <Ionicons
-                      name="play"
-                      size={15}
-                      color="#000"
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.startBtnText}>학습 시작</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.resetBtn, { opacity: 0.4 }]}
-                    activeOpacity={1}
-                    disabled
-                  >
-                    <Ionicons name="refresh" size={18} color={C.textSecondary} />
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
+        <View style={styles.weeklyCard}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>이번 주 통계</Text>
           </View>
 
-          <View style={styles.ddayCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>D-DAY</Text>
-              <TouchableOpacity style={styles.sectionActionBtn} activeOpacity={0.75}>
-                <Ionicons name="add" size={14} color={C.textPrimary} />
-                <Text style={styles.sectionActionText}>추가</Text>
-              </TouchableOpacity>
-            </View>
-
-            {ddayItems.map((item, index) => (
-              <View key={item.title} style={[styles.ddayItem, index > 0 && styles.ddayItemBorder]}>
-                <View style={styles.ddayLeft}>
-                  <View style={styles.ddayIcon}>
-                    <Ionicons name="flag-outline" size={15} color={C.textPrimary} />
-                  </View>
-                  <View>
-                    <Text style={styles.ddayTitle}>{item.title}</Text>
-                    <Text style={styles.ddayDate}>{item.targetDate.split("-").join(".")}</Text>
-                  </View>
-                </View>
-                <Text style={styles.ddayValue}>
-                  {item.daysLeft === 0 ? "D-DAY" : item.daysLeft > 0 ? `D-${item.daysLeft}` : `D+${Math.abs(item.daysLeft)}`}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.friendCard}>
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>친구 상태</Text>
-                <Text style={styles.friendSummary}>공부중 {studyingFriends}명</Text>
-              </View>
-              <TouchableOpacity style={styles.sectionActionBtn} activeOpacity={0.75}>
-                <Ionicons name="person-add-outline" size={14} color={C.textPrimary} />
-                <Text style={styles.sectionActionText}>친구</Text>
-              </TouchableOpacity>
-            </View>
-
-            {DEFAULT_FRIEND_STATUSES.map((friend, index) => {
-              const isStudying = friend.status === "studying";
-              const isResting = friend.status === "resting";
-              const statusLabel = isStudying ? "공부중" : isResting ? "쉬는중" : "오프라인";
-              const detailLabel = isStudying
-                ? `${friend.subject} ${friend.minutes}분째`
-                : isResting
-                  ? `${friend.minutes}분 휴식중`
-                  : "나중에 다시 확인";
-
-              return (
-                <View key={friend.name} style={[styles.friendItem, index > 0 && styles.friendItemBorder]}>
-                  <View style={styles.friendLeft}>
-                    <View style={styles.friendAvatar}>
-                      <Text style={styles.friendAvatarText}>{friend.name.slice(0, 1)}</Text>
+          <View style={styles.weeklyBody}>
+            <View style={styles.weeklyPanel}>
+              <Text style={styles.chartTitle}>일별 공부 시간 (시간)</Text>
+              <View style={styles.barChart}>
+              {weeklyStats.map((item) => {
+                const ratio = item.seconds / weeklyMax;
+                const isMax = item.seconds > 0 && item.seconds === weeklyMax;
+                return (
+                  <View key={item.key} style={styles.barItem}>
+                    <Text style={styles.barValue}>{item.seconds > 0 && ratio > 0.28 ? (item.seconds / 3600).toFixed(1) : ""}</Text>
+                    <View style={styles.barTrack}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          !isMax && styles.barFillMuted,
+                          { height: `${Math.max(ratio * 100, item.seconds > 0 ? 10 : 0)}%` },
+                        ]}
+                      />
                     </View>
-                    <View style={styles.friendTextWrap}>
-                      <Text style={styles.friendName} numberOfLines={1}>{friend.name}</Text>
-                      <Text style={styles.friendDetail} numberOfLines={1}>{detailLabel}</Text>
-                    </View>
+                    <Text style={styles.barLabel}>{item.label}</Text>
                   </View>
-                  <View style={[styles.friendStatusPill, !isStudying && styles.friendStatusPillMuted]}>
-                    <View style={[styles.friendStatusDot, !isStudying && styles.friendStatusDotMuted]} />
-                    <Text style={styles.friendStatusText}>{statusLabel}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+                );
+              })}
+              </View>
+            </View>
 
-          <View style={{ height: bottomSpace + 18 }} />
-        </ScrollView>
-      </View>
+            <View style={styles.weeklyPanel}>
+              <Text style={styles.chartTitle}>과목별 비중 (시간)</Text>
+              <View style={styles.subjectPanel}>
+              <SubjectDonut items={subjectShares} total={subjectTotal} C={C} />
+              <View style={styles.subjectLegend}>
+                {subjectShares.length === 0 ? (
+                  <Text style={styles.subjectEmpty}>과목 기록 없음</Text>
+                ) : (
+                  subjectShares.slice(0, 4).map((item) => (
+                    <View key={item.subject} style={styles.legendRow}>
+                      <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                      <Text style={styles.legendText} numberOfLines={1}>{item.subject}</Text>
+                      <Text style={styles.legendPercent}>
+                        {Math.round((item.seconds / Math.max(subjectTotal, 1)) * 100)}%
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
 
       <ActiveSessionBanner bottomOffset={bottomSpace + 14} />
       <BottomNav />
@@ -617,7 +698,50 @@ function MainScreenInner() {
   );
 }
 
-// ─── Default export ───────────────────────────────────────────────────────────
+function StatCard({
+  icon,
+  label,
+  value,
+  hint,
+  tone,
+  progress,
+  styles,
+  C,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  hint: string;
+  tone: "primary" | "success" | "warning" | "live";
+  progress?: number;
+  styles: ReturnType<typeof createStyles>;
+  C: HomeTheme;
+}) {
+  const colorMap = {
+    primary: [C.primary, C.primarySoft],
+    success: [C.success, C.successSoft],
+    warning: [C.warning, C.warningSoft],
+    live: [C.live, C.liveSoft],
+  } as const;
+  const [color, bg] = colorMap[tone];
+
+  return (
+    <View style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={16} color={color} />
+      </View>
+      <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
+      <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      <Text style={[styles.statHint, { color }]}>{hint}</Text>
+      {typeof progress === "number" ? (
+        <View style={styles.statProgressTrack}>
+          <View style={[styles.statProgressFill, { width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }]} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function MainScreen() {
   return (
     <SessionProvider>
@@ -626,8 +750,7 @@ export default function MainScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const createBannerStyles = (C: LegacyTheme) => StyleSheet.create({
+const createBannerStyles = (C: HomeTheme) => StyleSheet.create({
   banner: {
     position: "absolute",
     left: 16,
@@ -637,9 +760,9 @@ const createBannerStyles = (C: LegacyTheme) => StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: "#000",
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 18,
     elevation: 10,
   },
@@ -649,7 +772,7 @@ const createBannerStyles = (C: LegacyTheme) => StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: C.primary,
   },
   inner: {
     flexDirection: "row",
@@ -667,12 +790,12 @@ const createBannerStyles = (C: LegacyTheme) => StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 999,
-    backgroundColor: "#fff",
+    backgroundColor: C.live,
   },
   subject: {
     color: C.textPrimary,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   time: {
     color: C.textTertiary,
@@ -685,547 +808,568 @@ const createBannerStyles = (C: LegacyTheme) => StyleSheet.create({
     gap: 10,
   },
   percent: {
-    color: C.accentLight,
-    fontWeight: "700",
+    color: C.primary,
+    fontWeight: "800",
   },
   resumeBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: C.primarySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#000",
   },
   resumeText: {
-    color: "#000",
+    color: C.primary,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 });
 
-const createStyles = (C: LegacyTheme) => StyleSheet.create({
-  container: {
+const createStyles = (C: HomeTheme) => StyleSheet.create({
+  screen: {
     flex: 1,
     backgroundColor: C.bg,
   },
   header: {
+    paddingTop: 44,
+    paddingHorizontal: 22,
+    paddingBottom: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 26,
-    paddingTop: 62,
-    paddingBottom: 22,
+    justifyContent: "space-between",
   },
-  greetText: {
-    color: C.textTertiary,
-    fontSize: 12,
-    marginBottom: 4,
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  logoMark: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
   },
   appName: {
-    color: C.textPrimary,
-    fontSize: 26,
-    fontWeight: "700",
-    letterSpacing: -1,
+    color: C.primary,
+    fontSize: 25,
+    fontWeight: "900",
   },
-  settingBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: C.surfaceElevated,
+  headerSub: {
+    color: C.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: "700",
+  },
+  notificationButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: C.surface,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.09,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -2,
+    right: 1,
+    minWidth: 21,
+    height: 21,
+    borderRadius: 11,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  notificationBadgeText: {
+    color: C.inverse,
+    fontSize: 10,
+    fontWeight: "900",
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 60,
-  },
-  dateText: {
-    color: C.textTertiary,
-    fontSize: 12,
-    marginBottom: 18,
+    paddingHorizontal: 18,
+    gap: 11,
   },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    gap: 8,
+    backgroundColor: C.dangerSoft,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#000",
+    paddingVertical: 11,
   },
   errorText: {
-    color: "#000",
+    color: C.danger,
     fontSize: 12,
     flex: 1,
+    fontWeight: "700",
   },
-  focusCard: {
-    backgroundColor: C.surfaceElevated,
+  heroCard: {
     borderRadius: 28,
-    padding: 24,
-    marginBottom: 32,
-    overflow: "hidden",
+    paddingHorizontal: 15,
+    paddingVertical: 16,
+    backgroundColor: C.primarySoft,
     borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    borderColor: C.primarySoft,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
   },
-  focusGlow: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 999,
-    backgroundColor: C.glow,
-    top: -120,
-    right: -80,
-  },
-  focusCardHeader: {
+  heroTop: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
+    gap: 6,
   },
-  focusCardLabel: {
-    color: C.textTertiary,
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 2,
-  },
-  goalBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  goalBadgeText: {
-    color: C.success,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  focusMain: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-  focusLeft: {
+  heroCopy: {
     flex: 1,
+    minWidth: 0,
+    paddingLeft: 2,
   },
-  focusTime: {
-    color: C.textPrimary,
-    fontSize: 42,
-    fontWeight: "200",
-    letterSpacing: -2,
-    marginBottom: 6,
-    fontVariant: ["tabular-nums"],
+  heroEyebrow: {
+    color: C.primary,
+    fontSize: 12,
+    fontWeight: "900",
+    alignSelf: "flex-start",
+    backgroundColor: C.primarySoft,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  focusRemain: {
+  ddayEditorial: {
+    marginTop: 13,
+    paddingBottom: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: C.borderSoft,
+  },
+  ddayKicker: {
     color: C.textSecondary,
-    fontSize: 13,
-  },
-  motivation: {
-    color: C.textTertiary,
-    fontSize: 13,
-    marginTop: 8,
-  },
-  ringWrap: {
-    width: 82,
-    height: 82,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 18,
-  },
-  ringInner: {
-    position: "absolute",
-    alignItems: "center",
-  },
-  ringPercent: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "700",
   },
-  ringLabel: {
-    color: C.textTertiary,
-    fontSize: 10,
+  ddayLine: {
     marginTop: 2,
   },
-  progressTrack: {
-    height: 4,
-    backgroundColor: "#fff",
-    borderRadius: 999,
-    overflow: "hidden",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: C.surfaceAlt,
-    borderRadius: 18,
-    paddingVertical: 6,
-    marginBottom: 18,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: C.border,
-  },
-  statValue: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  statLabel: {
-    color: C.textTertiary,
-    fontSize: 10,
-  },
-  btnRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  startBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 16,
-    borderRadius: 18,
-    shadowColor: C.accent,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  startBtnText: {
-    color: "#000",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  resetBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: C.surfaceAlt,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  sectionTitle: {
-    color: C.textTertiary,
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    marginBottom: 14,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  sectionActionBtn: {
-    minHeight: 32,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderBottomWidth: 3,
-    borderColor: C.border,
-  },
-  sectionActionText: {
-    color: C.textPrimary,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  ddayCard: {
-    backgroundColor: C.surfaceElevated,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderBottomWidth: 4,
-    borderColor: C.border,
-  },
-  ddayItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  ddayItemBorder: {
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-  },
-  ddayLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingRight: 12,
-  },
-  ddayIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  ddayTitle: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 3,
+  ddayBig: {
+    color: C.primary,
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
   },
   ddayDate: {
     color: C.textTertiary,
     fontSize: 11,
-    fontVariant: ["tabular-nums"],
+    fontWeight: "700",
   },
-  ddayValue: {
-    color: C.textPrimary,
-    fontSize: 18,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"],
-  },
-  friendCard: {
-    backgroundColor: C.surfaceElevated,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderBottomWidth: 4,
-    borderColor: C.border,
-  },
-  friendSummary: {
-    color: C.textPrimary,
-    fontSize: 13,
-    fontWeight: "800",
-    marginTop: -6,
-  },
-  friendItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 13,
-    gap: 10,
-  },
-  friendItemBorder: {
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-  },
-  friendLeft: {
-    flex: 1,
+  ddayDateRow: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    minWidth: 0,
+    gap: 4,
+    marginTop: 1,
   },
-  friendAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  friendAvatarText: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  friendTextWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  friendName: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 3,
-  },
-  friendDetail: {
-    color: C.textTertiary,
-    fontSize: 11,
-  },
-  friendStatusPill: {
+  goalInline: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderRadius: 999,
     backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  friendStatusPillMuted: {
-    opacity: 0.68,
-  },
-  friendStatusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: C.textPrimary,
-  },
-  friendStatusDotMuted: {
-    backgroundColor: C.textTertiary,
-  },
-  friendStatusText: {
-    color: C.textPrimary,
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  menuGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 30,
-  },
-  quickItem: {
-    width: "48%",
-    backgroundColor: C.surfaceElevated,
-    borderRadius: 22,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  quickIconBox: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  quickLabel: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  comingSoonBadge: {
-    alignSelf: "flex-start",
-    marginTop: 10,
-    backgroundColor: C.surfaceAlt,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  comingSoonText: {
-    color: C.textTertiary,
-    fontSize: 10,
-  },
-  activityList: {
-    maxHeight: 260,
-    borderRadius: 22,
-    overflow: "hidden",
-    backgroundColor: C.surfaceElevated,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  activityItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  activityItemBorder: {
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-  },
-  activityLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  activityAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activityAvatarText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  activitySubject: {
-    color: C.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 3,
-  },
-  activityTime: {
-    color: C.textTertiary,
-    fontSize: 11,
-  },
-  durationTag: {
+    borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingVertical: 7,
+    marginTop: 12,
   },
-  durationTagText: {
+  goalInlineText: {
+    color: C.textPrimary,
     fontSize: 12,
     fontWeight: "700",
   },
-  emptyState: {
+  heroProgressRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.surfaceElevated,
-    borderRadius: 22,
-    paddingVertical: 46,
-    borderWidth: 1,
-    borderColor: C.border,
+    gap: 9,
+    marginTop: 13,
   },
-  emptyIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
+  heroProgressTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
     backgroundColor: C.surfaceAlt,
-    marginBottom: 14,
+    overflow: "hidden",
+  },
+  heroProgressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: C.primary,
+  },
+  heroProgressText: {
+    color: C.textSecondary,
+    fontSize: 12,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  heroButton: {
+    alignSelf: "flex-start",
+    minHeight: 44,
+    borderRadius: 14,
+    backgroundColor: C.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingLeft: 15,
+    paddingRight: 7,
+    marginTop: 16,
+    shadowColor: C.primary,
+    shadowOpacity: 0.14,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  heroButtonText: {
+    color: C.inverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  heroButtonIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.inverse,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroVisual: {
+    width: 142,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 2,
+  },
+  streakBadge: {
+    marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: C.surface,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
+  },
+  streakBadgeText: {
+    color: C.primary,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  statGrid: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  statCard: {
+    flex: 1,
+    minHeight: 132,
+    borderRadius: 17,
+    backgroundColor: C.surface,
+    padding: 9,
+    gap: 5,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  statIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statValue: {
+    color: C.textPrimary,
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 22,
+  },
+  statLabel: {
+    color: C.textSecondary,
+    fontSize: 8,
+    fontWeight: "800",
+  },
+  statHint: {
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  statProgressTrack: {
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: C.surfaceAlt,
+    overflow: "hidden",
+  },
+  statProgressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: C.success,
+  },
+  card: {
+    borderRadius: 22,
+    backgroundColor: C.surface,
+    padding: 15,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  weeklyCard: {
+    borderRadius: 22,
+    backgroundColor: C.surface,
+    padding: 15,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    gap: 10,
+  },
+  sectionTitle: {
+    color: C.textPrimary,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  sectionLink: {
+    color: C.textSecondary,
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  emptyBlock: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+    backgroundColor: C.surfaceAlt,
+    borderRadius: 16,
   },
   emptyTitle: {
     color: C.textPrimary,
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: "900",
+    marginTop: 9,
   },
-  emptyDesc: {
+  emptyText: {
     color: C.textTertiary,
     fontSize: 12,
+    marginTop: 4,
+  },
+  recentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 11,
+    gap: 10,
+  },
+  recentRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: C.borderSoft,
+  },
+  recentIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recentBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  recentSubject: {
+    color: C.textPrimary,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  recentDate: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 3,
+  },
+  recentDuration: {
+    color: C.primary,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  recentRight: {
+    alignItems: "flex-end",
+    gap: 2,
+    minWidth: 72,
+  },
+  recentTime: {
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  recentCheck: {
+    marginLeft: 2,
+  },
+  weeklyBody: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  weeklyPanel: {
+    flex: 1,
+    backgroundColor: C.surfaceAlt,
+    borderRadius: 16,
+    padding: 9,
+  },
+  chartTitle: {
+    color: C.textSecondary,
+    fontSize: 10,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  barChart: {
+    minHeight: 136,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+  },
+  barItem: {
+    alignItems: "center",
+    flex: 1,
+    gap: 6,
+  },
+  barValue: {
+    minHeight: 10,
+    color: C.textSecondary,
+    fontSize: 8,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  barTrack: {
+    width: 13,
+    height: 88,
+    borderRadius: 6,
+    backgroundColor: "transparent",
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  barFill: {
+    width: "100%",
+    borderRadius: 999,
+    backgroundColor: C.primary,
+  },
+  barFillMuted: {
+    backgroundColor: C.primarySoft,
+  },
+  barLabel: {
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  subjectPanel: {
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  subjectLegend: {
+    flex: 1,
+    gap: 4,
+  },
+  subjectEmpty: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  legendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  legendDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  legendText: {
+    color: C.textSecondary,
+    fontSize: 9,
+    fontWeight: "800",
+    flex: 1,
+  },
+  legendPercent: {
+    color: C.textPrimary,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+});
+
+const stylesStatic = StyleSheet.create({
+  ringBox: {
+    width: 136,
+    height: 136,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringCenter: {
+    position: "absolute",
+    alignItems: "center",
+  },
+  ringValue: {
+    fontSize: 27,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  ringLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    marginBottom: 3,
+  },
+  ringGoal: {
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  donutBox: {
+    width: 82,
+    height: 82,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  donutCenter: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  donutValue: {
+    fontSize: 15,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  donutLabel: {
+    fontSize: 9,
+    fontWeight: "800",
   },
 });

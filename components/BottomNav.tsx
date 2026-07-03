@@ -3,10 +3,10 @@ import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useMonoTheme } from "../constants/mono";
+import { useMonoTheme, type MonoTheme } from "../constants/mono";
 
-export const BOTTOM_NAV_HEIGHT = 70;
-export const BOTTOM_NAV_GAP = 12;
+export const BOTTOM_NAV_HEIGHT = 66;
+export const BOTTOM_NAV_GAP = 10;
 
 type NavKey = "record" | "group" | "home" | "community" | "setting";
 
@@ -16,18 +16,34 @@ const navItems: {
   icon: keyof typeof Ionicons.glyphMap;
   route: "/calendar" | "/Group" | "/main" | "/community" | "/setting";
 }[] = [
-  { key: "record", label: "기록", icon: "calendar-outline", route: "/calendar" },
+  {
+    key: "record",
+    label: "달력",
+    icon: "calendar-outline",
+    route: "/calendar",
+  },
   { key: "group", label: "그룹", icon: "people-outline", route: "/Group" },
   { key: "home", label: "홈", icon: "home-outline", route: "/main" },
-  { key: "community", label: "소셜", icon: "chatbubbles-outline", route: "/community" },
-  { key: "setting", label: "설정", icon: "settings-outline", route: "/setting" },
+  {
+    key: "community",
+    label: "소셜",
+    icon: "chatbubbles-outline",
+    route: "/community",
+  },
+  {
+    key: "setting",
+    label: "설정",
+    icon: "settings-outline",
+    route: "/setting",
+  },
 ];
 
 const getActiveKey = (pathname: string): NavKey => {
   if (pathname.includes("Group")) return "group";
   if (pathname.includes("community")) return "community";
   if (pathname.includes("setting")) return "setting";
-  if (pathname.includes("calendar") || pathname.includes("statistics")) return "record";
+  if (pathname.includes("calendar") || pathname.includes("statistics"))
+    return "record";
   return "home";
 };
 
@@ -41,7 +57,7 @@ export default function BottomNav() {
   const { theme } = useMonoTheme();
   const activeKey = getActiveKey(pathname);
   const bottom = Math.max(insets.bottom, BOTTOM_NAV_GAP);
-  const s = createStyles(theme.bg, theme.surface, theme.border, theme.text);
+  const s = createStyles(theme);
 
   return (
     <View style={[s.wrap, { bottom }]}>
@@ -60,8 +76,16 @@ export default function BottomNav() {
             ]}
             onPress={() => router.replace(item.route)}
           >
-            <Ionicons name={item.icon} size={isHome ? 21 : 19} color={theme.text} />
-            <Text style={[s.label, isHome && s.homeLabel]}>{item.label}</Text>
+            <Ionicons
+              name={item.icon}
+              size={isHome ? 21 : 19}
+              color={active ? theme.primary : theme.muted}
+            />
+            <Text
+              style={[s.label, isHome && s.homeLabel, active && s.labelActive]}
+            >
+              {item.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -69,59 +93,55 @@ export default function BottomNav() {
   );
 }
 
-const createStyles = (
-  bg: string,
-  surface: string,
-  border: string,
-  text: string,
-) =>
+const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     wrap: {
       position: "absolute",
       left: 14,
       right: 14,
       height: BOTTOM_NAV_HEIGHT,
-      backgroundColor: bg,
+      backgroundColor: C.surface,
       borderWidth: 1,
-      borderBottomWidth: 4,
-      borderColor: border,
-      borderRadius: 20,
+      borderColor: C.border,
+      borderRadius: 22,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 8,
+      paddingHorizontal: 7,
+      shadowColor: C.shadow,
+      shadowOpacity: 0.1,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 6,
       zIndex: 50,
     },
     item: {
       flex: 1,
-      height: 48,
+      height: 46,
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
       gap: 2,
-      backgroundColor: surface,
     },
     homeItem: {
-      height: 58,
-      borderWidth: 1,
-      borderBottomWidth: 4,
-      borderColor: border,
+      height: 52,
       marginHorizontal: 4,
-      transform: [{ translateY: -8 }],
+      transform: [{ translateY: -5 }],
     },
     itemActive: {
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: border,
+      backgroundColor: C.primarySoft,
     },
     itemPressed: {
       transform: [{ translateY: 1 }],
       opacity: 0.76,
     },
     label: {
-      color: text,
+      color: C.muted,
       fontSize: 10,
       fontWeight: "800",
+    },
+    labelActive: {
+      color: C.primary,
     },
     homeLabel: {
       fontSize: 11,

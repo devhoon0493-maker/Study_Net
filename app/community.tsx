@@ -35,17 +35,6 @@ const categoryEmoji: Record<PostCategory, string> = {
   "그룹 모집": "👥",
 };
 
-const withAlpha = (color: string, alpha: string) => {
-  if (/^#[0-9A-Fa-f]{3}$/.test(color)) {
-    const [, r, g, b] = color;
-    return `#${r}${r}${g}${g}${b}${b}${alpha}`;
-  }
-
-  if (/^#[0-9A-Fa-f]{6}$/.test(color)) return `${color}${alpha}`;
-
-  return color;
-};
-
 const toEmbeddedImageUri = (base64: string) => `data:image/jpeg;base64,${base64}`;
 
 type CommunityPost = {
@@ -73,6 +62,15 @@ type LiveStudyRoom = {
   memberCount: number;
   code: string;
   createdAt: number;
+};
+
+type LiveStudyRoomRecord = {
+  name?: string;
+  subjects?: string;
+  members?: Record<string, unknown>;
+  code?: string;
+  createdAt?: number;
+  visibility?: "public" | "private";
 };
 
 type CommunityPostRecord = Omit<CommunityPost, "id" | "likes" | "comments" | "liked" | "bookmarked"> & {
@@ -187,10 +185,11 @@ const snapshotToCommentsByPost = (
   );
 };
 
-const snapshotToRooms = (rawRooms: Record<string, any> | null): LiveStudyRoom[] => {
+const snapshotToRooms = (rawRooms: Record<string, LiveStudyRoomRecord> | null): LiveStudyRoom[] => {
   if (!rawRooms) return [];
 
   return Object.entries(rawRooms)
+    .filter(([, room]) => (room?.visibility ?? "public") === "public")
     .map(([id, room]) => ({
       id,
       name: room.name ?? "스터디룸",
@@ -584,9 +583,9 @@ export default function CommunityScreen() {
         <View style={s.livePanel}>
           <View style={s.livePanelHeader}>
             <View>
-              <Text style={s.liveEyebrow}>LIVE STUDY</Text>
+              <Text style={s.liveEyebrow}>실시간 스터디</Text>
               <Text style={s.liveTitle}>
-                {liveRooms.length > 0 ? `지금 ${liveRooms.reduce((sum, room) => sum + room.memberCount, 0)}명이 집중중` : "실시간 스터디"}
+                {liveRooms.length > 0 ? `지금 ${liveRooms.reduce((sum, room) => sum + room.memberCount, 0)}명이 공부 중` : "실시간 스터디"}
               </Text>
             </View>
 
@@ -612,7 +611,7 @@ export default function CommunityScreen() {
                   </View>
                   <Text style={s.liveRoomName} numberOfLines={1}>{room.name}</Text>
                   <View style={s.liveRoomMeta}>
-                    <Text style={s.liveRoomMetaText}>{room.memberCount}명 집중중</Text>
+                    <Text style={s.liveRoomMetaText}>{room.memberCount}명 공부 중</Text>
                     <Text style={s.liveRoomCode}>{room.code}</Text>
                   </View>
                   <View style={s.joinRoomButton}>
@@ -703,7 +702,7 @@ export default function CommunityScreen() {
                 <Ionicons
                   name={post.liked ? "heart" : "heart-outline"}
                   size={17}
-                  color={post.liked ? "#E05A5A" : C.text}
+                  color={post.liked ? C.danger : C.muted}
                 />
 
                 <Text style={[s.actionCount, post.liked && s.actionCountLiked]}>
@@ -786,7 +785,7 @@ export default function CommunityScreen() {
               value={draftTitle}
               onChangeText={setDraftTitle}
               placeholder="제목을 입력해주세요"
-              placeholderTextColor={withAlpha(C.text, "66")}
+              placeholderTextColor={C.subtle}
             />
 
             <View style={s.inputDivider} />
@@ -796,7 +795,7 @@ export default function CommunityScreen() {
               value={draftBody}
               onChangeText={setDraftBody}
               placeholder="공부 인증, 질문, 목표를 자유롭게 남겨보세요."
-              placeholderTextColor={withAlpha(C.text, "55")}
+              placeholderTextColor={C.subtle}
               multiline
               textAlignVertical="top"
             />
@@ -897,7 +896,7 @@ export default function CommunityScreen() {
                 value={draftComment}
                 onChangeText={setDraftComment}
                 placeholder="댓글을 입력하세요"
-                placeholderTextColor={withAlpha(C.text, "66")}
+                placeholderTextColor={C.subtle}
                 multiline
               />
               <TouchableOpacity
@@ -985,10 +984,7 @@ const createStyles = (C: MonoTheme) =>
       alignItems: "center",
       justifyContent: "center",
       borderRadius: 10,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      backgroundColor: C.surface,
+      backgroundColor: C.surfaceAlt,
     },
     headerTitleWrap: {
       flex: 1,
@@ -1001,7 +997,7 @@ const createStyles = (C: MonoTheme) =>
       letterSpacing: -0.3,
     },
     headerSub: {
-      color: withAlpha(C.text, "77"),
+      color: C.muted,
       fontSize: 10,
       fontWeight: "700",
       marginTop: 2,
@@ -1013,13 +1009,10 @@ const createStyles = (C: MonoTheme) =>
       paddingHorizontal: 12,
       height: 36,
       borderRadius: 10,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      backgroundColor: C.surface,
+      backgroundColor: C.primary,
     },
     composeButtonText: {
-      color: C.text,
+      color: C.inverse,
       fontSize: 12,
       fontWeight: "900",
     },
@@ -1042,14 +1035,17 @@ const createStyles = (C: MonoTheme) =>
       position: "relative",
       alignItems: "center",
     },
-    tabActive: {},
+    tabActive: {
+      backgroundColor: C.primarySoft,
+      borderRadius: 999,
+    },
     tabText: {
-      color: withAlpha(C.text, "77"),
+      color: C.muted,
       fontSize: 13,
       fontWeight: "700",
     },
     tabTextActive: {
-      color: C.text,
+      color: C.primary,
       fontWeight: "900",
     },
     tabUnderline: {
@@ -1059,7 +1055,7 @@ const createStyles = (C: MonoTheme) =>
       right: 10,
       height: 2.5,
       borderRadius: 99,
-      backgroundColor: C.text,
+      backgroundColor: C.primary,
     },
 
     divider: {
@@ -1075,11 +1071,13 @@ const createStyles = (C: MonoTheme) =>
     livePanel: {
       backgroundColor: C.surface,
       borderRadius: 18,
-      borderWidth: 1,
-      borderBottomWidth: 4,
-      borderColor: C.border,
       paddingVertical: 15,
       marginBottom: 16,
+      shadowColor: C.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 5 },
+      elevation: 2,
     },
     livePanelHeader: {
       flexDirection: "row",
@@ -1089,7 +1087,7 @@ const createStyles = (C: MonoTheme) =>
       marginBottom: 12,
     },
     liveEyebrow: {
-      color: withAlpha(C.text, "66"),
+      color: C.live,
       fontSize: 10,
       fontWeight: "900",
       letterSpacing: 1.4,
@@ -1108,13 +1106,10 @@ const createStyles = (C: MonoTheme) =>
       gap: 3,
       paddingHorizontal: 10,
       borderRadius: 10,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      backgroundColor: C.bg,
+      backgroundColor: C.primarySoft,
     },
     liveHeaderButtonText: {
-      color: C.text,
+      color: C.primary,
       fontSize: 11,
       fontWeight: "900",
     },
@@ -1123,7 +1118,7 @@ const createStyles = (C: MonoTheme) =>
       borderWidth: 1,
       borderColor: C.border,
       borderRadius: 14,
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       padding: 16,
       alignItems: "center",
     },
@@ -1134,7 +1129,7 @@ const createStyles = (C: MonoTheme) =>
       marginTop: 8,
     },
     liveEmptyText: {
-      color: C.text,
+      color: C.muted,
       fontSize: 11,
       lineHeight: 16,
       marginTop: 5,
@@ -1148,11 +1143,13 @@ const createStyles = (C: MonoTheme) =>
       width: 178,
       minHeight: 128,
       borderRadius: 14,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       padding: 12,
+      shadowColor: C.shadow,
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 1,
     },
     liveRoomTop: {
       flexDirection: "row",
@@ -1164,10 +1161,10 @@ const createStyles = (C: MonoTheme) =>
       width: 7,
       height: 7,
       borderRadius: 4,
-      backgroundColor: C.text,
+      backgroundColor: C.primary,
     },
     liveRoomSubject: {
-      color: C.text,
+      color: C.success,
       fontSize: 11,
       fontWeight: "900",
     },
@@ -1186,7 +1183,7 @@ const createStyles = (C: MonoTheme) =>
       marginBottom: 12,
     },
     liveRoomMetaText: {
-      color: C.text,
+      color: C.muted,
       fontSize: 11,
       fontWeight: "700",
     },
@@ -1202,12 +1199,10 @@ const createStyles = (C: MonoTheme) =>
       justifyContent: "center",
       gap: 5,
       borderRadius: 9,
-      borderWidth: 1,
-      borderColor: C.border,
-      backgroundColor: C.surface,
+      backgroundColor: C.primarySoft,
     },
     joinRoomButtonText: {
-      color: C.text,
+      color: C.primary,
       fontSize: 11,
       fontWeight: "900",
     },
@@ -1224,7 +1219,7 @@ const createStyles = (C: MonoTheme) =>
       marginBottom: 2,
     },
     feedMeta: {
-      color: withAlpha(C.text, "55"),
+      color: C.subtle,
       fontSize: 11,
       fontWeight: "700",
     },
@@ -1233,9 +1228,6 @@ const createStyles = (C: MonoTheme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 5,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
       borderRadius: 10,
       paddingHorizontal: 10,
       backgroundColor: C.surface,
@@ -1246,13 +1238,15 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: "900",
     },
     emptyFeedCard: {
-      borderWidth: 1,
-      borderBottomWidth: 4,
-      borderColor: C.border,
       borderRadius: 18,
       backgroundColor: C.surface,
       padding: 22,
       alignItems: "center",
+      shadowColor: C.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 5 },
+      elevation: 2,
     },
     emptyFeedTitle: {
       color: C.text,
@@ -1261,7 +1255,7 @@ const createStyles = (C: MonoTheme) =>
       marginTop: 10,
     },
     emptyFeedText: {
-      color: C.text,
+      color: C.muted,
       fontSize: 12,
       lineHeight: 18,
       textAlign: "center",
@@ -1272,16 +1266,13 @@ const createStyles = (C: MonoTheme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
       borderRadius: 10,
       paddingHorizontal: 13,
       marginTop: 14,
-      backgroundColor: C.surface,
+      backgroundColor: C.primary,
     },
     emptyFeedButtonText: {
-      color: C.text,
+      color: C.inverse,
       fontSize: 12,
       fontWeight: "900",
     },
@@ -1289,11 +1280,13 @@ const createStyles = (C: MonoTheme) =>
     card: {
       backgroundColor: C.surface,
       borderRadius: 18,
-      borderWidth: 1,
-      borderBottomWidth: 4,
-      borderColor: C.border,
       padding: 16,
       marginBottom: 10,
+      shadowColor: C.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 5 },
+      elevation: 2,
     },
     cardTop: {
       flexDirection: "row",
@@ -1306,10 +1299,10 @@ const createStyles = (C: MonoTheme) =>
       height: 40,
       borderRadius: 20,
       borderWidth: 1.5,
-      borderColor: C.border,
+      borderColor: C.borderSoft,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       overflow: "hidden",
     },
     avatarImage: {
@@ -1335,10 +1328,7 @@ const createStyles = (C: MonoTheme) =>
       width: 32,
       height: 32,
       borderRadius: 9,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -1348,24 +1338,22 @@ const createStyles = (C: MonoTheme) =>
       gap: 5,
     },
     categoryTag: {
-      backgroundColor: C.bg,
+      backgroundColor: C.primarySoft,
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 2,
-      borderWidth: 1,
-      borderColor: C.border,
     },
     categoryTagText: {
-      color: C.text,
+      color: C.primary,
       fontSize: 10,
       fontWeight: "800",
     },
     dot: {
-      color: withAlpha(C.text, "44"),
+      color: C.subtle,
       fontSize: 11,
     },
     timeText: {
-      color: withAlpha(C.text, "66"),
+      color: C.subtle,
       fontSize: 11,
       fontWeight: "600",
     },
@@ -1379,7 +1367,7 @@ const createStyles = (C: MonoTheme) =>
       letterSpacing: -0.2,
     },
     cardBody: {
-      color: withAlpha(C.text, "CC"),
+      color: C.muted,
       fontSize: 13,
       lineHeight: 20,
       marginBottom: 14,
@@ -1389,9 +1377,9 @@ const createStyles = (C: MonoTheme) =>
       aspectRatio: 4 / 3,
       borderRadius: 14,
       borderWidth: 1,
-      borderColor: C.border,
+      borderColor: C.borderSoft,
       marginBottom: 14,
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
     },
 
     cardActions: {
@@ -1409,14 +1397,13 @@ const createStyles = (C: MonoTheme) =>
       paddingHorizontal: 10,
       paddingVertical: 6,
       borderRadius: 8,
-      borderWidth: 1,
-      borderColor: C.border,
+      backgroundColor: C.surfaceAlt,
     },
     actionBtnRight: {
       marginLeft: "auto",
     },
     joinStudyAction: {
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
     },
     actionCount: {
       color: C.text,
@@ -1424,7 +1411,7 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: "800",
     },
     actionCountLiked: {
-      color: "#E05A5A",
+      color: C.danger,
     },
 
     modalBackdrop: {
@@ -1433,7 +1420,7 @@ const createStyles = (C: MonoTheme) =>
       justifyContent: "flex-end",
     },
     sheet: {
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       borderWidth: 1,
@@ -1473,12 +1460,11 @@ const createStyles = (C: MonoTheme) =>
       paddingVertical: 8,
       borderRadius: 999,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       backgroundColor: C.surface,
     },
     sheetCategoryChipActive: {
-      backgroundColor: C.text,
+      backgroundColor: C.primary,
     },
     sheetCategoryText: {
       color: C.text,
@@ -1512,7 +1498,6 @@ const createStyles = (C: MonoTheme) =>
       aspectRatio: 4 / 3,
       borderRadius: 14,
       borderWidth: 1,
-      borderBottomWidth: 4,
       borderColor: C.border,
       overflow: "hidden",
       marginBottom: 12,
@@ -1531,7 +1516,7 @@ const createStyles = (C: MonoTheme) =>
       borderRadius: 15,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: withAlpha(C.text, "CC"),
+      backgroundColor: C.muted,
     },
     attachButton: {
       minHeight: 44,
@@ -1541,7 +1526,6 @@ const createStyles = (C: MonoTheme) =>
       gap: 7,
       borderRadius: 12,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       backgroundColor: C.surface,
       marginBottom: 12,
@@ -1552,7 +1536,7 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: "900",
     },
     submitBtn: {
-      backgroundColor: C.text,
+      backgroundColor: C.primary,
       borderRadius: 14,
       height: 52,
       alignItems: "center",
@@ -1567,7 +1551,7 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: "900",
     },
     commentSheet: {
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       borderWidth: 1,
@@ -1577,7 +1561,7 @@ const createStyles = (C: MonoTheme) =>
       maxHeight: "82%",
     },
     commentSheetMeta: {
-      color: withAlpha(C.text, "66"),
+      color: C.subtle,
       fontSize: 11,
       fontWeight: "700",
       marginTop: 3,
@@ -1605,7 +1589,7 @@ const createStyles = (C: MonoTheme) =>
       marginTop: 10,
     },
     commentEmptyText: {
-      color: withAlpha(C.text, "77"),
+      color: C.muted,
       fontSize: 12,
       fontWeight: "700",
       marginTop: 4,
@@ -1620,7 +1604,6 @@ const createStyles = (C: MonoTheme) =>
       height: 34,
       borderRadius: 17,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       alignItems: "center",
       justifyContent: "center",
@@ -1657,7 +1640,7 @@ const createStyles = (C: MonoTheme) =>
       flexShrink: 1,
     },
     commentTime: {
-      color: withAlpha(C.text, "66"),
+      color: C.subtle,
       fontSize: 10,
       fontWeight: "700",
     },
@@ -1669,7 +1652,7 @@ const createStyles = (C: MonoTheme) =>
       justifyContent: "center",
     },
     commentBody: {
-      color: withAlpha(C.text, "CC"),
+      color: C.muted,
       fontSize: 13,
       lineHeight: 19,
     },
@@ -1686,7 +1669,6 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 44,
       maxHeight: 92,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       borderRadius: 12,
       paddingHorizontal: 12,
@@ -1702,7 +1684,7 @@ const createStyles = (C: MonoTheme) =>
       borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: C.text,
+      backgroundColor: C.primary,
     },
     commentSubmitButtonDisabled: {
       opacity: 0.35,
@@ -1716,7 +1698,6 @@ const createStyles = (C: MonoTheme) =>
     profileModalCard: {
       backgroundColor: C.surface,
       borderWidth: 1,
-      borderBottomWidth: 4,
       borderColor: C.border,
       borderRadius: 18,
       padding: 20,
@@ -1739,22 +1720,20 @@ const createStyles = (C: MonoTheme) =>
       height: 30,
       borderRadius: 8,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
     },
     profileModalAvatar: {
       width: 72,
       height: 72,
       borderRadius: 36,
       borderWidth: 1,
-      borderBottomWidth: 4,
       borderColor: C.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
       overflow: "hidden",
       marginBottom: 12,
     },
@@ -1774,7 +1753,6 @@ const createStyles = (C: MonoTheme) =>
     },
     profileModalBadge: {
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       borderRadius: 999,
       paddingHorizontal: 10,
@@ -1807,7 +1785,7 @@ const createStyles = (C: MonoTheme) =>
       borderRadius: 12,
       paddingVertical: 12,
       alignItems: "center",
-      backgroundColor: C.bg,
+      backgroundColor: C.surfaceAlt,
     },
     profileModalStatValue: {
       color: C.text,

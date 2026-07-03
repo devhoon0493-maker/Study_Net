@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
@@ -52,6 +52,17 @@ const createStudyTheme = (theme: MonoTheme) => ({
 
 type StudyTheme = ReturnType<typeof createStudyTheme>;
 
+const withAlpha = (color: string, alpha: string) => {
+  if (/^#[0-9A-Fa-f]{3}$/.test(color)) {
+    const [, r, g, b] = color;
+    return `#${r}${r}${g}${g}${b}${b}${alpha}`;
+  }
+
+  if (/^#[0-9A-Fa-f]{6}$/.test(color)) return `${color}${alpha}`;
+
+  return color;
+};
+
 interface SubjectStat {
   subject: string;
   seconds: number;
@@ -94,7 +105,12 @@ export default function StudyScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const savedSecondsRef = useRef(0);
+  const secondsRef = useRef(0);
   const flipAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    secondsRef.current = seconds;
+  }, [seconds]);
 
   // ── 마운트: 목표시간 + 이전에 최소화된 세션 복원 ──────────
   useEffect(() => {
@@ -115,8 +131,6 @@ export default function StudyScreen() {
             setSeconds(elapsed);
             startTimeRef.current = session.startEpoch;
           }
-          // 복원 후 active_session 삭제 (이제 이 화면이 관리)
-          await AsyncStorage.removeItem(KEY_ACTIVE);
         }
       } catch (e) {
         console.error("초기화 실패", e);
@@ -125,8 +139,12 @@ export default function StudyScreen() {
     init();
   }, [subject]);
 
-  // 타이머
-  const syncTimer = useCallback(() => {
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (running) {
       if (!startTimeRef.current) startTimeRef.current = Date.now() - savedSecondsRef.current * 1000;
       timerRef.current = setInterval(() => {
@@ -136,16 +154,32 @@ export default function StudyScreen() {
         }
       }, 1000);
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      savedSecondsRef.current = seconds;
+      savedSecondsRef.current = secondsRef.current;
       startTimeRef.current = null;
     }
-  }, [running, seconds]);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [running]);
 
   useEffect(() => {
-    syncTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [syncTimer]);
+    if (!running) return;
+
+    const persistActiveSession = async () => {
+      const startEpoch = startTimeRef.current ?? (Date.now() - seconds * 1000);
+      await AsyncStorage.setItem(KEY_ACTIVE, JSON.stringify({
+        subject,
+        startEpoch,
+        goalSeconds,
+      }));
+    };
+
+    persistActiveSession().catch((error) => console.error("세션 저장 실패", error));
+  }, [goalSeconds, running, seconds, subject]);
 
   useEffect(() => {
     const handleAppState = (nextState: AppStateStatus) => {
@@ -408,7 +442,7 @@ export default function StudyScreen() {
                           <Text style={[styles.backSubjectPct, { color: item.color }]}>{pct}%</Text>
                         </View>
                         <View style={styles.backBarTrack}>
-                          <View style={[styles.backBarFill, { width: `${pct}%`, backgroundColor: item.color + "CC" }]} />
+                          <View style={[styles.backBarFill, { width: `${pct}%`, backgroundColor: withAlpha(item.color, "CC") }]} />
                         </View>
                       </View>
                     );
@@ -554,7 +588,7 @@ const createStyles = (C: StudyTheme) => StyleSheet.create({
   timeSep: { color: C.border, fontSize: 32, fontWeight: "200", marginBottom: 14 },
   remainText: { color: C.textTertiary, fontSize: 12, letterSpacing: 0.5 },
   percentLabel: { color: C.textAccent, fontSize: 11, fontWeight: "700", letterSpacing: 1, marginTop: 2 },
-  goalBadge: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderWidth: 1, borderColor: C.success + "44", borderRadius: 5, paddingHorizontal: 10, paddingVertical: 4 },
+  goalBadge: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderWidth: 1, borderColor: withAlpha(C.success, "44"), borderRadius: 5, paddingHorizontal: 10, paddingVertical: 4 },
   goalBadgeText: { color: C.success, fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
   tapHint: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   tapHintText: { color: C.textTertiary, fontSize: 9, letterSpacing: 0.5 },
@@ -565,7 +599,7 @@ const createStyles = (C: StudyTheme) => StyleSheet.create({
   backTopLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
   backTopValue: { color: C.textPrimary, fontSize: 22, fontWeight: "200", fontVariant: ["tabular-nums"] },
   backTopUnit: { fontSize: 11, color: C.textTertiary },
-  backDivider: { height: 1, backgroundColor: C.border + "88" },
+  backDivider: { height: 1, backgroundColor: withAlpha(C.border, "88") },
   backSubjectList: { gap: 8, paddingBottom: 10 },
   backSubjectRow: { gap: 4 },
   backSubjectLeft: { flexDirection: "row", alignItems: "center", gap: 5 },
@@ -588,7 +622,7 @@ const createStyles = (C: StudyTheme) => StyleSheet.create({
   statCardValue: { color: C.textPrimary, fontSize: 13, fontWeight: "600", fontVariant: ["tabular-nums"] },
   btnRow: { flexDirection: "row", gap: 10 },
   pauseBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, backgroundColor: C.surface, paddingVertical: 16, borderRadius: 10, borderWidth: 1, borderBottomWidth: 4, borderColor: C.border },
-  pauseBtnActive: { borderColor: C.accent + "60", backgroundColor: "#fff" },
+  pauseBtnActive: { borderColor: withAlpha(C.accent, "60"), backgroundColor: "#fff" },
   pauseBtnText: { color: C.textSecondary, fontWeight: "600", fontSize: 14 },
   pauseBtnTextActive: { color: C.textAccent },
   finishBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: C.surface, paddingVertical: 16, borderRadius: 10, borderWidth: 1, borderBottomWidth: 4, borderColor: C.border },

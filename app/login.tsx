@@ -121,7 +121,7 @@ export default function LoginScreen() {
 
           router.replace("/main");
         } catch (e) {
-          console.log("Google 로그인 에러:", e);
+          console.warn("Google 로그인 에러:", e);
           setErrorMsg("구글 로그인에 실패했습니다. 다시 시도해주세요.");
         } finally {
           setGoogleLoading(false);
@@ -143,7 +143,7 @@ export default function LoginScreen() {
       setGoogleLoading(true);
       await promptAsync();
     } catch (e) {
-      console.log("promptAsync 에러:", e);
+      console.warn("promptAsync 에러:", e);
       setErrorMsg("구글 로그인을 시작할 수 없습니다.");
       setGoogleLoading(false);
     }
@@ -582,6 +582,7 @@ const s = StyleSheet.create({
 
   /* 구분선 */
   divider: {
+    display: "none",
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 22,
@@ -597,6 +598,7 @@ const s = StyleSheet.create({
 
   /* 소셜 아이콘 행 */
   socialRow: {
+    display: "none",
     flexDirection: "row",
     justifyContent: "center",
     gap: 16,

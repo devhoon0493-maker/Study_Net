@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../../components/BottomNav";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
+import { PRIMARY_DDAY_KEY } from "../../utils/dday";
 import { auth, db } from "../../utils/firebaseConfig";
 
 type UserProfile = {
@@ -100,6 +101,7 @@ export default function SettingsScreen() {
       "study_sessions",
       "active_session",
       "group_member_profile",
+      PRIMARY_DDAY_KEY,
     ]);
   };
 

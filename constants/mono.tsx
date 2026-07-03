@@ -18,10 +18,24 @@ export type MonoTheme = {
   bg: string;
   surface: string;
   surfaceAlt: string;
+  elevated: string;
   border: string;
+  borderSoft: string;
   text: string;
   muted: string;
+  subtle: string;
   inverse: string;
+  primary: string;
+  primarySoft: string;
+  success: string;
+  successSoft: string;
+  warning: string;
+  warningSoft: string;
+  danger: string;
+  dangerSoft: string;
+  live: string;
+  liveSoft: string;
+  shadow: string;
   statusBar: "dark-content" | "light-content";
 };
 
@@ -35,25 +49,53 @@ type MonoThemeContextValue = {
 
 export const monoLight: MonoTheme = {
   mode: "light",
-  bg: "#fff",
-  surface: "#fff",
-  surfaceAlt: "#fff",
-  border: "#000",
-  text: "#000",
-  muted: "#000",
-  inverse: "#fff",
+  bg: "#F6F7FB",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F1F5F9",
+  elevated: "#FFFFFF",
+  border: "#E2E8F0",
+  borderSoft: "#F1F5F9",
+  text: "#0F172A",
+  muted: "#64748B",
+  subtle: "#94A3B8",
+  inverse: "#FFFFFF",
+  primary: "#4F46E5",
+  primarySoft: "#EEF2FF",
+  success: "#10B981",
+  successSoft: "#ECFDF5",
+  warning: "#F59E0B",
+  warningSoft: "#FFFBEB",
+  danger: "#EF4444",
+  dangerSoft: "#FEF2F2",
+  live: "#EF4444",
+  liveSoft: "#FEF2F2",
+  shadow: "#0F172A",
   statusBar: "dark-content",
 };
 
 export const monoDark: MonoTheme = {
   mode: "dark",
-  bg: "#000",
-  surface: "#000",
-  surfaceAlt: "#000",
-  border: "#fff",
-  text: "#fff",
-  muted: "#fff",
-  inverse: "#000",
+  bg: "#070A12",
+  surface: "#111827",
+  surfaceAlt: "#182133",
+  elevated: "#151E2F",
+  border: "#263244",
+  borderSoft: "#1E293B",
+  text: "#F8FAFC",
+  muted: "#CBD5E1",
+  subtle: "#94A3B8",
+  inverse: "#FFFFFF",
+  primary: "#818CF8",
+  primarySoft: "rgba(129,140,248,0.18)",
+  success: "#34D399",
+  successSoft: "rgba(52,211,153,0.16)",
+  warning: "#FBBF24",
+  warningSoft: "rgba(251,191,36,0.16)",
+  danger: "#F87171",
+  dangerSoft: "rgba(248,113,113,0.16)",
+  live: "#F87171",
+  liveSoft: "rgba(248,113,113,0.16)",
+  shadow: "#000000",
   statusBar: "light-content",
 };
 
