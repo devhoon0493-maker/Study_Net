@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import { getScreenTopPadding } from "../constants/layout";
 import { useMonoTheme } from "../constants/mono";
 import {
   CategoryTabs,
@@ -53,6 +54,7 @@ export default function CommunityScreen() {
   const { theme: C } = useMonoTheme();
   const s = useMemo(() => createStyles(C), [C]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
+  const topPadding = getScreenTopPadding(insets.top);
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
@@ -268,11 +270,7 @@ export default function CommunityScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await Promise.all([
-              remove(ref(db, `communityPosts/${post.id}`)),
-              remove(ref(db, `communityPostCheers/${post.id}`)),
-              remove(ref(db, `communityPostComments/${post.id}`)),
-            ]);
+            await remove(ref(db, `communityPosts/${post.id}`));
           } catch {
             Alert.alert("삭제 실패", "게시글을 삭제하지 못했어요.");
           }
@@ -376,7 +374,7 @@ export default function CommunityScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + 12 }]}>
+    <View style={[s.container, { paddingTop: topPadding }]}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
 
       <CommunityHeader

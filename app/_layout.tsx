@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { MonoThemeProvider, useMonoTheme } from "../constants/mono";
 
 function RootStack() {
@@ -43,8 +44,10 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <MonoThemeProvider>
-      <RootStack />
-    </MonoThemeProvider>
+    <SafeAreaProvider>
+      <MonoThemeProvider>
+        <RootStack />
+      </MonoThemeProvider>
+    </SafeAreaProvider>
   );
 }

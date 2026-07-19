@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import { getScreenTopPadding } from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import {
   formatStudyDuration,
@@ -26,6 +27,7 @@ export default function StatisticsScreen() {
   const insets = useSafeAreaInsets();
   const s = useMemo(() => createStyles(C), [C]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
+  const topPadding = getScreenTopPadding(insets.top);
   const [sessions, setSessions] = useState<StudySession[]>([]);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function StatisticsScreen() {
   );
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: topPadding }]}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
       <View style={s.header}>
         <TouchableOpacity style={s.iconButton} onPress={() => router.back()}>
@@ -128,7 +130,7 @@ function StatCard({
 
 const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg, paddingTop: 58, paddingHorizontal: 20 },
+    container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
     iconButton: { width: 38, height: 38, borderWidth: 1, borderBottomWidth: 3, borderColor: C.border, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: C.surface },
     headerSpacer: { width: 38 },

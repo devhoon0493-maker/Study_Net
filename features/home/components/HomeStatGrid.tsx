@@ -1,8 +1,9 @@
+import { View } from "react-native";
+
 import type { HomeStyles } from "../homeStyles";
 import type { HomeTheme } from "../homeTheme";
 import { formatStatDuration } from "../homeUtils";
 import { StatCard } from "./StatCard";
-import { View } from "react-native";
 
 export function HomeStatGrid({
   totalSeconds,

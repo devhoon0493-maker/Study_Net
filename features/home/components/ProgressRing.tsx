@@ -2,8 +2,8 @@ import { Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import type { HomeTheme } from "../homeTheme";
-import { formatClock, formatCompactDuration } from "../homeUtils";
 import { stylesStatic } from "../homeStyles";
+import { formatClock, formatCompactDuration } from "../homeUtils";
 
 export function ProgressRing({
   percent,

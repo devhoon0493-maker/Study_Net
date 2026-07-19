@@ -15,6 +15,8 @@ export type Member = {
   status?: string;
   joinedAt?: number;
   studyStartEpoch?: number | null;
+  online?: boolean;
+  lastSeenAt?: number;
 };
 
 export type Room = {

@@ -86,7 +86,6 @@ export const createStyles = (C: HomeTheme) =>
       backgroundColor: C.bg,
     },
     header: {
-      paddingTop: 44,
       paddingHorizontal: 22,
       paddingBottom: 10,
       flexDirection: "row",
@@ -290,6 +289,10 @@ export const createStyles = (C: HomeTheme) =>
       shadowRadius: 9,
       shadowOffset: { width: 0, height: 4 },
       elevation: 3,
+    },
+    heroButtonActive: {
+      backgroundColor: C.live,
+      shadowColor: C.live,
     },
     heroButtonText: {
       color: C.inverse,

@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  getScreenBottomPadding,
+  getScreenTopPadding,
+} from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
 import {
   DEFAULT_DDAY_GOAL,
@@ -48,8 +53,11 @@ const streakOptions = [
 
 export default function GoalSettingsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme: C } = useMonoTheme();
   const s = useMemo(() => createStyles(C), [C]);
+  const topPadding = getScreenTopPadding(insets.top);
+  const bottomPadding = getScreenBottomPadding(insets.bottom, 40);
   const [dailyGoal, setDailyGoal] = useState(dailyOptions[2].value);
   const [weeklyGoal, setWeeklyGoal] = useState(weeklyOptions[1].value);
   const [streakGoal, setStreakGoal] = useState(streakOptions[1].value);
@@ -105,7 +113,7 @@ export default function GoalSettingsScreen() {
   };
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: topPadding }]}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
       <View style={s.header}>
         <TouchableOpacity style={s.iconButton} onPress={() => router.back()}>
@@ -115,7 +123,7 @@ export default function GoalSettingsScreen() {
         <View style={s.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottomPadding }]}>
         <GoalSection
           title="일일 공부 목표"
           desc="메인 화면과 공부 타이머의 기준 시간이 됩니다."
@@ -219,7 +227,6 @@ const createStyles = (C: MonoTheme) => {
     container: {
       flex: 1,
       backgroundColor: C.bg,
-      paddingTop: 58,
       paddingHorizontal: 20,
     },
     header: {

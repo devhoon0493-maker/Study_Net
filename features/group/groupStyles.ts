@@ -7,7 +7,7 @@ export type GroupStyles = ReturnType<typeof createStyles>;
 
 export const createStyles = (C: GroupTheme) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg, paddingTop: 56 },
+    container: { flex: 1, backgroundColor: C.bg },
     center: { justifyContent: "center", alignItems: "center" },
     header: {
       flexDirection: "row",
@@ -725,6 +725,7 @@ export const createStyles = (C: GroupTheme) =>
       padding: 12,
     },
     memberRowIdle: { opacity: 0.74 },
+    memberRowOffline: { opacity: 0.46 },
     memberRowMe: { borderWidth: 1, borderColor: C.primary },
     memberAvatar: {
       width: 42,
@@ -769,6 +770,7 @@ export const createStyles = (C: GroupTheme) =>
       backgroundColor: C.borderMid,
     },
     studyDotActive: { backgroundColor: C.success },
+    studyDotOffline: { backgroundColor: C.textTertiary },
     memberSubject: {
       color: C.textSecondary,
       fontSize: 11,
@@ -778,6 +780,7 @@ export const createStyles = (C: GroupTheme) =>
     memberMeta: { alignItems: "flex-end", gap: 4 },
     memberStatus: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
     memberStatusActive: { color: C.success },
+    memberStatusOffline: { color: C.textTertiary },
     memberTime: {
       color: C.textSecondary,
       fontSize: 12,

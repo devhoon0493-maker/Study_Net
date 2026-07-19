@@ -2,7 +2,13 @@ import { Image, Text, View } from "react-native";
 
 import type { GroupStyles } from "../groupStyles";
 import type { Member } from "../groupTypes";
-import { formatTimer, getInitial, isMemberStudying, withAlpha } from "../groupUtils";
+import {
+  formatTimer,
+  getInitial,
+  isMemberOnline,
+  isMemberStudying,
+  withAlpha,
+} from "../groupUtils";
 
 export function MemberRow({
   member,
@@ -16,10 +22,16 @@ export function MemberRow({
   s: GroupStyles;
 }) {
   const studying = isMemberStudying(member);
+  const online = isMemberOnline(member, now);
 
   return (
     <View
-      style={[s.memberRow, !studying && s.memberRowIdle, isMe && s.memberRowMe]}
+      style={[
+        s.memberRow,
+        (!studying || !online) && s.memberRowIdle,
+        !online && s.memberRowOffline,
+        isMe && s.memberRowMe,
+      ]}
     >
       <View
         style={[
@@ -55,20 +67,36 @@ export function MemberRow({
           )}
         </View>
         <View style={s.memberSubjectRow}>
-          <View style={[s.studyDot, studying && s.studyDotActive]} />
+          <View
+            style={[
+              s.studyDot,
+              online && studying && s.studyDotActive,
+              !online && s.studyDotOffline,
+            ]}
+          />
           <Text style={s.memberSubject} numberOfLines={1}>
-            {studying
+            {!online
+              ? "앱에 접속하지 않았어요"
+              : studying
               ? (member.status ?? "공부중")
               : "아직 공부를 시작하지 않았어요"}
           </Text>
         </View>
       </View>
       <View style={s.memberMeta}>
-        <Text style={[s.memberStatus, studying && s.memberStatusActive]}>
-          {studying ? "공부 중" : "대기"}
+        <Text
+          style={[
+            s.memberStatus,
+            online && studying && s.memberStatusActive,
+            !online && s.memberStatusOffline,
+          ]}
+        >
+          {!online ? "오프라인" : studying ? "공부 중" : "대기"}
         </Text>
         <Text style={s.memberTime}>
-          {studying
+          {!online
+            ? "접속 끊김"
+            : studying
             ? formatTimer(member.studyStartEpoch ?? undefined, now)
             : "아직 시작 전"}
         </Text>

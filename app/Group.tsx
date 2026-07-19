@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
-import { get, onValue, push, ref, update } from "firebase/database";
+import { get, onDisconnect, onValue, push, ref, update } from "firebase/database";
 import {
   useCallback,
   useEffect,
@@ -13,6 +13,8 @@ import {
 import {
   ActivityIndicator,
   Animated,
+  AppState,
+  type AppStateStatus,
   KeyboardAvoidingView,
   Modal,
   PanResponder,
@@ -26,6 +28,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import { getScreenTopPadding } from "../constants/layout";
 import { useMonoTheme } from "../constants/mono";
 import {
   EmptyState,
@@ -62,6 +65,7 @@ import {
   getColorFromId,
   getCurrentStudySession,
   getMemberSliderRatio,
+  isMemberOnline,
   isMemberStudying,
   makeCode,
   snapshotToRoom,
@@ -75,6 +79,7 @@ export default function GroupScreen() {
   const C = useMemo(() => createGroupTheme(theme), [theme]);
   const s = useMemo(() => createStyles(C), [C]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
+  const topPadding = getScreenTopPadding(insets.top);
   const [screen, setScreen] = useState<Screen>("lobby");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -243,6 +248,8 @@ export default function GroupScreen() {
           image: member.image ?? null,
           userType: member.userType ?? "",
           bio: member.bio ?? "",
+          online: true,
+          lastSeenAt: Date.now(),
           ...session,
         });
       } catch (error: any) {
@@ -269,12 +276,15 @@ export default function GroupScreen() {
     if (joinedRooms.length === 0) return;
 
     const session = await getCurrentStudySession();
+    const nowMs = Date.now();
     const memberPresence = {
       name: member.name,
       color: member.color,
       image: member.image ?? null,
       userType: member.userType ?? "",
       bio: member.bio ?? "",
+      online: true,
+      lastSeenAt: nowMs,
       ...session,
     };
 
@@ -284,7 +294,7 @@ export default function GroupScreen() {
         ...memberPresence,
         speaking: false,
         joinedAt:
-          room.members.find((m) => m.id === member.id)?.joinedAt ?? Date.now(),
+          room.members.find((m) => m.id === member.id)?.joinedAt ?? nowMs,
       };
     }
 
@@ -306,6 +316,62 @@ export default function GroupScreen() {
       setLoadError(error?.message ?? "공부 상태 동기화에 실패했어요.");
     });
   }, [joinedRoomKey, syncMyStudyStatusToJoinedRooms]);
+
+  useEffect(() => {
+    if (!member || !joinedRoomKey) return;
+
+    const disconnects = roomsRef.current
+      .filter((room) => room.members.some((m) => m.id === member.id))
+      .map((room) =>
+        onDisconnect(ref(db, `rooms/${room.id}/members/${member.id}`)),
+      );
+
+    disconnects.forEach((disconnect) => {
+      disconnect.update({ online: false, lastSeenAt: Date.now() });
+    });
+
+    return () => {
+      disconnects.forEach((disconnect) => {
+        disconnect.cancel().catch(() => {});
+      });
+    };
+  }, [joinedRoomKey, member]);
+
+  const updateMyPresenceInJoinedRooms = useCallback(
+    async (online: boolean) => {
+      if (!member) return;
+
+      const joinedRooms = roomsRef.current.filter((room) =>
+        room.members.some((m) => m.id === member.id),
+      );
+      if (joinedRooms.length === 0) return;
+
+      const nowMs = Date.now();
+      const updates: Record<string, unknown> = {};
+      for (const room of joinedRooms) {
+        updates[`rooms/${room.id}/members/${member.id}/online`] = online;
+        updates[`rooms/${room.id}/members/${member.id}/lastSeenAt`] = nowMs;
+      }
+
+      await update(ref(db), updates);
+    },
+    [member],
+  );
+
+  useEffect(() => {
+    if (!member) return;
+
+    const handleAppState = (nextState: AppStateStatus) => {
+      updateMyPresenceInJoinedRooms(nextState === "active").catch(() => {});
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppState);
+    updateMyPresenceInJoinedRooms(AppState.currentState === "active").catch(
+      () => {},
+    );
+
+    return () => subscription.remove();
+  }, [member, updateMyPresenceInJoinedRooms]);
 
   useEffect(() => {
     if (!member) return;
@@ -341,6 +407,7 @@ export default function GroupScreen() {
   const addMeToRoom = async (room: Room) => {
     if (!member) return false;
     const alreadyJoined = room.members.some((m) => m.id === member.id);
+    const nowMs = Date.now();
     if (room.members.length >= room.max && !alreadyJoined) {
       setCodeError("이 방은 현재 꽉 찼어요.");
       return false;
@@ -355,9 +422,11 @@ export default function GroupScreen() {
       bio: member.bio ?? "",
       speaking: false,
       ...session,
+      online: true,
+      lastSeenAt: nowMs,
       joinedAt: alreadyJoined
-        ? (room.members.find((m) => m.id === member.id)?.joinedAt ?? Date.now())
-        : Date.now(),
+        ? (room.members.find((m) => m.id === member.id)?.joinedAt ?? nowMs)
+        : nowMs,
     });
     return true;
   };
@@ -439,15 +508,15 @@ export default function GroupScreen() {
             bio: member.bio ?? "",
             speaking: false,
             ...session,
+            online: true,
+            lastSeenAt: createdAt,
             joinedAt: createdAt,
           },
         },
       };
 
-      await update(ref(db), {
-        [`rooms/${roomId}`]: room,
-        [`roomCodes/${code}`]: roomId,
-      });
+      await update(ref(db), { [`rooms/${roomId}`]: room });
+      await update(ref(db), { [`roomCodes/${code}`]: roomId });
 
       setLoadError("");
       setCreateModalVisible(false);
@@ -480,11 +549,7 @@ export default function GroupScreen() {
 
     try {
       const isOwner = selectedRoom.ownerId === member.id;
-      const remainingMembers = selectedRoom.members.filter(
-        (m) => m.id !== member.id,
-      );
-
-      if (isOwner || remainingMembers.length === 0) {
+      if (isOwner) {
         await deleteRoom(selectedRoom);
       } else {
         await update(ref(db), {
@@ -549,15 +614,18 @@ export default function GroupScreen() {
   const memberSliderPercent = memberSliderRatio * 100;
   const publicRooms = rooms.filter((room) => room.visibility === "public");
   const lobbyRooms = publicRooms;
+  const now = Date.now();
   const lobbyStudyingMembers = rooms.flatMap((room) =>
-    room.members.filter(isMemberStudying),
+    room.members.filter((m) => isMemberOnline(m, now) && isMemberStudying(m)),
   );
   const lobbyStudyingCount = rooms.reduce(
-    (sum, room) => sum + room.members.filter((m) => !!m.studyStartEpoch).length,
+    (sum, room) =>
+      sum +
+      room.members.filter((m) => isMemberOnline(m, now) && isMemberStudying(m))
+        .length,
     0,
   );
   void tick;
-  const now = Date.now();
 
   const joinLobbyRoom = async (room: Room) => {
     if (!member || joining) return;
@@ -587,7 +655,7 @@ export default function GroupScreen() {
 
   if (screen === "lobby") {
     return (
-      <View style={s.container}>
+      <View style={[s.container, { paddingTop: topPadding }]}>
         <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
 
         <View style={s.header}>
@@ -870,7 +938,7 @@ export default function GroupScreen() {
 
   if (!selectedRoom) {
     return (
-      <View style={[s.container, s.center]}>
+      <View style={[s.container, s.center, { paddingTop: topPadding }]}>
         <ActivityIndicator color={C.textAccent} />
         <Text style={s.loadingText}>방 정보를 불러오는 중...</Text>
         <BottomNav />
@@ -878,13 +946,16 @@ export default function GroupScreen() {
     );
   }
 
-  const studyingMembers = roomMembers.filter(isMemberStudying);
-  const waitingMemberList = roomMembers.filter((m) => !isMemberStudying(m));
+  const onlineMembers = roomMembers.filter((m) => isMemberOnline(m, now));
+  const offlineMemberList = roomMembers.filter((m) => !isMemberOnline(m, now));
+  const studyingMembers = onlineMembers.filter(isMemberStudying);
+  const waitingMemberList = onlineMembers.filter((m) => !isMemberStudying(m));
   const waitingMembers = waitingMemberList.length;
+  const offlineMembers = offlineMemberList.length;
   const isOwner = selectedRoom.ownerId === member?.id;
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: topPadding }]}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
 
       <View style={s.header}>
@@ -926,7 +997,7 @@ export default function GroupScreen() {
         <FocusSummaryCard
           studyingCount={studyingMembers.length}
           waitingCount={waitingMembers}
-          totalCount={roomMembers.length}
+          offlineCount={offlineMembers}
           s={s}
         />
 
@@ -974,6 +1045,34 @@ export default function GroupScreen() {
           ) : (
             <View style={s.memberList}>
               {waitingMemberList.map((m) => (
+                <MemberRow
+                  key={m.id}
+                  member={m}
+                  isMe={m.id === member?.id}
+                  now={now}
+                  s={s}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={s.memberSection}>
+          <View style={s.memberSectionHeader}>
+            <Text style={s.memberSectionTitle}>오프라인</Text>
+            <Text style={s.memberSectionCount}>{offlineMembers}</Text>
+          </View>
+          {offlineMemberList.length === 0 ? (
+            <EmptyState
+              icon="moon-outline"
+              title="오프라인 멤버가 없어요."
+              description="앱을 닫은 멤버가 생기면 이곳에 표시돼요."
+              s={s}
+              C={C}
+            />
+          ) : (
+            <View style={s.memberList}>
+              {offlineMemberList.map((m) => (
                 <MemberRow
                   key={m.id}
                   member={m}

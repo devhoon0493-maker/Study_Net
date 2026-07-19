@@ -15,6 +15,7 @@ export function HomeHeroCard({
   todaySeconds,
   dailyGoal,
   streak,
+  isStudying,
   styles,
   C,
   onOpenGoals,
@@ -28,6 +29,7 @@ export function HomeHeroCard({
   todaySeconds: number;
   dailyGoal: number;
   streak: number;
+  isStudying: boolean;
   styles: HomeStyles;
   C: HomeTheme;
   onOpenGoals: () => void;
@@ -66,10 +68,20 @@ export function HomeHeroCard({
             <Text style={styles.heroProgressText}>{Math.round(percent * 100)}%</Text>
           </View>
 
-          <TouchableOpacity style={styles.heroButton} onPress={onStartStudy} activeOpacity={0.86}>
-            <Text style={styles.heroButtonText}>공부 시작하기</Text>
+          <TouchableOpacity
+            style={[styles.heroButton, isStudying && styles.heroButtonActive]}
+            onPress={onStartStudy}
+            activeOpacity={0.86}
+          >
+            <Text style={styles.heroButtonText}>
+              {isStudying ? "공부중" : "공부 시작하기"}
+            </Text>
             <View style={styles.heroButtonIcon}>
-              <Ionicons name="play" size={14} color={C.primary} />
+              <Ionicons
+                name={isStudying ? "timer-outline" : "play"}
+                size={14}
+                color={isStudying ? C.live : C.primary}
+              />
             </View>
           </TouchableOpacity>
         </View>

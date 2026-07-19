@@ -52,6 +52,14 @@ export const formatTimer = (joinedAt?: number, now = Date.now()) => {
 
 export const isMemberStudying = (member: Member) => !!member.studyStartEpoch;
 
+export const isMemberOnline = (member: Member, now = Date.now()) => {
+  if (member.online === false) return false;
+  if (member.online === true) return true;
+  if (!member.lastSeenAt) return member.online === true || !!member.studyStartEpoch;
+
+  return now - member.lastSeenAt < 30_000;
+};
+
 export const getCurrentStudySession = async () => {
   const raw = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
   if (!raw) return { status: "접속중", studyStartEpoch: null };
@@ -90,6 +98,9 @@ export const snapshotToRoom = (id: string, raw: RoomRecord): Room => ({
       status: m.status ?? "공부 중",
       joinedAt: m.joinedAt,
       studyStartEpoch: m.studyStartEpoch ?? null,
+      online: m.online ?? false,
+      lastSeenAt:
+        typeof m.lastSeenAt === "number" ? m.lastSeenAt : undefined,
     }),
   ),
 });

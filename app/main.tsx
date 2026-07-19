@@ -11,6 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import { getScreenTopPadding } from "../constants/layout";
+import { useMonoTheme } from "../constants/mono";
 import {
   ActiveSessionBanner,
   HomeHeader,
@@ -20,6 +22,7 @@ import {
   WeeklyStatsCard,
 } from "../features/home/components";
 import { SessionContext, SessionProvider } from "../features/home/HomeSessionContext";
+import { createStyles } from "../features/home/homeStyles";
 import { createHomeTheme } from "../features/home/homeTheme";
 import type { StoredSession, SubjectShare, WeeklyDay } from "../features/home/homeTypes";
 import {
@@ -28,8 +31,6 @@ import {
   getWeekStart,
   toDateKey,
 } from "../features/home/homeUtils";
-import { createStyles } from "../features/home/homeStyles";
-import { useMonoTheme } from "../constants/mono";
 import {
   DEFAULT_DDAY_GOAL,
   formatDdayCount,
@@ -47,6 +48,7 @@ function MainScreenInner() {
   const C = useMemo(() => createHomeTheme(theme), [theme]);
   const styles = useMemo(() => createStyles(C), [C]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
+  const topPadding = getScreenTopPadding(insets.top);
 
   const {
     session: activeSession,
@@ -203,6 +205,7 @@ function MainScreenInner() {
         notificationCount={notificationCount}
         styles={styles}
         C={C}
+        topPadding={topPadding}
         onOpenSettings={() => router.push("/setting")}
       />
 
@@ -229,6 +232,7 @@ function MainScreenInner() {
           todaySeconds={todaySeconds}
           dailyGoal={safeDailyGoal}
           streak={streak}
+          isStudying={hasActiveSession}
           styles={styles}
           C={C}
           onOpenGoals={() => router.push("/setting/goals")}

@@ -8,22 +8,24 @@ export function HomeHeader({
   notificationCount,
   styles,
   C,
+  topPadding,
   onOpenSettings,
 }: {
   notificationCount: number;
   styles: HomeStyles;
   C: HomeTheme;
+  topPadding: number;
   onOpenSettings: () => void;
 }) {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: topPadding }]}>
       <View style={styles.brandRow}>
         <View style={styles.logoMark}>
           <Ionicons name="book-outline" size={34} color={C.primary} />
         </View>
         <View>
           <Text style={styles.appName}>StudyNet</Text>
-          <Text style={styles.headerSub}>오늘도 성장하는 하루 되세요! 💪</Text>
+          <Text style={styles.headerSub}>오늘도 성장하는 하루 보내세요.</Text>
         </View>
       </View>
       <TouchableOpacity

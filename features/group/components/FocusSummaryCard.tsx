@@ -5,12 +5,12 @@ import type { GroupStyles } from "../groupStyles";
 export function FocusSummaryCard({
   studyingCount,
   waitingCount,
-  totalCount,
+  offlineCount,
   s,
 }: {
   studyingCount: number;
   waitingCount: number;
-  totalCount: number;
+  offlineCount: number;
   s: GroupStyles;
 }) {
   return (
@@ -28,8 +28,8 @@ export function FocusSummaryCard({
       </View>
       <View style={s.focusSummaryDivider} />
       <View style={s.focusSummaryItem}>
-        <Text style={s.focusSummaryValue}>{totalCount}</Text>
-        <Text style={s.focusSummaryLabel}>총 참여자</Text>
+        <Text style={s.focusSummaryValue}>{offlineCount}</Text>
+        <Text style={s.focusSummaryLabel}>오프라인</Text>
       </View>
     </View>
   );

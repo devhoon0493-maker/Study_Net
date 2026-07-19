@@ -13,7 +13,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  getScreenBottomPadding,
+  getScreenTopPadding,
+} from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
 import { auth, db } from "../../utils/firebaseConfig";
 
@@ -32,8 +37,11 @@ const getInitial = (name: string) => name.trim().slice(0, 1).toUpperCase() || "S
 
 export default function PublicProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme: C } = useMonoTheme();
   const styles = useMemo(() => createStyles(C), [C]);
+  const topPadding = getScreenTopPadding(insets.top);
+  const bottomPadding = getScreenBottomPadding(insets.bottom, 44);
 
   const [profile, setProfile] = useState<UserProfile>({});
   const [bio, setBio] = useState("");
@@ -95,7 +103,13 @@ export default function PublicProfileScreen() {
   const name = profile.name || "Study User";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: topPadding, paddingBottom: bottomPadding },
+      ]}
+    >
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={20} color={C.text} />
@@ -154,8 +168,6 @@ const createStyles = (C: MonoTheme) =>
     },
     content: {
       paddingHorizontal: 20,
-      paddingTop: 58,
-      paddingBottom: 44,
     },
     header: {
       flexDirection: "row",

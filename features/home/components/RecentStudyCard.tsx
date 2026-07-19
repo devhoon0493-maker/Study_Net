@@ -58,14 +58,14 @@ export function RecentStudyCard({
               <Text style={styles.recentSubject} numberOfLines={1}>
                 {session.subject}
               </Text>
-              <Text style={styles.recentDate}>{session.subject}</Text>
+              <Text style={styles.recentDate}>{formatStudyDate(session.date)}</Text>
             </View>
             <View style={styles.recentRight}>
               <Text style={styles.recentDuration}>
                 {formatCompactDuration(session.seconds)}
               </Text>
               <Text style={styles.recentTime} numberOfLines={1}>
-                {formatStudyDate(session.date)}
+                완료
               </Text>
             </View>
             <Ionicons

@@ -15,7 +15,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  getScreenBottomPadding,
+  getScreenTopPadding,
+} from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
 import { auth, db } from "../../utils/firebaseConfig";
 
@@ -67,8 +72,11 @@ const getProfileSaveErrorMessage = (error: unknown) => {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme: C } = useMonoTheme();
   const styles = useMemo(() => createStyles(C), [C]);
+  const topPadding = getScreenTopPadding(insets.top);
+  const bottomPadding = getScreenBottomPadding(insets.bottom, 44);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -147,7 +155,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: topPadding, paddingBottom: bottomPadding },
+      ]}
+    >
       <Text style={styles.title}>프로필 설정</Text>
 
       <TouchableOpacity style={styles.imageWrapper} onPress={pickImage}>
@@ -213,7 +227,6 @@ const createStyles = (C: MonoTheme) =>
     },
     content: {
       padding: 20,
-      paddingBottom: 44,
     },
     title: {
       fontSize: 22,

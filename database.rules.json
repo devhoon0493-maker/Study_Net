@@ -1,0 +1,51 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "rooms": {
+      ".read": "auth != null",
+      "$roomId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ownerId').val() === auth.uid))",
+        "members": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
+    "roomCodes": {
+      ".read": "auth != null",
+      "$code": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid))"
+      }
+    },
+    "communityPosts": {
+      ".read": "auth != null",
+      "$postId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('authorId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))"
+      }
+    },
+    "communityPostCheers": {
+      ".read": "auth != null",
+      "$postId": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "communityPostComments": {
+      ".read": "auth != null",
+      "$postId": {
+        "$commentId": {
+          ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('authorId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))"
+        }
+      }
+    }
+  }
+}

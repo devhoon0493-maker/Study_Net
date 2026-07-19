@@ -28,7 +28,7 @@ export function WeeklyStatsCard({
 
       <View style={styles.weeklyBody}>
         <View style={styles.weeklyPanel}>
-          <Text style={styles.chartTitle}>일별 공부 시간 (시간)</Text>
+          <Text style={styles.chartTitle}>요일별 공부 시간 (시간)</Text>
           <View style={styles.barChart}>
             {weeklyStats.map((item) => {
               const ratio = item.seconds / weeklyMax;

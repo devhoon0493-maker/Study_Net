@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  getScreenBottomPadding,
+  getScreenTopPadding,
+} from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 
 const SUBJECT_MAP: Record<string, string[]> = {
@@ -26,8 +31,11 @@ const SUBJECT_MAP: Record<string, string[]> = {
 
 export default function SubjectSelect() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme: C } = useMonoTheme();
   const styles = useMemo(() => createStyles(C), [C]);
+  const topPadding = getScreenTopPadding(insets.top);
+  const bottomPadding = getScreenBottomPadding(insets.bottom);
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [customSubjects, setCustomSubjects] = useState<string[]>([]);
@@ -99,7 +107,7 @@ export default function SubjectSelect() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingTop: topPadding }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.headerRow}>
@@ -147,7 +155,7 @@ export default function SubjectSelect() {
       <FlatList
         data={subjects}
         keyExtractor={(item, index) => item + index}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
         renderItem={({ item }) => {
           const isCustom = customSubjects.includes(item);
 
@@ -173,7 +181,6 @@ const createStyles = (C: MonoTheme) =>
       flex: 1,
       backgroundColor: C.bg,
       paddingHorizontal: 20,
-      paddingTop: 60,
     },
     headerRow: {
       flexDirection: "row",
