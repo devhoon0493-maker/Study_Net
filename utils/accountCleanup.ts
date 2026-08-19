@@ -19,6 +19,8 @@ export const buildAccountCleanupUpdates = (
 ) => {
   const updates: Record<string, null> = {
     [`users/${uid}`]: null,
+    [`publicProfiles/${uid}`]: null,
+    [`userRooms/${uid}`]: null,
   };
   const myPostIds = new Set<string>();
 
@@ -51,11 +53,15 @@ export const buildAccountCleanupUpdates = (
     if (room.ownerId === uid) {
       updates[`rooms/${roomId}`] = null;
       if (room.code) updates[`roomCodes/${room.code}`] = null;
+      Object.keys(room.members ?? {}).forEach((memberUid) => {
+        updates[`userRooms/${memberUid}/${roomId}`] = null;
+      });
       return;
     }
 
     if (room.members?.[uid]) {
       updates[`rooms/${roomId}/members/${uid}`] = null;
+      updates[`userRooms/${uid}/${roomId}`] = null;
     }
   });
 

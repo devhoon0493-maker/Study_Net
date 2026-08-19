@@ -194,8 +194,14 @@ describe("useProfileForm", () => {
     expect(update).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        name: "New Name",
-        email: "new@example.com",
+        "users/user-1": expect.objectContaining({
+          name: "New Name",
+          email: "new@example.com",
+        }),
+        "publicProfiles/user-1": expect.objectContaining({
+          name: "New Name",
+          userType: "Student",
+        }),
       }),
     );
     expect(onSaved).toHaveBeenCalled();
@@ -331,7 +337,12 @@ describe("useProfileForm", () => {
     expect(updateProfile).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ uid: "stored-user" }),
+      expect.objectContaining({
+        "users/stored-user": expect.objectContaining({ uid: "stored-user" }),
+        "publicProfiles/stored-user": expect.objectContaining({
+          name: "Stored Name",
+        }),
+      }),
     );
     expect(onSaved).toHaveBeenCalled();
   });

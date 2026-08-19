@@ -36,20 +36,23 @@ export function useGroupJoinActions({
 
       const session = await getCurrentStudySession();
       const studyStatusPublic = await loadStudyStatusPublic();
-      await update(ref(db, `rooms/${room.id}/members/${member.id}`), {
-        name: member.name,
-        color: member.color,
-        image: member.image ?? null,
-        userType: member.userType ?? "",
-        bio: member.bio ?? "",
-        studyStatusPublic,
-        speaking: false,
-        ...session,
-        online: true,
-        lastSeenAt: nowMs,
-        joinedAt: alreadyJoined
-          ? (room.members.find((m) => m.id === member.id)?.joinedAt ?? nowMs)
-          : nowMs,
+      await update(ref(db), {
+        [`rooms/${room.id}/members/${member.id}`]: {
+          name: member.name,
+          color: member.color,
+          image: member.image ?? null,
+          userType: member.userType ?? "",
+          bio: member.bio ?? "",
+          studyStatusPublic,
+          speaking: false,
+          ...session,
+          online: true,
+          lastSeenAt: nowMs,
+          joinedAt: alreadyJoined
+            ? (room.members.find((m) => m.id === member.id)?.joinedAt ?? nowMs)
+            : nowMs,
+        },
+        [`userRooms/${member.id}/${room.id}`]: true,
       });
       return true;
     },

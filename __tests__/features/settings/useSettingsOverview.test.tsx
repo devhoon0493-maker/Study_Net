@@ -196,14 +196,28 @@ describe("useSettingsOverview", () => {
     await expect(
       AsyncStorage.getItem(COMMUNITY_ACTIVITY_PUBLIC_KEY),
     ).resolves.toBe("true");
-    expect(update).toHaveBeenCalledWith(expect.anything(), {
-      studyStatusPublic: false,
-      updatedAt: 10_000,
-    });
-    expect(update).toHaveBeenCalledWith(expect.anything(), {
-      communityActivityPublic: true,
-      updatedAt: 10_000,
-    });
+    expect(update).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        "users/user-1/studyStatusPublic": false,
+        "users/user-1/updatedAt": 10_000,
+        "publicProfiles/user-1": expect.objectContaining({
+          studyStatusPublic: false,
+          updatedAt: 10_000,
+        }),
+      }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        "users/user-1/communityActivityPublic": true,
+        "users/user-1/updatedAt": 10_000,
+        "publicProfiles/user-1": expect.objectContaining({
+          communityActivityPublic: true,
+          updatedAt: 10_000,
+        }),
+      }),
+    );
   });
 
   it("updates privacy settings locally without remote writes when signed out", async () => {

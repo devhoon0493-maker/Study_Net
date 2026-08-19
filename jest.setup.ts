@@ -2,6 +2,8 @@
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
+jest.setTimeout(15_000);
+
 process.env.EXPO_PUBLIC_FIREBASE_API_KEY ??= "test-api-key";
 process.env.EXPO_PUBLIC_FIREBASE_APP_ID ??= "test-app-id";
 process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ??= "test.firebaseapp.com";
@@ -96,6 +98,7 @@ jest.mock("firebase/auth", () => ({
 }));
 
 jest.mock("firebase/database", () => ({
+  equalTo: jest.fn((value) => ({ type: "equalTo", value })),
   get: jest.fn(() =>
     Promise.resolve({
       exists: () => false,
@@ -103,7 +106,13 @@ jest.mock("firebase/database", () => ({
     }),
   ),
   getDatabase: jest.fn(() => ({})),
+  limitToLast: jest.fn((value) => ({ type: "limitToLast", value })),
   onValue: jest.fn(),
+  orderByChild: jest.fn((value) => ({ type: "orderByChild", value })),
+  query: jest.fn((baseRef, ...constraints) => ({
+    ...baseRef,
+    constraints,
+  })),
   ref: jest.fn((db, path) => ({ db, path })),
   set: jest.fn(() => Promise.resolve()),
   update: jest.fn(() => Promise.resolve()),

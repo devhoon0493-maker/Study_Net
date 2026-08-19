@@ -43,7 +43,7 @@ export default function NotificationsScreen() {
       return;
     }
 
-    const unsubscribe = subscribeCommunityNotificationSources((sources) => {
+    const unsubscribe = subscribeCommunityNotificationSources(uid, (sources) => {
       setNotifications(
         buildCommunityNotifications({
           ...sources,

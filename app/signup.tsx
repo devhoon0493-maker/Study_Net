@@ -28,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import { getErrorCode } from "../utils/errorMessages";
 import { auth, db } from "../utils/firebaseConfig";
+import { publicProfileUpdate } from "../utils/publicProfile";
 import {
   getGoogleAuthErrorMessage,
   getGoogleRuntimeErrorMessage,
@@ -110,6 +111,10 @@ export default function SignupScreen() {
   }) => {
     await Promise.all([
       set(ref(db, `users/${profile.uid}`), profile),
+      set(
+        ref(db, `publicProfiles/${profile.uid}`),
+        publicProfileUpdate(profile.uid, profile)[`publicProfiles/${profile.uid}`],
+      ),
       saveStoredUserProfile(profile),
     ]);
   };

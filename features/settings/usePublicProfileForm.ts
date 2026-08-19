@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import { ref, update } from "firebase/database";
 
 import { auth, db } from "../../utils/firebaseConfig";
+import { publicProfileUpdate } from "../../utils/publicProfile";
 import {
   loadStoredUserProfile,
   saveStoredUserProfile,
@@ -60,9 +61,10 @@ export function usePublicProfileForm({ onSaved }: UsePublicProfileFormParams) {
       await saveStoredUserProfile(nextProfile);
 
       if (uid) {
-        await update(ref(db, `users/${uid}`), {
-          bio: trimmedBio,
-          updatedAt: nextProfile.updatedAt,
+        await update(ref(db), {
+          [`users/${uid}/bio`]: trimmedBio,
+          [`users/${uid}/updatedAt`]: nextProfile.updatedAt,
+          ...publicProfileUpdate(uid, nextProfile),
         });
       }
 

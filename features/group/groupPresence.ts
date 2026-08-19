@@ -6,7 +6,7 @@ import { auth, db } from "../../utils/firebaseConfig";
 import { loadStudyStatusPublic } from "../../utils/privacySettings";
 import { loadStoredUserProfile, type StoredUserProfile } from "../../utils/userProfileStorage";
 import { MEMBER_KEY } from "./groupConstants";
-import type { RoomMemberRecord, RoomRecord, StoredMember } from "./groupTypes";
+import type { RoomRecord, StoredMember } from "./groupTypes";
 import { getColorFromId, getCurrentStudySession } from "./groupUtils";
 
 type StudyPresence = {
@@ -71,19 +71,44 @@ export const syncCurrentMemberToJoinedRooms = async ({
   const member = await loadCurrentMember();
   if (!member) return;
 
-  const roomsSnapshot = await get(ref(db, "rooms"));
-  const rooms = roomsSnapshot.val() as Record<string, RoomRecord> | null;
-  if (!rooms) return;
+  const roomIndexSnapshot = await get(ref(db, `userRooms/${member.id}`));
+  const roomIndex =
+    (roomIndexSnapshot.val() as Record<string, boolean | RoomRecord> | null) ??
+    {};
+  const indexedRoomIds = Object.entries(roomIndex)
+    .filter(([, value]) => value === true)
+    .map(([roomId]) => roomId);
+  const legacyRoomEntries = Object.entries(roomIndex).filter(
+    ([, value]) => value && typeof value === "object",
+  ) as Array<[string, RoomRecord]>;
+  if (indexedRoomIds.length === 0 && legacyRoomEntries.length === 0) return;
+
+  const roomEntries =
+    legacyRoomEntries.length > 0
+      ? legacyRoomEntries
+      : await Promise.all(
+          indexedRoomIds.map(async (roomId) => {
+            const snapshot = await get(ref(db, `rooms/${roomId}`));
+            return [roomId, (snapshot?.val() as RoomRecord | null) ?? null] as const;
+          }),
+        );
 
   const nextSession = session ?? (await getCurrentStudySession());
   const studyStatusPublic = await loadStudyStatusPublic();
   const now = Date.now();
-  const updates: Record<string, RoomMemberRecord> = {};
+  const updates: Record<string, unknown> = {};
   const disconnects: Promise<void>[] = [];
 
-  for (const [roomId, room] of Object.entries(rooms)) {
+  for (const [roomId, room] of roomEntries) {
+    if (!room) {
+      updates[`userRooms/${member.id}/${roomId}`] = null;
+      continue;
+    }
     const previous = room.members?.[member.id];
-    if (!previous) continue;
+    if (!previous) {
+      updates[`userRooms/${member.id}/${roomId}`] = null;
+      continue;
+    }
 
     const memberRef = ref(db, `rooms/${roomId}/members/${member.id}`);
     disconnects.push(

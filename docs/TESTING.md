@@ -7,9 +7,9 @@ StudyNet uses Jest with the Expo preset for automated tests.
 - 49 test suites.
 - 287 automated tests.
 - `npm test`, `npm run test:coverage`, `npm run typecheck`, and `npm run validate:config` pass locally.
-- Current Jest statement, branch, function, and line coverage are 100% across collected `features` and `utils` files.
-- Jest enforces 100% global thresholds for statements, branches, functions, and lines.
-- GitHub Actions runs `npm run validate` and `npm run test:coverage` on pushes to `main` and pull requests.
+- Current Jest statement, function, and line coverage are above 99% across collected `features` and `utils` files, with branch coverage above 97%.
+- Jest enforces pragmatic global thresholds: 98% statements/functions/lines and 95% branches.
+- GitHub Actions runs `npm run validate` and `npm run test:coverage` on pushes to `main`/`master` and pull requests.
 
 ## Commands
 

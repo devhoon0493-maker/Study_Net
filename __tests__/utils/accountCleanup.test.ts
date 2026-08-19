@@ -4,6 +4,8 @@ describe("account cleanup helpers", () => {
   it("always removes the deleted user profile", () => {
     expect(buildAccountCleanupUpdates("user-1", {})).toEqual({
       "users/user-1": null,
+      "publicProfiles/user-1": null,
+      "userRooms/user-1": null,
     });
   });
 
@@ -35,6 +37,8 @@ describe("account cleanup helpers", () => {
       }),
     ).toEqual({
       "users/user-1": null,
+      "publicProfiles/user-1": null,
+      "userRooms/user-1": null,
       "communityPosts/post-1": null,
       "communityPostCheers/post-1/user-2": null,
       "communityPostCheers/post-2/user-1": null,
@@ -64,9 +68,13 @@ describe("account cleanup helpers", () => {
       }),
     ).toEqual({
       "users/user-1": null,
+      "publicProfiles/user-1": null,
+      "userRooms/user-1": null,
       "rooms/room-owned": null,
       "roomCodes/ABC123": null,
       "rooms/room-joined/members/user-1": null,
+      "userRooms/user-1/room-joined": null,
+      "userRooms/user-2/room-owned": null,
     });
   });
 
@@ -88,6 +96,8 @@ describe("account cleanup helpers", () => {
       }),
     ).toEqual({
       "users/user-1": null,
+      "publicProfiles/user-1": null,
+      "userRooms/user-1": null,
       "rooms/room-owned": null,
     });
   });

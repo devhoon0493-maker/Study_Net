@@ -4,6 +4,7 @@ import { Alert } from "react-native";
 import { ref, update } from "firebase/database";
 
 import { auth, db } from "../../utils/firebaseConfig";
+import { publicProfileUpdate } from "../../utils/publicProfile";
 import {
   formatNotificationSummary,
   loadNotificationSettings,
@@ -83,9 +84,12 @@ export function useSettingsOverview() {
     await saveStudyStatusPublic(value);
     const uid = auth.currentUser?.uid;
     if (uid) {
-      await update(ref(db, `users/${uid}`), {
-        studyStatusPublic: value,
-        updatedAt: Date.now(),
+      const updatedAt = Date.now();
+      const profile = { ...((await loadStoredUserProfile()) ?? {}), studyStatusPublic: value, updatedAt };
+      await update(ref(db), {
+        [`users/${uid}/studyStatusPublic`]: value,
+        [`users/${uid}/updatedAt`]: updatedAt,
+        ...publicProfileUpdate(uid, profile),
       });
     }
   }, []);
@@ -95,9 +99,12 @@ export function useSettingsOverview() {
     await saveCommunityActivityPublic(value);
     const uid = auth.currentUser?.uid;
     if (uid) {
-      await update(ref(db, `users/${uid}`), {
-        communityActivityPublic: value,
-        updatedAt: Date.now(),
+      const updatedAt = Date.now();
+      const profile = { ...((await loadStoredUserProfile()) ?? {}), communityActivityPublic: value, updatedAt };
+      await update(ref(db), {
+        [`users/${uid}/communityActivityPublic`]: value,
+        [`users/${uid}/updatedAt`]: updatedAt,
+        ...publicProfileUpdate(uid, profile),
       });
     }
   }, []);

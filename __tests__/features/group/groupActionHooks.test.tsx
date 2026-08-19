@@ -171,15 +171,18 @@ describe("group action hooks", () => {
     });
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ path: "rooms/room-1/members/member-1" }),
+      expect.anything(),
       expect.objectContaining({
-        name: "Member",
-        studyStatusPublic: false,
-        status: "Math",
-        studyStartEpoch: 123,
-        online: true,
-        lastSeenAt: 10_000,
-        joinedAt: 500,
+        "rooms/room-1/members/member-1": expect.objectContaining({
+          name: "Member",
+          studyStatusPublic: false,
+          status: "Math",
+          studyStartEpoch: 123,
+          online: true,
+          lastSeenAt: 10_000,
+          joinedAt: 500,
+        }),
+        "userRooms/member-1/room-1": true,
       }),
     );
     expect(result.current.codeInput).toBe("");
@@ -264,12 +267,15 @@ describe("group action hooks", () => {
     });
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ path: "rooms/room-3/members/member-2" }),
+      expect.anything(),
       expect.objectContaining({
-        image: null,
-        userType: "",
-        bio: "",
-        joinedAt: 10_000,
+        "rooms/room-3/members/member-2": expect.objectContaining({
+          image: null,
+          userType: "",
+          bio: "",
+          joinedAt: 10_000,
+        }),
+        "userRooms/member-2/room-3": true,
       }),
     );
 
@@ -300,10 +306,13 @@ describe("group action hooks", () => {
       await nullishHook.result.current.joinByCode("ROOM44");
     });
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ path: "rooms/room-4/members/member-3" }),
+      expect.anything(),
       expect.objectContaining({
-        userType: "",
-        bio: "",
+        "rooms/room-4/members/member-3": expect.objectContaining({
+          userType: "",
+          bio: "",
+        }),
+        "userRooms/member-3/room-4": true,
       }),
     );
   });
@@ -705,7 +714,7 @@ describe("group action hooks", () => {
     const ownerHook = await renderHook(() =>
       useGroupRoomActions({
         member,
-        selectedRoom: makeRoom({ ownerId: member.id }),
+        selectedRoom: makeRoom({ ownerId: member.id, members: [member] }),
         onError,
         onCreated: jest.fn(),
         onLeft,
@@ -717,6 +726,7 @@ describe("group action hooks", () => {
     expect(update).toHaveBeenCalledWith(expect.anything(), {
       "rooms/room-1": null,
       "roomCodes/ABC123": null,
+      "userRooms/member-1/room-1": null,
     });
     expect(onLeft).toHaveBeenCalled();
 
@@ -734,6 +744,7 @@ describe("group action hooks", () => {
     });
     expect(update).toHaveBeenCalledWith(expect.anything(), {
       "rooms/room-1/members/member-1": null,
+      "userRooms/member-1/room-1": null,
     });
 
     const missingHook = await renderHook(() =>

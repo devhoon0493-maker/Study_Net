@@ -10,6 +10,8 @@ export type StoredUserProfile = {
   userType?: string;
   bio?: string;
   color?: string;
+  studyStatusPublic?: boolean;
+  communityActivityPublic?: boolean;
   createdAt?: number;
   updatedAt?: number;
 };

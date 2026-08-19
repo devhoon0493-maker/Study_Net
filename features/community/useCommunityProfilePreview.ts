@@ -25,7 +25,7 @@ export function useCommunityProfilePreview(posts: CommunityPost[]) {
       setSelectedProfile(fallbackProfile);
 
       try {
-        const snapshot = await get(ref(db, `users/${post.authorId}`));
+        const snapshot = await get(ref(db, `publicProfiles/${post.authorId}`));
         if (!snapshot.exists()) return;
 
         const profile = snapshot.val();

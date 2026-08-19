@@ -158,7 +158,7 @@ function MainScreenInner() {
         setNotificationCount(countUnreadCommunityNotifications(notifications, readAt));
       };
 
-      const unsubscribe = subscribeCommunityNotificationSources((sources) => {
+      const unsubscribe = subscribeCommunityNotificationSources(uid, (sources) => {
         lastSources = sources;
         sync();
       });

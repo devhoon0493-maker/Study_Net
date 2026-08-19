@@ -10,7 +10,10 @@ All Firebase database paths require `auth != null` for reads unless noted otherw
 
 ### `users/{uid}`
 
-Purpose: account profile, public profile, and privacy flags.
+Purpose: private account profile cache and privacy flags.
+
+Reader:
+- Only the signed-in user whose `auth.uid === uid`.
 
 Writer:
 - Only the signed-in user whose `auth.uid === uid`.
@@ -35,8 +38,46 @@ Used by:
 - Login/signup profile creation.
 - Email verification state lives in Firebase Auth as `emailVerified`, not in Realtime Database.
 - Settings profile and public profile screens.
-- Group member profile sync.
-- Community author/profile preview and notification display.
+- Group member profile sync for the current signed-in user.
+
+### `publicProfiles/{uid}`
+
+Purpose: public profile fields that other signed-in users may view in community and group surfaces.
+
+Reader:
+- Any signed-in user.
+
+Writer:
+- Only the signed-in user whose `auth.uid === uid`.
+
+Fields:
+- `name`: string, 1-40 chars.
+- `image`: null or string.
+- `userType`: string, max 40 chars.
+- `bio`: string, max 80 chars.
+- `color`: string, max 24 chars.
+- `studyStatusPublic`: boolean.
+- `communityActivityPublic`: boolean.
+- `updatedAt`: number.
+
+Used by:
+- Community feed author hydration.
+- Community profile preview.
+- Community reaction/comment notifications.
+
+### `userRooms/{uid}/{roomId}`
+
+Purpose: user-scoped index of rooms a member has joined. This prevents timer/presence sync from scanning every room.
+
+Reader:
+- Only the signed-in user whose `auth.uid === uid`.
+
+Writer:
+- The signed-in user can update their own index.
+- A room owner can clear member indexes when deleting the room.
+
+Value:
+- `true` when joined, or removed when leaving/deleting.
 
 ### `rooms/{roomId}`
 
@@ -178,7 +219,7 @@ Rules:
 - Upload content type must match `image/.*`.
 
 Database link:
-- The public download URL is stored in `users/{uid}.image` and copied to related group/community author fields.
+- The public download URL is stored in `users/{uid}.image`, copied to `publicProfiles/{uid}.image`, and copied to related group/community author fields.
 
 ## AsyncStorage Keys
 

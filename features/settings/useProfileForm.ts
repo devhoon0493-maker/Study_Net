@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 
 import { auth, db, storage } from "../../utils/firebaseConfig";
+import { publicProfileUpdate } from "../../utils/publicProfile";
 import {
   loadStoredUserProfile,
   saveStoredUserProfile,
@@ -151,7 +152,10 @@ export function useProfileForm({ onSaved }: UseProfileFormParams) {
         });
       }
 
-      await update(ref(db, `users/${uid}`), profile);
+      await update(ref(db), {
+        [`users/${uid}`]: profile,
+        ...publicProfileUpdate(uid, profile),
+      });
 
       onSaved();
     } catch (error) {

@@ -75,19 +75,15 @@ describe("group presence sync", () => {
       update: disconnectUpdate,
     } as never);
     jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ joined: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
       val: () => ({
-        joined: {
-          members: {
-            "member-1": {
-              joinedAt: 100,
-              speaking: true,
-              status: "old",
-            },
-          },
-        },
-        unrelated: {
-          members: {
-            other: {},
+        members: {
+          "member-1": {
+            joinedAt: 100,
+            speaking: true,
+            status: "old",
           },
         },
       }),
@@ -95,7 +91,8 @@ describe("group presence sync", () => {
 
     await syncCurrentMemberToJoinedRooms();
 
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "rooms");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "userRooms/member-1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "rooms/joined");
     expect(ref).toHaveBeenCalledWith(
       expect.anything(),
       "rooms/joined/members/member-1",
@@ -133,11 +130,12 @@ describe("group presence sync", () => {
       }),
     );
     jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ joined: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
       val: () => ({
-        joined: {
-          members: {
-            "member-2": {},
-          },
+        members: {
+          "member-2": {},
         },
       }),
     } as never);
@@ -183,12 +181,13 @@ describe("group presence sync", () => {
       [STUDY_STATUS_PUBLIC_KEY, "true"],
     ]);
     jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ room: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
       val: () => ({
-        room: {
-          members: {
-            "user-1": {
-              joinedAt: 200,
-            },
+        members: {
+          "user-1": {
+            joinedAt: 200,
           },
         },
       }),
@@ -232,10 +231,25 @@ describe("group presence sync", () => {
     expect(update).not.toHaveBeenCalled();
 
     jest.mocked(get).mockResolvedValueOnce({
-      val: () => ({ room: { members: { other: {} } } }),
+      val: () => ({ room: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ members: { other: {} } }),
     } as never);
     await syncCurrentMemberToJoinedRooms();
-    expect(update).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(expect.anything(), {
+      "userRooms/member-1/room": null,
+    });
+
+    jest.clearAllMocks();
+    jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ missing: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({ val: () => null } as never);
+    await syncCurrentMemberToJoinedRooms();
+    expect(update).toHaveBeenCalledWith(expect.anything(), {
+      "userRooms/member-1/missing": null,
+    });
   });
 
   it("falls back when stored member and profile JSON cannot be parsed", async () => {
@@ -250,11 +264,12 @@ describe("group presence sync", () => {
       [USER_PROFILE_KEY, "{bad json"],
     ]);
     jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ room: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
       val: () => ({
-        room: {
-          members: {
-            "user-1": {},
-          },
+        members: {
+          "user-1": {},
         },
       }),
     } as never);
@@ -299,11 +314,12 @@ describe("group presence sync", () => {
       ],
     ]);
     jest.mocked(get).mockResolvedValueOnce({
+      val: () => ({ room: true }),
+    } as never);
+    jest.mocked(get).mockResolvedValueOnce({
       val: () => ({
-        room: {
-          members: {
-            "user-2": {},
-          },
+        members: {
+          "user-2": {},
         },
       }),
     } as never);

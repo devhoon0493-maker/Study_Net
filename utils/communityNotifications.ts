@@ -1,5 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onValue, ref, type Unsubscribe } from "firebase/database";
+import {
+  equalTo,
+  onValue,
+  orderByChild,
+  query,
+  ref,
+  type Unsubscribe,
+} from "firebase/database";
 
 import type {
   CommunityCommentRecord,
@@ -133,6 +140,7 @@ export const buildCommunityNotifications = ({
 };
 
 export const subscribeCommunityNotificationSources = (
+  uid: string,
   onChange: (sources: CommunityNotificationSources) => void,
 ) => {
   const sources: CommunityNotificationSources = {
@@ -146,27 +154,88 @@ export const subscribeCommunityNotificationSources = (
     onChange({ ...sources });
   };
 
-  const unsubscribers: Unsubscribe[] = [
-    onValue(ref(db, "communityPosts"), (snapshot) => {
+  const unsubscribers: Unsubscribe[] = [];
+  const postUnsubscribers = new Map<string, Unsubscribe[]>();
+  const profileUnsubscribers = new Map<string, Unsubscribe>();
+
+  const clearPostSubscriptions = () => {
+    postUnsubscribers.forEach((items) => items.forEach((unsubscribe) => unsubscribe()));
+    postUnsubscribers.clear();
+    sources.cheers = {};
+    sources.comments = {};
+  };
+
+  const syncProfiles = () => {
+    const actorIds = new Set<string>();
+
+    Object.values(sources.cheers ?? {}).forEach((cheers) => {
+      Object.keys(cheers ?? {}).forEach((actorId) => {
+        if (actorId !== uid) actorIds.add(actorId);
+      });
+    });
+    Object.values(sources.comments ?? {}).forEach((comments) => {
+      Object.values(comments ?? {}).forEach((comment) => {
+        if (comment.authorId !== uid) actorIds.add(comment.authorId);
+      });
+    });
+
+    profileUnsubscribers.forEach((unsubscribe, actorId) => {
+      if (!actorIds.has(actorId)) {
+        unsubscribe();
+        profileUnsubscribers.delete(actorId);
+        if (sources.users) delete sources.users[actorId];
+      }
+    });
+
+    actorIds.forEach((actorId) => {
+      if (profileUnsubscribers.has(actorId)) return;
+      const unsubscribe = onValue(ref(db, `publicProfiles/${actorId}`), (snapshot) => {
+        sources.users = {
+          ...(sources.users ?? {}),
+          [actorId]: snapshot.val() ?? {},
+        };
+        emit();
+      });
+      profileUnsubscribers.set(actorId, unsubscribe);
+    });
+  };
+
+  unsubscribers.push(
+    onValue(
+      query(ref(db, "communityPosts"), orderByChild("authorId"), equalTo(uid)),
+      (snapshot) => {
       sources.posts = snapshot.val();
+      clearPostSubscriptions();
+      Object.keys(sources.posts ?? {}).forEach((postId) => {
+        postUnsubscribers.set(postId, [
+          onValue(ref(db, `communityPostCheers/${postId}`), (cheerSnapshot) => {
+            sources.cheers = {
+              ...(sources.cheers ?? {}),
+              [postId]: cheerSnapshot.val() ?? {},
+            };
+            syncProfiles();
+            emit();
+          }),
+          onValue(ref(db, `communityPostComments/${postId}`), (commentSnapshot) => {
+            sources.comments = {
+              ...(sources.comments ?? {}),
+              [postId]: commentSnapshot.val() ?? {},
+            };
+            syncProfiles();
+            emit();
+          }),
+        ]);
+      });
       emit();
-    }),
-    onValue(ref(db, "communityPostCheers"), (snapshot) => {
-      sources.cheers = snapshot.val();
-      emit();
-    }),
-    onValue(ref(db, "communityPostComments"), (snapshot) => {
-      sources.comments = snapshot.val();
-      emit();
-    }),
-    onValue(ref(db, "users"), (snapshot) => {
-      sources.users = snapshot.val();
-      emit();
-    }),
-  ];
+      },
+    ),
+  );
 
   return () => {
     unsubscribers.forEach((unsubscribe) => unsubscribe());
+    clearPostSubscriptions();
+    profileUnsubscribers.forEach((unsubscribe) => unsubscribe());
+    profileUnsubscribers.clear();
   };
 };
 

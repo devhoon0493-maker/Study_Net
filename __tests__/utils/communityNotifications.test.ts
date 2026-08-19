@@ -7,7 +7,7 @@ import {
   saveCommunityNotificationsReadAt,
   subscribeCommunityNotificationSources,
 } from "../../utils/communityNotifications";
-import { onValue, ref } from "firebase/database";
+import { equalTo, onValue, orderByChild, query, ref } from "firebase/database";
 
 describe("community notifications", () => {
   beforeEach(async () => {
@@ -248,35 +248,111 @@ describe("community notifications", () => {
     ).toBe(2);
   });
 
-  it("subscribes to all notification sources and cleans up", () => {
+  it("subscribes to scoped notification sources and cleans up", () => {
     const unsubscribeFns = [jest.fn(), jest.fn(), jest.fn(), jest.fn()];
     const unsubscribers = [...unsubscribeFns];
     const onChange = jest.fn();
     jest.mocked(onValue).mockImplementation((sourceRef, callback) => {
       const path = (sourceRef as unknown as { path: string }).path;
+      if (path === "communityPosts") {
+        callback({
+          val: () => ({
+            post1: {
+              authorId: "owner",
+              author: "Owner",
+              category: "질문",
+              title: "Title",
+              body: "Body",
+              createdAt: 100,
+            },
+          }),
+        } as never);
+        return unsubscribers.shift() ?? jest.fn();
+      }
+      if (path === "communityPostCheers/post1") {
+        callback({ val: () => ({ actor: { createdAt: 200 } }) } as never);
+        return unsubscribers.shift() ?? jest.fn();
+      }
+      if (path === "communityPostComments/post1") {
+        callback({
+          val: () => ({
+            comment1: {
+              authorId: "commenter",
+              author: "Commenter",
+              body: "Nice",
+              createdAt: 300,
+            },
+          }),
+        } as never);
+        return unsubscribers.shift() ?? jest.fn();
+      }
       callback({
-        val: () => ({ [path]: true }),
+        val: () => ({ name: path }),
       } as never);
       return unsubscribers.shift() ?? jest.fn();
     });
 
-    const unsubscribe = subscribeCommunityNotificationSources(onChange);
+    const unsubscribe = subscribeCommunityNotificationSources("owner", onChange);
 
     expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPosts");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostCheers");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostComments");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "users");
-    expect(onChange).toHaveBeenCalledTimes(4);
-    expect(onChange).toHaveBeenLastCalledWith({
-      posts: { communityPosts: true },
-      cheers: { communityPostCheers: true },
-      comments: { communityPostComments: true },
-      users: { users: true },
-    });
+    expect(query).toHaveBeenCalled();
+    expect(orderByChild).toHaveBeenCalledWith("authorId");
+    expect(equalTo).toHaveBeenCalledWith("owner");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostCheers/post1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostComments/post1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "publicProfiles/actor");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "publicProfiles/commenter");
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        posts: expect.objectContaining({ post1: expect.any(Object) }),
+        cheers: expect.objectContaining({ post1: expect.any(Object) }),
+        comments: expect.objectContaining({ post1: expect.any(Object) }),
+        users: expect.objectContaining({
+          actor: expect.any(Object),
+          commenter: expect.any(Object),
+        }),
+      }),
+    );
 
     unsubscribe();
     unsubscribeFns.forEach((unsubscribeFn) => {
       expect(unsubscribeFn).toHaveBeenCalled();
     });
+  });
+
+  it("removes stale actor profile subscriptions", () => {
+    const actorProfileUnsubscribe = jest.fn();
+    const callbacks: Record<string, (snapshot: { val: () => unknown }) => void> = {};
+    jest.mocked(onValue).mockImplementation((sourceRef, callback) => {
+      const path = (sourceRef as unknown as { path: string }).path;
+      callbacks[path] = callback as never;
+      if (path === "communityPosts") {
+        callback({
+          val: () => ({
+            post1: {
+              authorId: "owner",
+              author: "Owner",
+              category: "질문",
+              title: "Title",
+              body: "Body",
+              createdAt: 100,
+            },
+          }),
+        } as never);
+      }
+      if (path === "communityPostCheers/post1") {
+        callback({ val: () => ({ actor: { createdAt: 200 } }) } as never);
+      }
+      if (path === "publicProfiles/actor") {
+        return actorProfileUnsubscribe;
+      }
+      return jest.fn();
+    });
+
+    subscribeCommunityNotificationSources("owner", jest.fn());
+
+    callbacks["communityPostCheers/post1"]?.({ val: () => ({}) });
+
+    expect(actorProfileUnsubscribe).toHaveBeenCalled();
   });
 });

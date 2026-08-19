@@ -93,7 +93,10 @@ export function useGroupRoomActions({
           },
         };
 
-        await update(ref(db), { [`rooms/${roomId}`]: room });
+        await update(ref(db), {
+          [`rooms/${roomId}`]: room,
+          [`userRooms/${member.id}/${roomId}`]: true,
+        });
         createdRoomId = roomId;
         await update(ref(db), { [`roomCodes/${code}`]: roomId });
         createdRoomId = null;
@@ -119,6 +122,12 @@ export function useGroupRoomActions({
     await update(ref(db), {
       [`rooms/${room.id}`]: null,
       [`roomCodes/${room.code}`]: null,
+      ...Object.fromEntries(
+        room.members.map((roomMember) => [
+          `userRooms/${roomMember.id}/${room.id}`,
+          null,
+        ]),
+      ),
     });
   }, []);
 
@@ -135,6 +144,7 @@ export function useGroupRoomActions({
       } else {
         await update(ref(db), {
           [`rooms/${selectedRoom.id}/members/${member.id}`]: null,
+          [`userRooms/${member.id}/${selectedRoom.id}`]: null,
         });
       }
     } catch (error) {

@@ -18,6 +18,8 @@ Minimum rule:
 
 Treat as user data:
 - `users/{uid}`
+- `publicProfiles/{uid}`
+- `userRooms/{uid}`
 - `communityPosts` authored by the user.
 - `communityPostCheers/{postId}/{uid}`
 - `communityPostComments` authored by the user.
@@ -26,7 +28,7 @@ Treat as user data:
 
 Deletion:
 - Must be removed or anonymized when the user deletes the account.
-- Current implementation removes user profile, owned posts, own cheers/comments, owned rooms/codes, and memberships.
+- Current implementation removes the private user profile, public profile, room index, owned posts, own cheers/comments, owned rooms/codes, member indexes for owned rooms, and memberships.
 
 ### Ephemeral operational data
 
@@ -130,3 +132,16 @@ Current mitigation:
 
 Follow-up:
 - Periodically scan and remove broken mappings from an admin script.
+
+### Missing `userRooms` indexes
+
+Symptom:
+- Existing users joined rooms before `userRooms/{uid}/{roomId}` existed.
+- Background timer sync cannot find those rooms without a one-time migration.
+
+Current mitigation:
+- New room creation, code joins, public joins, and room leaves maintain the index.
+- The focused group room still syncs through its selected room path.
+
+Follow-up:
+- Before production launch, scan `rooms/*/members/*` and backfill `userRooms/{uid}/{roomId}: true` in staging, then production.

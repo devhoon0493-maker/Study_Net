@@ -158,8 +158,7 @@ describe("useStorageStatus", () => {
       } as never)
       .mockResolvedValueOnce({
         val: () => ({
-          room1: { members: { "user-1": true } },
-          room2: { members: { "other-user": true } },
+          room1: true,
         }),
       } as never);
 

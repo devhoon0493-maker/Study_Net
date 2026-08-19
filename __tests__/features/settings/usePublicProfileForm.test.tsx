@@ -116,11 +116,17 @@ describe("usePublicProfileForm", () => {
       bio: "public bio",
       updatedAt: Date.now(),
     });
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "users/auth-user");
-    expect(update).toHaveBeenCalledWith(expect.anything(), {
-      bio: "public bio",
-      updatedAt: Date.now(),
-    });
+    expect(update).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        "users/auth-user/bio": "public bio",
+        "users/auth-user/updatedAt": Date.now(),
+        "publicProfiles/auth-user": expect.objectContaining({
+          bio: "public bio",
+          updatedAt: Date.now(),
+        }),
+      }),
+    );
     expect(onSaved).toHaveBeenCalled();
   });
 

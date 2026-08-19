@@ -66,7 +66,7 @@ describe("auxiliary app screens", () => {
     jest.clearAllMocks();
     setCurrentUser(null);
     jest.mocked(subscribeCommunityNotificationSources).mockImplementation(
-      (onChange) => {
+      (_uid, onChange) => {
         onChange({
           posts: null,
           cheers: null,

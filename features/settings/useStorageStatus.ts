@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { get, ref } from "firebase/database";
+import { equalTo, get, orderByChild, query, ref } from "firebase/database";
 import { useCallback, useState } from "react";
 
 import { PRIMARY_DDAY_KEY } from "../../utils/dday";
@@ -84,19 +84,15 @@ export function useStorageStatus() {
       if (user) {
         const [profileSnapshot, postSnapshot, roomSnapshot] = await Promise.all([
           get(ref(db, `users/${user.uid}`)),
-          get(ref(db, "communityPosts")),
-          get(ref(db, "rooms")),
+          get(query(ref(db, "communityPosts"), orderByChild("authorId"), equalTo(user.uid))),
+          get(ref(db, `userRooms/${user.uid}`)),
         ]);
         const posts = postSnapshot.val() as Record<string, { authorId?: string }> | null;
-        const rooms = roomSnapshot.val() as
-          | Record<string, { members?: Record<string, unknown> }>
-          | null;
+        const rooms = roomSnapshot.val() as Record<string, boolean> | null;
         const myPostCount = Object.values(posts ?? {}).filter(
           (post) => post.authorId === user.uid,
         ).length;
-        const joinedRoomCount = Object.values(rooms ?? {}).filter((room) =>
-          Boolean(room.members?.[user.uid]),
-        ).length;
+        const joinedRoomCount = Object.keys(rooms ?? {}).length;
 
         nextRemote.push(
           {

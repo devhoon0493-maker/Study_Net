@@ -169,6 +169,8 @@ describe("useSettingsAccountActions", () => {
 
     expect(update).toHaveBeenCalledWith(expect.anything(), {
       "users/user-empty": null,
+      "publicProfiles/user-empty": null,
+      "userRooms/user-empty": null,
     });
     expect(deleteUser).toHaveBeenCalledWith(user);
     expect(onExitToLogin).toHaveBeenCalled();

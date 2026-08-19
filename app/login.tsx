@@ -29,6 +29,7 @@ import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import { requiresEmailVerification } from "../utils/emailVerification";
 import { getErrorCode } from "../utils/errorMessages";
 import { auth, db } from "../utils/firebaseConfig";
+import { publicProfileUpdate } from "../utils/publicProfile";
 import {
   getGoogleAuthErrorMessage,
   getGoogleRuntimeErrorMessage,
@@ -83,6 +84,7 @@ const persistUserProfile = async (user: User, userType = "일반 회원") => {
     await set(userRef, profile);
   }
 
+  await set(ref(db, `publicProfiles/${user.uid}`), publicProfileUpdate(user.uid, profile)[`publicProfiles/${user.uid}`]);
   await saveStoredUserProfile(profile);
 };
 

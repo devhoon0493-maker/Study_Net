@@ -70,6 +70,25 @@ assert(
 );
 
 const databaseRules = JSON.parse(readText("database.rules.json"));
+assert(
+  databaseRules.rules?.users?.$uid?.[".read"] ===
+    "auth != null && auth.uid === $uid",
+  "database.rules.json users must be owner-readable only",
+);
+assert(
+  databaseRules.rules?.publicProfiles?.[".read"] === "auth != null",
+  "database.rules.json publicProfiles must require auth reads",
+);
+assert(
+  databaseRules.rules?.publicProfiles?.$uid?.[".write"] ===
+    "auth != null && auth.uid === $uid",
+  "database.rules.json publicProfiles writes must be owner-scoped",
+);
+assert(
+  databaseRules.rules?.userRooms?.$uid?.[".read"] ===
+    "auth != null && auth.uid === $uid",
+  "database.rules.json userRooms must be owner-readable only",
+);
 const roomCodeRules = databaseRules.rules?.roomCodes?.$code;
 assert(roomCodeRules?.[".read"] === "auth != null", "database.rules.json roomCodes must require auth reads");
 assert(

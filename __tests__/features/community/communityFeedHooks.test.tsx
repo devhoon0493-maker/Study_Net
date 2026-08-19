@@ -116,7 +116,7 @@ describe("community feed hooks", () => {
       await result.current.openProfilePreview(posts[0]);
     });
 
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "users/author-1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "publicProfiles/author-1");
     expect(result.current.selectedProfile).toEqual({
       uid: "author-1",
       name: "Remote Author",
@@ -210,11 +210,10 @@ describe("community feed hooks", () => {
       communityPosts: jest.fn(),
       communityPostCheers: jest.fn(),
       communityPostComments: jest.fn(),
-      users: jest.fn(),
+      publicProfiles: jest.fn(),
     };
     jest.mocked(onValue).mockImplementation((sourceRef, callback) => {
-      const path = (sourceRef as unknown as { path: keyof typeof unsubscribers })
-        .path;
+      const path = (sourceRef as unknown as { path: string }).path;
       if (path === "communityPosts") {
         callback({
           val: () => ({
@@ -230,43 +229,40 @@ describe("community feed hooks", () => {
           }),
         } as never);
       }
-      if (path === "communityPostCheers") {
+      if (path === "communityPostCheers/post-1") {
         callback({
           val: () => ({
-            "post-1": {
-              "user-1": true,
-              other: { createdAt: 12 },
+            "user-1": true,
+            other: { createdAt: 12 },
+          }),
+        } as never);
+        return unsubscribers.communityPostCheers;
+      }
+      if (path === "communityPostComments/post-1") {
+        callback({
+          val: () => ({
+            "comment-1": {
+              authorId: "commenter",
+              author: "Commenter",
+              body: "Comment",
+              createdAt: 11,
             },
           }),
         } as never);
+        return unsubscribers.communityPostComments;
       }
-      if (path === "communityPostComments") {
+      if (path === "publicProfiles/author-1") {
         callback({
           val: () => ({
-            "post-1": {
-              "comment-1": {
-                authorId: "commenter",
-                author: "Commenter",
-                body: "Comment",
-                createdAt: 11,
-              },
-            },
+            name: "Profile Author",
+            userType: "Teacher",
+            image: "profile.jpg",
+            communityActivityPublic: true,
           }),
         } as never);
+        return unsubscribers.publicProfiles;
       }
-      if (path === "users") {
-        callback({
-          val: () => ({
-            "author-1": {
-              name: "Profile Author",
-              userType: "Teacher",
-              image: "profile.jpg",
-              communityActivityPublic: true,
-            },
-          }),
-        } as never);
-      }
-      return unsubscribers[path];
+      return unsubscribers.communityPosts;
     });
 
     const bookmarkedPostIds = new Set(["post-1"]);
@@ -279,9 +275,9 @@ describe("community feed hooks", () => {
     });
 
     expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPosts");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostCheers");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostComments");
-    expect(ref).toHaveBeenCalledWith(expect.anything(), "users");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostCheers/post-1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "communityPostComments/post-1");
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "publicProfiles/author-1");
     expect(result.current.loadingPosts).toBe(false);
     expect(result.current.loadError).toBe("");
     expect(result.current.posts[0]).toMatchObject({
@@ -305,6 +301,56 @@ describe("community feed hooks", () => {
     Object.values(unsubscribers).forEach((unsubscribe) => {
       expect(unsubscribe).toHaveBeenCalled();
     });
+  });
+
+  it("removes stale public profile subscriptions when feed authors change", async () => {
+    const oldProfileUnsubscribe = jest.fn();
+    const callbacks: Record<string, (snapshot: { val: () => unknown }) => void> = {};
+    jest.mocked(onValue).mockImplementation((sourceRef, callback) => {
+      const path = (sourceRef as unknown as { path: string }).path;
+      callbacks[path] = callback as never;
+      if (path === "communityPosts") {
+        callback({
+          val: () => ({
+            "post-1": {
+              authorId: "author-1",
+              author: "Old",
+              category: postCategory,
+              title: "Old post",
+              body: "Body",
+              createdAt: 10,
+            },
+          }),
+        } as never);
+      }
+      if (path === "publicProfiles/author-1") {
+        return oldProfileUnsubscribe;
+      }
+      return jest.fn();
+    });
+
+    const bookmarkedPostIds = new Set<string>();
+    await renderHook(() =>
+      useCommunityFeed({ bookmarkedPostIds, uid: "user-1" }),
+    );
+
+    await act(async () => {
+      callbacks.communityPosts?.({
+        val: () => ({
+          "post-2": {
+            authorId: "author-2",
+            author: "New",
+            category: postCategory,
+            title: "New post",
+            body: "Body",
+            createdAt: 20,
+          },
+        }),
+      });
+    });
+
+    expect(oldProfileUnsubscribe).toHaveBeenCalled();
+    expect(ref).toHaveBeenCalledWith(expect.anything(), "publicProfiles/author-2");
   });
 
   it("sets a load error when the posts subscription fails", async () => {

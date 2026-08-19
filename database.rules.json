@@ -4,8 +4,8 @@
     ".write": false,
 
     "users": {
-      ".read": "auth != null",
       "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'name', 'email']) && newData.child('uid').val() === $uid)",
         "uid": {
@@ -46,6 +46,51 @@
         },
         "$other": {
           ".validate": false
+        }
+      }
+    },
+
+    "publicProfiles": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "!newData.exists() || newData.hasChildren(['name'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "image": {
+          ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+        },
+        "userType": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+        },
+        "bio": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 80)"
+        },
+        "color": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 24)"
+        },
+        "studyStatusPublic": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "communityActivityPublic": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "updatedAt": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "userRooms": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$roomId": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('rooms').child($roomId).child('ownerId').val() === auth.uid)",
+          ".validate": "!newData.exists() || newData.val() === true"
         }
       }
     },

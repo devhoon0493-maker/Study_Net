@@ -17,6 +17,7 @@
 - Firebase Android app package name matches `expo.android.package` in `app.json`.
 - Google Sign-In Android OAuth client has the correct package name and signing certificate SHA-1/SHA-256.
 - Google native Sign-In is configured with `@react-native-google-signin/google-signin`, `google-services.json`, and the Firebase Web client ID.
+- EAS has `GOOGLE_SERVICES_JSON` configured as either a file path, raw JSON, or base64-encoded `google-services.json` content.
 - Google login/signup are tested in an Android development or installed build, not Expo Go.
 - Kakao Developers OpenID Connect is enabled.
 - Kakao redirect URI for the `studynet` scheme is registered.
@@ -29,9 +30,12 @@
 - Deploy Realtime Database rules to staging before production.
 - Deploy Firebase Storage rules to staging before production.
 - Confirm `firebase.json` points to `database.rules.json` and `storage.rules`.
+- Confirm `users/{uid}` is readable only by the owner and `publicProfiles/{uid}` contains only public display fields.
+- Backfill `userRooms/{uid}/{roomId}` from existing `rooms/{roomId}/members/{uid}` data before using existing production rooms.
 - Smoke test signup/login, public group join, private code join, profile image upload, community write flows, and account deletion.
 - Confirm public reads/writes are not accidentally enabled.
 - If a visible public group cannot be joined, compare deployed rules with local `database.rules.json`.
+- If EAS cannot find Google services, confirm `GOOGLE_SERVICES_JSON` is present in the selected EAS environment.
 
 ## Device QA
 
