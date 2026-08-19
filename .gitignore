@@ -25,13 +25,20 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+coverage/
 
 # macOS
 .DS_Store
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
+
+# local Firebase/native app config
+google-services.json
+GoogleService-Info.plist
 
 # typescript
 *.tsbuildinfo

@@ -1,0 +1,180 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { onValue, ref, type Unsubscribe } from "firebase/database";
+
+import type {
+  CommunityCommentRecord,
+  CommunityPostRecord,
+  UserProfileRecord,
+} from "../features/community/communityTypes";
+import type { PostCategory } from "../features/community/communityConstants";
+import { db } from "./firebaseConfig";
+
+export const COMMUNITY_NOTIFICATIONS_READ_KEY = "community_notifications_read_at";
+
+export type CommunityCheerRecord =
+  | boolean
+  | {
+      authorId?: string;
+      createdAt?: number;
+    };
+
+export type CommunityNotification = {
+  id: string;
+  type: "cheer" | "comment";
+  actorId: string;
+  actorName: string;
+  actorImage?: string | null;
+  postId: string;
+  postCategory: PostCategory;
+  postTitle: string;
+  postBody: string;
+  postImage?: string | null;
+  body?: string;
+  createdAt: number;
+  legacy?: boolean;
+};
+
+type BuildArgs = {
+  posts: Record<string, CommunityPostRecord> | null;
+  cheers: Record<string, Record<string, CommunityCheerRecord>> | null;
+  comments: Record<string, Record<string, CommunityCommentRecord>> | null;
+  users: Record<string, UserProfileRecord> | null;
+  uid?: string | null;
+};
+
+export type CommunityNotificationSources = Omit<BuildArgs, "uid">;
+
+export const getCommunityNotificationsReadKey = (uid?: string | null) =>
+  uid
+    ? `${COMMUNITY_NOTIFICATIONS_READ_KEY}_${uid}`
+    : COMMUNITY_NOTIFICATIONS_READ_KEY;
+
+export const loadCommunityNotificationsReadAt = async (uid?: string | null) => {
+  const raw = await AsyncStorage.getItem(getCommunityNotificationsReadKey(uid));
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : 0;
+};
+
+export const saveCommunityNotificationsReadAt = async (
+  uid?: string | null,
+  value = Date.now(),
+) => {
+  await AsyncStorage.setItem(
+    getCommunityNotificationsReadKey(uid),
+    String(value),
+  );
+};
+
+export const buildCommunityNotifications = ({
+  posts,
+  cheers,
+  comments,
+  users,
+  uid,
+}: BuildArgs) => {
+  if (!uid || !posts) return [];
+
+  const notifications: CommunityNotification[] = [];
+
+  Object.entries(posts).forEach(([postId, post]) => {
+    if (post.authorId !== uid) return;
+
+    const postTitle = post.title || "내 게시글";
+    const postBody = post.body || "";
+
+    Object.entries(cheers?.[postId] ?? {}).forEach(([actorId, cheer]) => {
+      if (actorId === uid || !cheer) return;
+
+      const createdAt =
+        typeof cheer === "object" && typeof cheer.createdAt === "number"
+          ? cheer.createdAt
+          : post.createdAt;
+      const actor = users?.[actorId] ?? {};
+
+      notifications.push({
+        id: `cheer-${postId}-${actorId}`,
+        type: "cheer",
+        actorId,
+        actorName: actor.name || "사용자",
+        actorImage: actor.image ?? null,
+        postId,
+        postCategory: post.category,
+        postTitle,
+        postBody,
+        postImage: post.image ?? null,
+        createdAt,
+        legacy: typeof cheer === "boolean",
+      });
+    });
+
+    Object.entries(comments?.[postId] ?? {}).forEach(([commentId, comment]) => {
+      if (comment.authorId === uid) return;
+
+      const actor = users?.[comment.authorId] ?? {};
+
+      notifications.push({
+        id: `comment-${postId}-${commentId}`,
+        type: "comment",
+        actorId: comment.authorId,
+        actorName: actor.name || comment.author || "사용자",
+        actorImage: actor.image ?? comment.authorImage ?? null,
+        postId,
+        postCategory: post.category,
+        postTitle,
+        postBody,
+        postImage: post.image ?? null,
+        body: comment.body,
+        createdAt: comment.createdAt,
+      });
+    });
+  });
+
+  return notifications.sort((a, b) => b.createdAt - a.createdAt);
+};
+
+export const subscribeCommunityNotificationSources = (
+  onChange: (sources: CommunityNotificationSources) => void,
+) => {
+  const sources: CommunityNotificationSources = {
+    posts: null,
+    cheers: null,
+    comments: null,
+    users: null,
+  };
+
+  const emit = () => {
+    onChange({ ...sources });
+  };
+
+  const unsubscribers: Unsubscribe[] = [
+    onValue(ref(db, "communityPosts"), (snapshot) => {
+      sources.posts = snapshot.val();
+      emit();
+    }),
+    onValue(ref(db, "communityPostCheers"), (snapshot) => {
+      sources.cheers = snapshot.val();
+      emit();
+    }),
+    onValue(ref(db, "communityPostComments"), (snapshot) => {
+      sources.comments = snapshot.val();
+      emit();
+    }),
+    onValue(ref(db, "users"), (snapshot) => {
+      sources.users = snapshot.val();
+      emit();
+    }),
+  ];
+
+  return () => {
+    unsubscribers.forEach((unsubscribe) => unsubscribe());
+  };
+};
+
+export const countUnreadCommunityNotifications = (
+  notifications: CommunityNotification[],
+  readAt: number,
+) =>
+  notifications.filter((item) => {
+    if (item.legacy && readAt === 0) return true;
+    return item.createdAt > readAt;
+  }).length;

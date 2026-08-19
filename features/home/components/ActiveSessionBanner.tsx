@@ -30,6 +30,7 @@ export function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) 
   if (!session) return null;
 
   const percent = Math.min(Math.round((elapsed / session.goalSeconds) * 100), 100);
+  const paused = session.running === false;
 
   return (
     <Animated.View
@@ -40,10 +41,13 @@ export function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) 
       </View>
       <View style={styles.inner}>
         <View style={styles.left}>
-          <View style={styles.liveDot} />
+          <View style={[styles.liveDot, paused && styles.pausedDot]} />
           <View>
             <Text style={styles.subject}>{session.subject}</Text>
-            <Text style={styles.time}>{formatClock(elapsed)}</Text>
+            <Text style={styles.time}>
+              {paused ? "일시정지 · " : ""}
+              {formatClock(elapsed)}
+            </Text>
           </View>
         </View>
         <View style={styles.right}>
@@ -58,7 +62,12 @@ export function ActiveSessionBanner({ bottomOffset }: { bottomOffset: number }) 
               })
             }
           >
-            <Ionicons name="play" size={11} color={C.primary} style={{ marginRight: 4 }} />
+            <Ionicons
+              name={paused ? "pause" : "play"}
+              size={11}
+              color={C.primary}
+              style={{ marginRight: 4 }}
+            />
             <Text style={styles.resumeText}>돌아가기</Text>
           </TouchableOpacity>
         </View>

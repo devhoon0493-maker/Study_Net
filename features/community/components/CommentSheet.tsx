@@ -43,6 +43,8 @@ export function CommentSheet({
   onSubmit: () => void;
   onDeleteComment: (comment: CommunityComment) => void;
 }) {
+  const submitDisabled = !draftComment.trim();
+
   return (
     <Modal
       visible={!!selectedPost}
@@ -117,14 +119,18 @@ export function CommentSheet({
               placeholder="댓글을 입력하세요"
               placeholderTextColor={C.subtle}
               multiline
+              maxLength={500}
             />
             <TouchableOpacity
               style={[
                 s.commentSubmitButton,
-                !draftComment.trim() && s.commentSubmitButtonDisabled,
+                submitDisabled && s.commentSubmitButtonDisabled,
               ]}
               onPress={onSubmit}
+              disabled={submitDisabled}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="댓글 등록"
             >
               <Ionicons name="send" size={17} color={C.bg} />
             </TouchableOpacity>

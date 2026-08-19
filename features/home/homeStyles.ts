@@ -45,6 +45,9 @@ export const createBannerStyles = (C: HomeTheme) =>
       borderRadius: 999,
       backgroundColor: C.live,
     },
+    pausedDot: {
+      backgroundColor: C.warning,
+    },
     subject: {
       color: C.textPrimary,
       fontSize: 13,
@@ -79,7 +82,7 @@ export const createBannerStyles = (C: HomeTheme) =>
     },
   });
 
-export const createStyles = (C: HomeTheme) =>
+export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) =>
   StyleSheet.create({
     screen: {
       flex: 1,
@@ -116,10 +119,16 @@ export const createStyles = (C: HomeTheme) =>
       marginTop: 2,
       fontWeight: "700",
     },
-    notificationButton: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginLeft: 10,
+    },
+    headerIconButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: C.surface,
       justifyContent: "center",
       alignItems: "center",
@@ -335,14 +344,16 @@ export const createStyles = (C: HomeTheme) =>
     },
     statGrid: {
       flexDirection: "row",
-      gap: 6,
+      flexWrap: "wrap",
+      gap: 8,
     },
     statCard: {
-      flex: 1,
-      minHeight: 132,
+      flexGrow: 1,
+      flexBasis: "48%",
+      minHeight: 116,
       borderRadius: 17,
       backgroundColor: C.surface,
-      padding: 9,
+      padding: 12,
       gap: 5,
       shadowColor: C.shadow,
       shadowOpacity: 0.05,
@@ -359,17 +370,17 @@ export const createStyles = (C: HomeTheme) =>
     },
     statValue: {
       color: C.textPrimary,
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: "900",
       lineHeight: 22,
     },
     statLabel: {
       color: C.textSecondary,
-      fontSize: 8,
+      fontSize: 10,
       fontWeight: "800",
     },
     statHint: {
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: "900",
     },
     statProgressTrack: {
@@ -425,6 +436,7 @@ export const createStyles = (C: HomeTheme) =>
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 24,
+      paddingHorizontal: 16,
       backgroundColor: C.surfaceAlt,
       borderRadius: 16,
     },
@@ -438,6 +450,7 @@ export const createStyles = (C: HomeTheme) =>
       color: C.textTertiary,
       fontSize: 12,
       marginTop: 4,
+      textAlign: "center",
     },
     recentRow: {
       flexDirection: "row",
@@ -490,7 +503,7 @@ export const createStyles = (C: HomeTheme) =>
       marginLeft: 2,
     },
     weeklyBody: {
-      flexDirection: "row",
+      flexDirection: options.compact ? "column" : "row",
       gap: 10,
     },
     weeklyPanel: {

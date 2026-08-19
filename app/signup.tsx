@@ -1,11 +1,11 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import * as Google from "expo-auth-session/providers/google";
+import { useRouter, type Href } from "expo-router";
+import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  sendEmailVerification,
   signInWithCredential,
   updateProfile,
 } from "firebase/auth";
@@ -13,7 +13,6 @@ import { ref, set } from "firebase/database";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -26,14 +25,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useMonoTheme, type MonoTheme } from "../constants/mono";
+import { getErrorCode } from "../utils/errorMessages";
 import { auth, db } from "../utils/firebaseConfig";
+import {
+  getGoogleAuthErrorMessage,
+  getGoogleRuntimeErrorMessage,
+  isGoogleAuthSupportedInCurrentRuntime,
+  signInWithGoogle,
+} from "../utils/googleAuth";
+import {
+  getKakaoAuthErrorMessage,
+  getKakaoConfigErrorMessage,
+  isKakaoConfigured,
+  kakaoAuthRequestConfig,
+  signInWithKakaoCode,
+} from "../utils/kakaoAuth";
+import { saveStoredUserProfile } from "../utils/userProfileStorage";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const googleWebClientId = "713632998369-g276ekeqbra47uag5lttt8i5fb766mft.apps.googleusercontent.com";
-const googleAndroidClientId = "713632998369-kplb0uk05k8peh43s48l6guidgn27pl5.apps.googleusercontent.com";
-const googleIosClientId = googleWebClientId;
 const userTypes = ["초등학생", "중학생", "고등학생", "대학생", "취준생", "직장인"];
 
 const getSignupErrorMessage = (code?: string) => {
@@ -53,6 +65,8 @@ const getSignupErrorMessage = (code?: string) => {
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { theme: C } = useMonoTheme();
+  const s = useMemo(() => createStyles(C), [C]);
   const { height } = useWindowDimensions();
   const compact = height < 760;
   const veryCompact = height < 700;
@@ -64,13 +78,15 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: googleWebClientId,
-    androidClientId: googleAndroidClientId,
-    iosClientId: googleIosClientId,
-  });
+  const [kakaoRequest, kakaoResponse, promptKakaoAsync] =
+    AuthSession.useAuthRequest(kakaoAuthRequestConfig, {
+      authorizationEndpoint: "https://kauth.kakao.com/oauth/authorize",
+      tokenEndpoint: "https://kauth.kakao.com/oauth/token",
+    });
 
   const isValid = useMemo(
     () =>
@@ -78,8 +94,9 @@ export default function SignupScreen() {
       emailRegex.test(email.trim()) &&
       password.length >= 6 &&
       password === confirmPassword &&
-      !!userType,
-    [confirmPassword, email, name, password, userType],
+      !!userType &&
+      privacyAgreed,
+    [confirmPassword, email, name, password, privacyAgreed, userType],
   );
 
   const saveUserProfile = async (profile: {
@@ -89,30 +106,33 @@ export default function SignupScreen() {
     image: string | null;
     userType: string;
     createdAt: number;
+    privacyPolicyAgreedAt: number;
   }) => {
     await Promise.all([
       set(ref(db, `users/${profile.uid}`), profile),
-      AsyncStorage.setItem("userProfile", JSON.stringify(profile)),
+      saveStoredUserProfile(profile),
     ]);
   };
 
   useEffect(() => {
-    const handleGoogleResponse = async () => {
-      if (response?.type === "success") {
+    const handleKakaoResponse = async () => {
+      if (kakaoResponse?.type === "success") {
         try {
-          setGoogleLoading(true);
+          setKakaoLoading(true);
           setErrorMsg("");
 
-          const { id_token } = response.params;
-          if (!id_token) {
-            setErrorMsg("Google 인증 정보를 가져오지 못했어요.");
+          const { code } = kakaoResponse.params;
+          if (!code) {
+            setErrorMsg("Kakao 인증 코드를 받지 못했어요.");
             return;
           }
 
-          const credential = GoogleAuthProvider.credential(id_token);
-          const result = await signInWithCredential(auth, credential);
-          const user = result.user;
+          const user = await signInWithKakaoCode(
+            code,
+            kakaoRequest?.codeVerifier,
+          );
           const fallbackName = user.email?.split("@")[0] || "Study User";
+          const agreedAt = Date.now();
 
           await saveUserProfile({
             uid: user.uid,
@@ -120,24 +140,25 @@ export default function SignupScreen() {
             email: user.email || "",
             image: user.photoURL || null,
             userType,
-            createdAt: Date.now(),
+            createdAt: agreedAt,
+            privacyPolicyAgreedAt: agreedAt,
           });
 
           router.replace("/main");
         } catch (error) {
-          console.warn("Google signup error:", error);
-          setErrorMsg("Google 회원가입에 실패했어요. 다시 시도해주세요.");
+          console.warn("Kakao signup error:", error);
+          setErrorMsg(getKakaoAuthErrorMessage(error));
         } finally {
-          setGoogleLoading(false);
+          setKakaoLoading(false);
         }
-      } else if (response?.type === "error") {
-        setErrorMsg("Google 회원가입이 취소되었거나 실패했어요.");
-        setGoogleLoading(false);
+      } else if (kakaoResponse?.type === "error") {
+        setErrorMsg("Kakao 회원가입이 취소되었거나 실패했어요.");
+        setKakaoLoading(false);
       }
     };
 
-    handleGoogleResponse();
-  }, [response, router, userType]);
+    handleKakaoResponse();
+  }, [kakaoRequest, kakaoResponse, router, userType]);
 
   const handleSignup = async () => {
     if (loading) return;
@@ -161,10 +182,15 @@ export default function SignupScreen() {
       setErrorMsg("비밀번호가 서로 일치하지 않아요.");
       return;
     }
+    if (!privacyAgreed) {
+      setErrorMsg("개인정보 처리방침에 동의해주세요.");
+      return;
+    }
 
     try {
       setLoading(true);
       setErrorMsg("");
+      const agreedAt = Date.now();
 
       const credential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       await updateProfile(credential.user, { displayName: trimmedName });
@@ -175,39 +201,93 @@ export default function SignupScreen() {
         email: trimmedEmail,
         image: null,
         userType,
-        createdAt: Date.now(),
+        createdAt: agreedAt,
+        privacyPolicyAgreedAt: agreedAt,
       };
 
       await saveUserProfile(profile);
 
-      router.replace("/main");
-    } catch (error: any) {
-      setErrorMsg(getSignupErrorMessage(error?.code));
+      await sendEmailVerification(credential.user);
+      router.replace({
+        pathname: "/verify-email",
+        params: { email: trimmedEmail },
+      } as unknown as Href);
+    } catch (error) {
+      setErrorMsg(getSignupErrorMessage(getErrorCode(error)));
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignup = async () => {
-    if (!request || googleLoading) return;
+    if (googleLoading) return;
+    if (!privacyAgreed) {
+      setErrorMsg("개인정보 처리방침에 동의해주세요.");
+      return;
+    }
+    if (!isGoogleAuthSupportedInCurrentRuntime()) {
+      setErrorMsg(getGoogleRuntimeErrorMessage());
+      return;
+    }
+
     try {
       setGoogleLoading(true);
       setErrorMsg("");
-      await promptAsync();
+
+      const idToken = await signInWithGoogle();
+      if (!idToken) return;
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      const result = await signInWithCredential(auth, credential);
+      const user = result.user;
+      const fallbackName = user.email?.split("@")[0] || "Study User";
+      const agreedAt = Date.now();
+
+      await saveUserProfile({
+        uid: user.uid,
+        name: user.displayName || fallbackName,
+        email: user.email || "",
+        image: user.photoURL || null,
+        userType,
+        createdAt: agreedAt,
+        privacyPolicyAgreedAt: agreedAt,
+      });
+
+      router.replace("/main");
     } catch (error) {
-      console.warn("Google prompt error:", error);
-      setErrorMsg("Google 회원가입을 시작하지 못했어요.");
+      console.warn("Google signup error:", error);
+      setErrorMsg(getGoogleAuthErrorMessage(error));
+    } finally {
       setGoogleLoading(false);
     }
   };
 
-  const showProviderNotice = (provider: string) => {
-    Alert.alert("준비중", `${provider} 회원가입은 나중에 연결할 예정이에요.`);
+  const handleKakaoSignup = async () => {
+    if (kakaoLoading) return;
+    if (!privacyAgreed) {
+      setErrorMsg("개인정보 처리방침에 동의해주세요.");
+      return;
+    }
+    if (!isKakaoConfigured()) {
+      setErrorMsg(getKakaoConfigErrorMessage());
+      return;
+    }
+    if (!kakaoRequest) return;
+
+    try {
+      setKakaoLoading(true);
+      setErrorMsg("");
+      await promptKakaoAsync();
+    } catch (error) {
+      console.warn("Kakao prompt error:", error);
+      setErrorMsg("Kakao 회원가입을 시작하지 못했어요.");
+      setKakaoLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -215,11 +295,12 @@ export default function SignupScreen() {
       >
         <View style={[s.content, compact && s.contentCompact, veryCompact && s.contentVeryCompact]}>
           <TouchableOpacity
+            testID="signup-back-button"
             style={[s.backButton, compact && s.backButtonCompact]}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#000" />
+            <Ionicons name="chevron-back" size={24} color={C.text} />
           </TouchableOpacity>
 
           <View style={[s.header, compact && s.headerCompact]}>
@@ -231,8 +312,9 @@ export default function SignupScreen() {
 
           <View style={[s.card, compact && s.cardCompact]}>
             <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="person-outline" size={18} color="#000" />
+              <Ionicons name="person-outline" size={18} color={C.text} />
               <TextInput
+                testID="signup-name-input"
                 style={s.input}
                 value={name}
                 onChangeText={(text) => {
@@ -240,15 +322,16 @@ export default function SignupScreen() {
                   setErrorMsg("");
                 }}
                 placeholder="이름"
-                placeholderTextColor="#000"
+                placeholderTextColor={C.subtle}
                 autoCapitalize="none"
                 returnKeyType="next"
               />
             </View>
 
             <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="mail-outline" size={18} color="#000" />
+              <Ionicons name="mail-outline" size={18} color={C.text} />
               <TextInput
+                testID="signup-email-input"
                 style={s.input}
                 value={email}
                 onChangeText={(text) => {
@@ -256,7 +339,7 @@ export default function SignupScreen() {
                   setErrorMsg("");
                 }}
                 placeholder="이메일 주소"
-                placeholderTextColor="#000"
+                placeholderTextColor={C.subtle}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -265,8 +348,9 @@ export default function SignupScreen() {
             </View>
 
             <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="lock-closed-outline" size={18} color="#000" />
+              <Ionicons name="lock-closed-outline" size={18} color={C.text} />
               <TextInput
+                testID="signup-password-input"
                 style={s.input}
                 value={password}
                 onChangeText={(text) => {
@@ -274,18 +358,23 @@ export default function SignupScreen() {
                   setErrorMsg("");
                 }}
                 placeholder="비밀번호 6자 이상"
-                placeholderTextColor="#000"
+                placeholderTextColor={C.subtle}
                 secureTextEntry={!showPassword}
                 returnKeyType="next"
               />
-              <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={s.eyeBtn}>
-                <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={18} color="#000" />
+              <TouchableOpacity
+                testID="signup-password-visibility-button"
+                onPress={() => setShowPassword((v) => !v)}
+                style={s.eyeBtn}
+              >
+                <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={18} color={C.text} />
               </TouchableOpacity>
             </View>
 
             <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="shield-checkmark-outline" size={18} color="#000" />
+              <Ionicons name="shield-checkmark-outline" size={18} color={C.text} />
               <TextInput
+                testID="signup-confirm-password-input"
                 style={s.input}
                 value={confirmPassword}
                 onChangeText={(text) => {
@@ -293,7 +382,7 @@ export default function SignupScreen() {
                   setErrorMsg("");
                 }}
                 placeholder="비밀번호 확인"
-                placeholderTextColor="#000"
+                placeholderTextColor={C.subtle}
                 secureTextEntry={!showPassword}
                 returnKeyType="done"
                 onSubmitEditing={handleSignup}
@@ -308,6 +397,7 @@ export default function SignupScreen() {
 
                   return (
                     <TouchableOpacity
+                      testID={`signup-user-type-${type}`}
                       key={type}
                       style={[s.typeChip, active && s.typeChipActive]}
                       onPress={() => {
@@ -323,25 +413,54 @@ export default function SignupScreen() {
               </View>
             </View>
 
+            <TouchableOpacity
+              testID="signup-privacy-agreement-button"
+              style={s.agreementRow}
+              onPress={() => {
+                setPrivacyAgreed((value) => !value);
+                setErrorMsg("");
+              }}
+              activeOpacity={0.82}
+            >
+              <View style={[s.checkBox, privacyAgreed && s.checkBoxActive]}>
+                {privacyAgreed && (
+                  <Ionicons name="checkmark" size={15} color={C.inverse} />
+                )}
+              </View>
+              <Text style={s.agreementText}>
+                개인정보 처리방침에 동의합니다
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              testID="signup-privacy-link"
+              style={s.policyLinkButton}
+              onPress={() => router.push("/setting/privacy")}
+              activeOpacity={0.75}
+            >
+              <Text style={s.policyLinkText}>개인정보 처리방침 보기</Text>
+            </TouchableOpacity>
+
             {errorMsg ? (
               <View style={s.errorRow}>
-                <Ionicons name="alert-circle-outline" size={14} color="#000" />
+                <Ionicons name="alert-circle-outline" size={14} color={C.danger} />
                 <Text style={s.errorText}>{errorMsg}</Text>
               </View>
             ) : null}
 
             <TouchableOpacity
+              testID="signup-submit-button"
               style={[s.submitBtn, compact && s.submitBtnCompact, !isValid && s.submitBtnDisabled]}
               activeOpacity={isValid ? 0.85 : 1}
               disabled={!isValid || loading}
               onPress={handleSignup}
             >
               {loading ? (
-                <ActivityIndicator color="#000" />
+                <ActivityIndicator color={C.inverse} />
               ) : (
                 <>
                   <Text style={s.submitText}>회원가입</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#000" />
+                  <Ionicons name="arrow-forward" size={18} color={C.inverse} />
                 </>
               )}
             </TouchableOpacity>
@@ -355,35 +474,46 @@ export default function SignupScreen() {
 
           <View style={s.providerRow}>
             <TouchableOpacity
+              testID="signup-google-button"
               style={[s.providerBtn, compact && s.providerBtnCompact, googleLoading && s.providerBtnDisabled]}
               onPress={handleGoogleSignup}
-              activeOpacity={request && !googleLoading ? 0.75 : 1}
-              disabled={!request || googleLoading}
+              activeOpacity={!googleLoading ? 0.75 : 1}
+              disabled={googleLoading}
             >
               {googleLoading ? (
-                <ActivityIndicator color="#000" size="small" />
+                <ActivityIndicator color={C.text} size="small" />
               ) : (
-                <Ionicons name="logo-google" size={18} color="#000" />
+                <Ionicons name="logo-google" size={18} color={C.text} />
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={[s.providerBtn, compact && s.providerBtnCompact]} onPress={() => showProviderNotice("Apple")} activeOpacity={0.75}>
-              <Ionicons name="logo-apple" size={18} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.providerBtn, compact && s.providerBtnCompact]} onPress={() => showProviderNotice("Kakao")} activeOpacity={0.75}>
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color="#000" />
+            <TouchableOpacity
+              testID="signup-kakao-button"
+              style={[s.providerBtn, compact && s.providerBtnCompact, kakaoLoading && s.providerBtnDisabled]}
+              onPress={handleKakaoSignup}
+              activeOpacity={kakaoRequest && !kakaoLoading ? 0.75 : 1}
+              disabled={!kakaoRequest || kakaoLoading}
+            >
+              {kakaoLoading ? (
+                <ActivityIndicator color={C.text} size="small" />
+              ) : (
+                <Ionicons name="chatbubble" size={18} color={C.text} />
+              )}
             </TouchableOpacity>
           </View>
 
           <View style={[s.loginRow, compact && s.loginRowCompact]}>
             <Text style={s.loginText}>이미 계정이 있으신가요?</Text>
-            <TouchableOpacity onPress={() => router.replace("/login")}>
+            <TouchableOpacity
+              testID="signup-login-link"
+              onPress={() => router.replace("/login")}
+            >
               <Text style={s.loginLink}> 로그인</Text>
             </TouchableOpacity>
           </View>
 
           {!veryCompact && (
             <Text style={s.notice}>
-              회원가입을 진행하면 이용약관 및 개인정보 처리방침에 동의한 것으로 간주됩니다.
+              동의 내용은 계정 프로필에 저장되며 설정에서 개인정보 처리방침을 다시 확인할 수 있습니다.
             </Text>
           )}
         </View>
@@ -392,10 +522,11 @@ export default function SignupScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (C: MonoTheme) =>
+  StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: C.bg,
   },
   kav: {
     flex: 1,
@@ -421,7 +552,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderBottomWidth: 3,
-    borderColor: "#000",
+    borderColor: C.border,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 28,
@@ -441,19 +572,19 @@ const s = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "900",
-    color: "#000",
+    color: C.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#000",
+    color: C.muted,
     lineHeight: 20,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: C.surface,
     borderWidth: 1,
     borderBottomWidth: 4,
-    borderColor: "#000",
+    borderColor: C.border,
     borderRadius: 18,
     padding: 18,
   },
@@ -467,11 +598,11 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     borderWidth: 1,
-    borderColor: "#000",
+    borderColor: C.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     marginBottom: 12,
-    backgroundColor: "#fff",
+    backgroundColor: C.surface,
   },
   fieldCompact: {
     minHeight: 46,
@@ -482,7 +613,7 @@ const s = StyleSheet.create({
   input: {
     flex: 1,
     minWidth: 0,
-    color: "#000",
+    color: C.text,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -496,7 +627,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   typeLabel: {
-    color: "#000",
+    color: C.text,
     fontSize: 12,
     fontWeight: "900",
     marginBottom: 8,
@@ -514,29 +645,75 @@ const s = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderBottomWidth: 3,
-    borderColor: "#000",
+    borderColor: C.border,
     borderRadius: 10,
-    backgroundColor: "#fff",
+    backgroundColor: C.surface,
     paddingHorizontal: 8,
   },
   typeChipActive: {
-    backgroundColor: "#000",
+    backgroundColor: C.primary,
   },
   typeChipText: {
-    color: "#000",
+    color: C.text,
     fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
   },
   typeChipTextActive: {
-    color: "#fff",
+    color: C.inverse,
+  },
+  agreementRow: {
+    minHeight: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderWidth: 1,
+    borderBottomWidth: 3,
+    borderColor: C.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: C.surfaceAlt,
+  },
+  checkBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.surfaceAlt,
+  },
+  checkBoxActive: {
+    backgroundColor: C.primary,
+  },
+  agreementText: {
+    flex: 1,
+    color: C.text,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  policyLinkButton: {
+    alignSelf: "flex-start",
+    minHeight: 28,
+    justifyContent: "center",
+    marginTop: -6,
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  policyLinkText: {
+    color: C.primary,
+    fontSize: 12,
+    fontWeight: "900",
+    textDecorationLine: "underline",
   },
   errorRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: "#000",
+    borderColor: C.border,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 9,
@@ -544,7 +721,7 @@ const s = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    color: "#000",
+    color: C.danger,
     fontSize: 12,
     lineHeight: 17,
   },
@@ -556,9 +733,9 @@ const s = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderBottomWidth: 4,
-    borderColor: "#000",
+    borderColor: C.primary,
     borderRadius: 14,
-    backgroundColor: "#fff",
+    backgroundColor: C.primary,
   },
   submitBtnCompact: {
     height: 48,
@@ -568,12 +745,11 @@ const s = StyleSheet.create({
     opacity: 0.42,
   },
   submitText: {
-    color: "#000",
+    color: C.inverse,
     fontSize: 15,
     fontWeight: "900",
   },
   divider: {
-    display: "none",
     flexDirection: "row",
     alignItems: "center",
     marginTop: 24,
@@ -586,16 +762,15 @@ const s = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: "#000",
+    backgroundColor: C.border,
   },
   dividerText: {
     marginHorizontal: 10,
     fontSize: 12,
-    color: "#000",
+    color: C.text,
     fontWeight: "800",
   },
   providerRow: {
-    display: "none",
     flexDirection: "row",
     gap: 10,
   },
@@ -604,11 +779,11 @@ const s = StyleSheet.create({
     height: 48,
     borderWidth: 1,
     borderBottomWidth: 3,
-    borderColor: "#000",
+    borderColor: C.border,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: C.surface,
   },
   providerBtnCompact: {
     height: 42,
@@ -627,18 +802,18 @@ const s = StyleSheet.create({
     marginTop: 14,
   },
   loginText: {
-    color: "#000",
+    color: C.text,
     fontSize: 13,
   },
   loginLink: {
-    color: "#000",
+    color: C.text,
     fontSize: 13,
     fontWeight: "900",
   },
   notice: {
     marginTop: 20,
     fontSize: 11,
-    color: "#000",
+    color: C.text,
     textAlign: "center",
     lineHeight: 18,
   },

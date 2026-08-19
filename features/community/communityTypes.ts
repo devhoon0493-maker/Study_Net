@@ -7,7 +7,9 @@ export type CommunityPost = {
   authorType?: string;
   authorImage?: string | null;
   authorBio?: string;
+  communityActivityPublic?: boolean;
   category: PostCategory;
+  groupCode?: string | null;
   title: string;
   body: string;
   image?: string | null;
@@ -30,7 +32,7 @@ export type LiveStudyRoom = {
 export type LiveStudyRoomRecord = {
   name?: string;
   subjects?: string;
-  members?: Record<string, unknown>;
+  members?: Record<string, { studyStatusPublic?: boolean } | unknown>;
   code?: string;
   createdAt?: number;
   visibility?: "public" | "private";
@@ -61,6 +63,8 @@ export type UserProfileRecord = {
   userType?: string;
   image?: string | null;
   bio?: string;
+  studyStatusPublic?: boolean;
+  communityActivityPublic?: boolean;
 };
 
 export type ProfilePreview = {
@@ -71,4 +75,5 @@ export type ProfilePreview = {
   bio?: string;
   postCount: number;
   cheerCount: number;
+  communityActivityPublic: boolean;
 };

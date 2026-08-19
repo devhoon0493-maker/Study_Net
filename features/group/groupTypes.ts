@@ -11,6 +11,7 @@ export type Member = {
   image?: string | null;
   userType?: string;
   bio?: string;
+  studyStatusPublic?: boolean;
   speaking?: boolean;
   status?: string;
   joinedAt?: number;
@@ -45,6 +46,8 @@ export type StoredMember = {
 export type ActiveSessionData = {
   subject?: string;
   startEpoch?: number;
+  savedSeconds?: number;
+  running?: boolean;
   goalSeconds?: number;
 };
 

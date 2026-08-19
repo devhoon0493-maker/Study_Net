@@ -14,7 +14,7 @@ export function LiveStudyPanel({
   liveRooms: LiveStudyRoom[];
   s: CommunityStyles;
   C: MonoTheme;
-  onOpenGroup: () => void;
+  onOpenGroup: (code?: string | null) => void;
 }) {
   const studyingCount = liveRooms.reduce((sum, room) => sum + room.memberCount, 0);
 
@@ -28,7 +28,7 @@ export function LiveStudyPanel({
           </Text>
         </View>
 
-        <TouchableOpacity style={s.liveHeaderButton} onPress={onOpenGroup} activeOpacity={0.8}>
+        <TouchableOpacity style={s.liveHeaderButton} onPress={() => onOpenGroup()} activeOpacity={0.8}>
           <Text style={s.liveHeaderButtonText}>그룹</Text>
           <Ionicons name="chevron-forward" size={14} color={C.text} />
         </TouchableOpacity>
@@ -43,7 +43,12 @@ export function LiveStudyPanel({
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.liveRoomRow}>
           {liveRooms.map((room) => (
-            <TouchableOpacity key={room.id} style={s.liveRoomCard} onPress={onOpenGroup} activeOpacity={0.82}>
+            <TouchableOpacity
+              key={room.id}
+              style={s.liveRoomCard}
+              onPress={() => onOpenGroup(room.code)}
+              activeOpacity={0.82}
+            >
               <View style={s.liveRoomTop}>
                 <View style={s.liveDot} />
                 <Text style={s.liveRoomSubject}>{room.subjects}</Text>

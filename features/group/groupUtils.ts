@@ -66,6 +66,10 @@ export const getCurrentStudySession = async () => {
 
   try {
     const session: ActiveSessionData = JSON.parse(raw);
+    if (session.running === false) {
+      return { status: "접속중", studyStartEpoch: null };
+    }
+
     return {
       status: session.subject?.trim() || "공부 중",
       studyStartEpoch: session.startEpoch ?? null,

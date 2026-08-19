@@ -2,48 +2,248 @@
   "rules": {
     ".read": false,
     ".write": false,
+
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'name', 'email']) && newData.child('uid').val() === $uid)",
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === $uid"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "image": {
+          ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+        },
+        "userType": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+        },
+        "bio": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 80)"
+        },
+        "studyStatusPublic": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "communityActivityPublic": {
+          ".validate": "!newData.exists() || newData.isBoolean()"
+        },
+        "color": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 24)"
+        },
+        "createdAt": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() > 0 && newData.val() <= now)"
+        },
+        "updatedAt": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() > 0 && newData.val() <= now)"
+        },
+        "privacyPolicyAgreedAt": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() > 0 && newData.val() <= now)"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
+
     "rooms": {
       ".read": "auth != null",
+      ".indexOn": ["createdAt", "visibility"],
       "$roomId": {
-        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ownerId').val() === auth.uid))",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ownerId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('ownerId').val() === auth.uid && newData.child('ownerId').val() === auth.uid))",
+        ".validate": "!newData.exists() || data.exists() || newData.hasChildren(['ownerId', 'name', 'subjects', 'emoji', 'color', 'max', 'code', 'visibility', 'createdAt'])",
+        "ownerId": {
+          ".validate": "newData.isString() && ((!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val()))"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 40"
+        },
+        "subjects": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
+        },
+        "emoji": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+        },
+        "color": {
+          ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "max": {
+          ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 20"
+        },
+        "code": {
+          ".validate": "newData.isString() && newData.val().length === 6"
+        },
+        "visibility": {
+          ".validate": "newData.isString() && (newData.val() === 'public' || newData.val() === 'private')"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000"
+        },
+        "mode": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+        },
         "members": {
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid"
+            ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($roomId).exists()",
+            ".validate": "!newData.exists() || newData.hasChildren(['name', 'color', 'online', 'lastSeenAt', 'joinedAt'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().length <= 24"
+            },
+            "image": {
+              ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+            },
+            "userType": {
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+            },
+            "bio": {
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 80)"
+            },
+            "studyStatusPublic": {
+              ".validate": "!newData.exists() || newData.isBoolean()"
+            },
+            "speaking": {
+              ".validate": "!newData.exists() || newData.isBoolean()"
+            },
+            "status": {
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+            },
+            "studyStartEpoch": {
+              ".validate": "!newData.exists() || newData.val() === null || (newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000)"
+            },
+            "goalSeconds": {
+              ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 60 && newData.val() <= 86400)"
+            },
+            "online": {
+              ".validate": "newData.isBoolean()"
+            },
+            "lastSeenAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "roomCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && (!root.child('rooms').child(data.val()).exists() || root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid)) || (data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid))",
+        ".validate": "!newData.exists() || newData.isString()"
+      }
+    },
+
+    "communityPosts": {
+      ".read": "auth != null",
+      ".indexOn": ["createdAt", "category", "authorId"],
+      "$postId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('authorId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))",
+        ".validate": "!newData.exists() || newData.hasChildren(['authorId', 'author', 'category', 'title', 'body', 'createdAt'])",
+        "authorId": {
+          ".validate": "newData.isString() && ((!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val()))"
+        },
+        "author": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "authorType": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+        },
+        "authorImage": {
+          ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+        },
+        "authorBio": {
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 80)"
+        },
+        "category": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
+        },
+        "groupCode": {
+          ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length === 6)"
+        },
+        "title": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 80"
+        },
+        "body": {
+          ".validate": "newData.isString() && newData.val().length >= 4 && newData.val().length <= 2000"
+        },
+        "image": {
+          ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+        },
+        "cheerCount": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0)"
+        },
+        "commentCount": {
+          ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "communityPostCheers": {
+      ".read": "auth != null",
+      "$postId": {
+        ".write": "auth != null && !newData.exists() && (!data.exists() || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)",
+        "$uid": {
+          ".write": "auth != null && ((auth.uid === $uid && (!newData.exists() || root.child('communityPosts').child($postId).exists())) || (data.exists() && !newData.exists() && root.child('communityPosts').child($postId).child('authorId').val() === auth.uid))",
+          ".validate": "!newData.exists() || newData.val() === true || (newData.hasChildren(['authorId', 'createdAt']) && newData.child('authorId').val() === $uid)",
+          "authorId": {
+            ".validate": "newData.isString() && newData.val() === $uid"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
           }
         }
       }
     },
-    "roomCodes": {
-      ".read": "auth != null",
-      "$code": {
-        ".write": "auth != null && ((!data.exists() && newData.exists() && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid))"
-      }
-    },
-    "communityPosts": {
-      ".read": "auth != null",
-      "$postId": {
-        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('authorId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))"
-      }
-    },
-    "communityPostCheers": {
-      ".read": "auth != null",
-      "$postId": {
-        "$uid": {
-          ".write": "auth != null && auth.uid === $uid"
-        }
-      }
-    },
+
     "communityPostComments": {
       ".read": "auth != null",
       "$postId": {
+        ".write": "auth != null && !newData.exists() && (!data.exists() || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)",
         "$commentId": {
-          ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('authorId').val() === auth.uid) || (data.exists() && newData.exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))"
+          ".write": "auth != null && ((!data.exists() && newData.exists() && root.child('communityPosts').child($postId).exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && (data.child('authorId').val() === auth.uid || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)) || (data.exists() && newData.exists() && root.child('communityPosts').child($postId).exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))",
+          ".validate": "!newData.exists() || newData.hasChildren(['authorId', 'author', 'body', 'createdAt'])",
+          "authorId": {
+            ".validate": "newData.isString() && ((!data.exists() && newData.val() === auth.uid) || (data.exists() && newData.val() === data.val()))"
+          },
+          "author": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "authorImage": {
+            ".validate": "!newData.exists() || newData.val() === null || (newData.isString() && newData.val().length <= 700000)"
+          },
+          "body": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1000"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     }

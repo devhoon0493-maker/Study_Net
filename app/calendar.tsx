@@ -289,11 +289,21 @@ export default function CalendarScreen() {
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
 
       <View style={s.header}>
-        <TouchableOpacity style={s.iconButton} onPress={() => router.back()} activeOpacity={0.78}>
+        <TouchableOpacity
+          testID="calendar-back-button"
+          style={s.iconButton}
+          onPress={() => router.back()}
+          activeOpacity={0.78}
+        >
           <Ionicons name="chevron-back" size={20} color={C.text} />
         </TouchableOpacity>
         <Text style={s.title}>캘린더</Text>
-        <TouchableOpacity style={s.todayButton} onPress={goToday} activeOpacity={0.78}>
+        <TouchableOpacity
+          testID="calendar-today-button"
+          style={s.todayButton}
+          onPress={goToday}
+          activeOpacity={0.78}
+        >
           <Text style={s.todayButtonText}>오늘</Text>
         </TouchableOpacity>
       </View>
@@ -340,6 +350,7 @@ export default function CalendarScreen() {
               label="연속 기록"
               value={streakDays > 0 ? `${streakDays}일` : "-"}
               icon={streakDays > 0 ? "flame" : undefined}
+              iconColor={C.warning}
               styles={s}
             />
           </View>
@@ -387,11 +398,21 @@ export default function CalendarScreen() {
 
         <View style={s.monthPanel}>
           <View style={s.monthRow}>
-            <TouchableOpacity style={s.monthButton} onPress={() => moveMonth(-1)} activeOpacity={0.78}>
+            <TouchableOpacity
+              testID="calendar-prev-month-button"
+              style={s.monthButton}
+              onPress={() => moveMonth(-1)}
+              activeOpacity={0.78}
+            >
               <Ionicons name="chevron-back" size={18} color={C.text} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.monthCenter} onPress={togglePicker} activeOpacity={0.75}>
+            <TouchableOpacity
+              testID="calendar-month-picker-button"
+              style={s.monthCenter}
+              onPress={togglePicker}
+              activeOpacity={0.75}
+            >
               <Text style={s.monthText}>{monthTitle(cursor)}</Text>
               <Ionicons
                 name={pickerOpen ? "chevron-up" : "chevron-down"}
@@ -400,7 +421,12 @@ export default function CalendarScreen() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.monthButton} onPress={() => moveMonth(1)} activeOpacity={0.78}>
+            <TouchableOpacity
+              testID="calendar-next-month-button"
+              style={s.monthButton}
+              onPress={() => moveMonth(1)}
+              activeOpacity={0.78}
+            >
               <Ionicons name="chevron-forward" size={18} color={C.text} />
             </TouchableOpacity>
           </View>
@@ -409,6 +435,7 @@ export default function CalendarScreen() {
             <View style={s.pickerPanel}>
               <View style={s.pickerYearRow}>
                 <TouchableOpacity
+                  testID="calendar-picker-prev-year-button"
                   style={s.pickerYearButton}
                   onPress={() => setPickerYear((year) => year - 1)}
                   activeOpacity={0.78}
@@ -417,6 +444,7 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
                 <Text style={s.pickerYearText}>{pickerYear}년</Text>
                 <TouchableOpacity
+                  testID="calendar-picker-next-year-button"
                   style={s.pickerYearButton}
                   onPress={() => setPickerYear((year) => year + 1)}
                   activeOpacity={0.78}
@@ -431,6 +459,7 @@ export default function CalendarScreen() {
                   return (
                     <TouchableOpacity
                       key={label}
+                      testID={`calendar-picker-month-${index}`}
                       style={[s.pickerMonthCell, active && s.pickerMonthCellActive]}
                       onPress={() => selectMonth(index)}
                       activeOpacity={0.78}
@@ -473,6 +502,7 @@ export default function CalendarScreen() {
               return (
                 <TouchableOpacity
                   key={day.key}
+                  testID={`calendar-day-${day.key}`}
                   style={[s.dayCell, !day.inMonth && s.dayCellMuted]}
                   onPress={() => setSelectedKey(day.key)}
                   activeOpacity={0.75}
@@ -540,7 +570,11 @@ export default function CalendarScreen() {
           ) : (
             <View style={s.sessionList}>
               {selectedSessions.map((item, index) => (
-                <View key={`${item.date}-${index}`} style={s.sessionRow}>
+                <View
+                  key={`${item.date}-${index}`}
+                  testID={`calendar-session-row-${index}`}
+                  style={s.sessionRow}
+                >
                   <View style={s.sessionTimeBox}>
                     <Text style={s.sessionTime}>
                       {new Date(item.date).toLocaleTimeString("ko-KR", {
@@ -568,11 +602,13 @@ function SummaryItem({
   label,
   value,
   icon,
+  iconColor,
   styles,
 }: {
   label: string;
   value: string;
   icon?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
   styles: ReturnType<typeof createStyles>;
 }) {
   return (
@@ -580,7 +616,7 @@ function SummaryItem({
       <Text style={styles.summaryItemLabel}>{label}</Text>
       <View style={styles.summaryItemValueRow}>
         {icon ? (
-          <Ionicons name={icon} size={13} color="#F97316" style={styles.summaryItemIcon} />
+          <Ionicons name={icon} size={13} color={iconColor} style={styles.summaryItemIcon} />
         ) : null}
         <Text style={styles.summaryItemValue} numberOfLines={1}>
           {value}

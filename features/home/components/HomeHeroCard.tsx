@@ -42,6 +42,7 @@ export function HomeHeroCard({
           <Text style={styles.heroEyebrow}>오늘의 목표</Text>
 
           <TouchableOpacity
+            testID="home-dday-goal-button"
             style={styles.ddayEditorial}
             onPress={onOpenGoals}
             activeOpacity={0.82}
@@ -69,6 +70,7 @@ export function HomeHeroCard({
           </View>
 
           <TouchableOpacity
+            testID="home-start-study-button"
             style={[styles.heroButton, isStudying && styles.heroButtonActive]}
             onPress={onStartStudy}
             activeOpacity={0.86}

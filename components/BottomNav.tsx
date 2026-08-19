@@ -18,7 +18,7 @@ const navItems: {
 }[] = [
   {
     key: "record",
-    label: "달력",
+    label: "기록",
     icon: "calendar-outline",
     route: "/calendar",
   },

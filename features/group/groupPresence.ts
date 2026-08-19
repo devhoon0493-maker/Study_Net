@@ -3,6 +3,8 @@ import { User } from "firebase/auth";
 import { get, onDisconnect, ref, update } from "firebase/database";
 
 import { auth, db } from "../../utils/firebaseConfig";
+import { loadStudyStatusPublic } from "../../utils/privacySettings";
+import { loadStoredUserProfile, type StoredUserProfile } from "../../utils/userProfileStorage";
 import { MEMBER_KEY } from "./groupConstants";
 import type { RoomMemberRecord, RoomRecord, StoredMember } from "./groupTypes";
 import { getColorFromId, getCurrentStudySession } from "./groupUtils";
@@ -10,16 +12,6 @@ import { getColorFromId, getCurrentStudySession } from "./groupUtils";
 type StudyPresence = {
   status: string;
   studyStartEpoch: number | null;
-};
-
-type StoredProfile = {
-  uid?: string;
-  name?: string;
-  email?: string;
-  image?: string | null;
-  userType?: string;
-  bio?: string;
-  color?: string;
 };
 
 const loadStoredMember = async () => {
@@ -34,19 +26,12 @@ const loadStoredMember = async () => {
 };
 
 const loadStoredProfile = async () => {
-  const raw = await AsyncStorage.getItem("userProfile");
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw) as StoredProfile;
-  } catch {
-    return null;
-  }
+  return loadStoredUserProfile();
 };
 
 const memberFromUser = (
   user: User,
-  profile: StoredProfile | null,
+  profile: StoredUserProfile | null,
   storedMember: StoredMember | null,
 ): StoredMember => ({
   id: user.uid,
@@ -91,6 +76,7 @@ export const syncCurrentMemberToJoinedRooms = async ({
   if (!rooms) return;
 
   const nextSession = session ?? (await getCurrentStudySession());
+  const studyStatusPublic = await loadStudyStatusPublic();
   const now = Date.now();
   const updates: Record<string, RoomMemberRecord> = {};
   const disconnects: Promise<void>[] = [];
@@ -111,6 +97,7 @@ export const syncCurrentMemberToJoinedRooms = async ({
       image: member.image ?? null,
       userType: member.userType ?? "",
       bio: member.bio ?? "",
+      studyStatusPublic,
       speaking: previous.speaking ?? false,
       online,
       lastSeenAt: now,

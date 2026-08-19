@@ -9,12 +9,14 @@ export function HomeHeader({
   styles,
   C,
   topPadding,
+  onOpenNotifications,
   onOpenSettings,
 }: {
   notificationCount: number;
   styles: HomeStyles;
   C: HomeTheme;
   topPadding: number;
+  onOpenNotifications: () => void;
   onOpenSettings: () => void;
 }) {
   return (
@@ -28,16 +30,34 @@ export function HomeHeader({
           <Text style={styles.headerSub}>오늘도 성장하는 하루 보내세요.</Text>
         </View>
       </View>
-      <TouchableOpacity
-        style={styles.notificationButton}
-        onPress={onOpenSettings}
-        activeOpacity={0.82}
-      >
-        <Ionicons name="notifications-outline" size={20} color={C.textPrimary} />
-        <View style={styles.notificationBadge}>
-          <Text style={styles.notificationBadgeText}>{notificationCount}</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.headerActions}>
+        <TouchableOpacity
+          testID="home-notifications-button"
+          accessibilityLabel="알림 열기"
+          style={styles.headerIconButton}
+          onPress={onOpenNotifications}
+          activeOpacity={0.82}
+        >
+          <Ionicons name="notifications-outline" size={20} color={C.textPrimary} />
+          {notificationCount > 0 ? (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {notificationCount > 99 ? "99+" : notificationCount}
+              </Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          testID="home-settings-button"
+          accessibilityLabel="설정 열기"
+          style={styles.headerIconButton}
+          onPress={onOpenSettings}
+          activeOpacity={0.82}
+        >
+          <Ionicons name="settings-outline" size={20} color={C.textPrimary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

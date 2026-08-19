@@ -18,6 +18,8 @@ export type SubjectShare = {
 
 export type ActiveSessionData = {
   subject: string;
-  startEpoch: number;
+  startEpoch?: number;
+  savedSeconds?: number;
+  running?: boolean;
   goalSeconds: number;
 };

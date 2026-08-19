@@ -27,7 +27,7 @@ export function CommunityHeader({
       </View>
 
       <TouchableOpacity style={s.composeButton} onPress={onCompose}>
-        <Ionicons name="create-outline" size={18} color={C.text} />
+        <Ionicons name="create-outline" size={18} color={C.inverse} />
         <Text style={s.composeButtonText}>글쓰기</Text>
       </TouchableOpacity>
     </View>

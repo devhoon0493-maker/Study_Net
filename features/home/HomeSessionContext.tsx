@@ -26,12 +26,17 @@ export const SessionContext = createContext<SessionContextValue>({
   refresh: async () => {},
 });
 
+const getSessionElapsed = (session: ActiveSessionData) => {
+  if (session.running === false) return Math.max(0, session.savedSeconds ?? 0);
+  if (typeof session.startEpoch !== "number") return Math.max(0, session.savedSeconds ?? 0);
+  return Math.max(0, Math.floor((Date.now() - session.startEpoch) / 1000));
+};
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<ActiveSessionData | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
   const sessionRef = useRef<ActiveSessionData | null>(null);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollCount = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -41,21 +46,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const data: ActiveSessionData = JSON.parse(raw);
         sessionRef.current = data;
         setSession(data);
-        setElapsed(Math.floor((Date.now() - data.startEpoch) / 1000));
+        setElapsed(getSessionElapsed(data));
       } else {
         sessionRef.current = null;
         setSession(null);
         setElapsed(0);
       }
-    } catch {}
+    } catch {
+      sessionRef.current = null;
+      setSession(null);
+      setElapsed(0);
+    }
   }, []);
 
   useEffect(() => {
     refresh();
 
-    tickRef.current = setInterval(() => {
+    const timer = setInterval(() => {
       if (sessionRef.current) {
-        setElapsed(Math.floor((Date.now() - sessionRef.current.startEpoch) / 1000));
+        setElapsed(getSessionElapsed(sessionRef.current));
       }
 
       pollCount.current += 1;
@@ -65,7 +74,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }, 1000);
 
     return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
+      clearInterval(timer);
     };
   }, [refresh]);
 

@@ -163,20 +163,30 @@ export default function StudyTimer() {
     startTimeRef.current = null;
     savedSecondsRef.current = 0;
     setSeconds(0);
+    setRunning(true);
+    setIsFlipped(false);
 
     const init = async () => {
       try {
-        const savedGoal = await AsyncStorage.getItem(KEY_DAILY_GOAL);
-        if (savedGoal) setGoalSeconds(Number(savedGoal));
+        const savedGoal = Number(await AsyncStorage.getItem(KEY_DAILY_GOAL));
+        if (Number.isFinite(savedGoal) && savedGoal > 0) {
+          setGoalSeconds(savedGoal);
+        }
 
         const raw = await AsyncStorage.getItem(KEY_ACTIVE);
         if (raw) {
           const session = JSON.parse(raw);
-          if (session.subject === subject && session.startEpoch) {
-            const elapsed = Math.floor((Date.now() - session.startEpoch) / 1000);
+          if (session.subject === subject) {
+            const elapsed =
+              session.running === false
+                ? Math.max(0, Math.floor(session.savedSeconds ?? 0))
+                : session.startEpoch
+                  ? Math.floor((Date.now() - session.startEpoch) / 1000)
+                  : Math.max(0, Math.floor(session.savedSeconds ?? 0));
             savedSecondsRef.current = elapsed;
             setSeconds(elapsed);
-            startTimeRef.current = session.startEpoch;
+            setRunning(session.running !== false);
+            startTimeRef.current = session.running === false ? null : session.startEpoch;
           }
         }
       } catch (error) {
@@ -208,12 +218,24 @@ export default function StudyTimer() {
     } else {
       savedSecondsRef.current = secondsRef.current;
       startTimeRef.current = null;
+      AsyncStorage.setItem(
+        KEY_ACTIVE,
+        JSON.stringify({
+          subject,
+          savedSeconds: savedSecondsRef.current,
+          goalSeconds,
+          running: false,
+        }),
+      ).catch((error) => console.error("일시정지 세션 저장 실패", error));
+      syncCurrentMemberToJoinedRooms({
+        session: { status: subject, studyStartEpoch: null },
+      }).catch(() => {});
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [initializedSubject, running, subject]);
+  }, [goalSeconds, initializedSubject, running, subject]);
 
   useEffect(() => {
     if (initializedSubject !== subject || !running) return;
@@ -222,7 +244,7 @@ export default function StudyTimer() {
       const startEpoch = startTimeRef.current ?? Date.now() - seconds * 1000;
       await AsyncStorage.setItem(
         KEY_ACTIVE,
-        JSON.stringify({ subject, startEpoch, goalSeconds }),
+        JSON.stringify({ subject, startEpoch, goalSeconds, running: true }),
       );
 
       const nowMs = Date.now();
@@ -382,12 +404,12 @@ export default function StudyTimer() {
   const minimizeStudy = async () => {
     try {
       const startEpoch = startTimeRef.current ?? Date.now() - seconds * 1000;
-      await AsyncStorage.setItem(
-        KEY_ACTIVE,
-        JSON.stringify({ subject, startEpoch, goalSeconds }),
-      );
+      const activeSession = running
+        ? { subject, startEpoch, goalSeconds, running: true }
+        : { subject, savedSeconds: seconds, goalSeconds, running: false };
+      await AsyncStorage.setItem(KEY_ACTIVE, JSON.stringify(activeSession));
       await syncCurrentMemberToJoinedRooms({
-        session: { status: subject, studyStartEpoch: startEpoch },
+        session: { status: subject, studyStartEpoch: running ? startEpoch : null },
       });
       router.replace({ pathname: "/main", params: { added: Date.now() } });
     } catch (error) {
@@ -396,6 +418,27 @@ export default function StudyTimer() {
   };
 
   const finishStudy = () => {
+    const discardSession = async () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      await AsyncStorage.removeItem(KEY_ACTIVE);
+      await syncCurrentMemberToJoinedRooms({
+        session: { status: "접속중", studyStartEpoch: null },
+      });
+      router.replace({ pathname: "/main", params: { added: Date.now() } });
+    };
+
+    if (seconds <= 0) {
+      Alert.alert("세션 종료", "아직 기록할 공부 시간이 없어요. 기록 없이 나갈까요?", [
+        { text: "계속하기", style: "cancel" },
+        {
+          text: "나가기",
+          style: "destructive",
+          onPress: discardSession,
+        },
+      ]);
+      return;
+    }
+
     Alert.alert("세션 종료", "현재 공부를 종료할까요?", [
       { text: "계속하기", style: "cancel" },
       {
@@ -451,7 +494,12 @@ export default function StudyTimer() {
         contentContainerStyle={[styles.content, { paddingBottom: bottomPadding + 24 }]}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.iconButton} onPress={minimizeStudy} activeOpacity={0.78}>
+          <TouchableOpacity
+            testID="study-minimize-button"
+            style={styles.iconButton}
+            onPress={minimizeStudy}
+            activeOpacity={0.78}
+          >
             <Ionicons name="chevron-down" size={19} color={C.textSecondary} />
           </TouchableOpacity>
 
@@ -475,7 +523,12 @@ export default function StudyTimer() {
             ]}
             pointerEvents={isFlipped ? "none" : "auto"}
           >
-            <TouchableOpacity style={styles.ringTouch} onPress={handleRingPress} activeOpacity={0.96}>
+            <TouchableOpacity
+              testID="study-ring-button"
+              style={styles.ringTouch}
+              onPress={handleRingPress}
+              activeOpacity={0.96}
+            >
               <View style={styles.glowLayer} pointerEvents="none">
                 <Svg width={glowSize} height={glowSize}>
                   <Defs>
@@ -615,7 +668,12 @@ export default function StudyTimer() {
             </Text>
           </View>
           <View style={styles.statStripDivider} />
-          <TouchableOpacity style={styles.statStripItem} onPress={openGoalModal} activeOpacity={0.78}>
+          <TouchableOpacity
+            testID="study-goal-button"
+            style={styles.statStripItem}
+            onPress={openGoalModal}
+            activeOpacity={0.78}
+          >
             <View style={styles.statStripLabelRow}>
               <Text style={styles.statStripLabel}>목표</Text>
               <Ionicons name="pencil" size={10} color={C.textTertiary} />
@@ -642,6 +700,7 @@ export default function StudyTimer() {
 
         <View style={styles.actionRow}>
           <TouchableOpacity
+            testID="study-pause-toggle-button"
             style={[styles.actionButton, styles.secondaryAction, !running && styles.resumeAction]}
             onPress={() => setRunning((value) => !value)}
             activeOpacity={0.82}
@@ -656,7 +715,12 @@ export default function StudyTimer() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.finishAction} onPress={finishStudy} activeOpacity={0.78}>
+          <TouchableOpacity
+            testID="study-finish-button"
+            style={styles.finishAction}
+            onPress={finishStudy}
+            activeOpacity={0.78}
+          >
             <Ionicons name="stop-outline" size={15} color={C.textTertiary} />
             <Text style={styles.finishActionText}>세션 종료</Text>
           </TouchableOpacity>
@@ -686,10 +750,16 @@ export default function StudyTimer() {
                 C={C}
               />
             </View>
-            <TouchableOpacity style={styles.saveBtn} onPress={saveNewGoal} activeOpacity={0.82}>
+            <TouchableOpacity
+              testID="study-goal-save-button"
+              style={styles.saveBtn}
+              onPress={saveNewGoal}
+              activeOpacity={0.82}
+            >
               <Text style={styles.saveBtnText}>저장하기</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="study-goal-cancel-button"
               style={styles.cancelBtn}
               onPress={() => setGoalModalVisible(false)}
               activeOpacity={0.78}

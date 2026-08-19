@@ -1,9 +1,20 @@
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { MonoThemeProvider, useMonoTheme } from "../constants/mono";
+import { loadNotificationSettings } from "../utils/notificationSettings";
+import { syncStudyNetNotifications } from "../utils/notificationScheduler";
 
 function RootStack() {
   const { theme } = useMonoTheme();
+
+  useEffect(() => {
+    loadNotificationSettings()
+      .then((settings) =>
+        syncStudyNetNotifications(settings, { requestPermission: false }),
+      )
+      .catch(() => {});
+  }, []);
 
   return (
     <Stack

@@ -12,9 +12,17 @@ export const DEFAULT_DDAY_GOAL: DdayGoal = {
   targetDate: "2026-11-19",
 };
 
-export const isValidDdayDate = (value: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+export const isValidDdayDate = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return (
+    parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day
+  );
+};
 
 export const getDdayCount = (targetDate: string) => {
   const today = new Date();

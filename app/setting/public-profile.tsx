@@ -1,10 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { ref, update } from "firebase/database";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -20,18 +16,11 @@ import {
   getScreenTopPadding,
 } from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
-import { auth, db } from "../../utils/firebaseConfig";
-
-type UserProfile = {
-  uid?: string;
-  name?: string;
-  email?: string;
-  image?: string | null;
-  userType?: string;
-  bio?: string;
-};
-
-const MAX_BIO_LENGTH = 60;
+import { SettingsHeader } from "../../features/settings/SettingsHeader";
+import {
+  PUBLIC_PROFILE_BIO_MAX_LENGTH,
+  usePublicProfileForm,
+} from "../../features/settings/usePublicProfileForm";
 
 const getInitial = (name: string) => name.trim().slice(0, 1).toUpperCase() || "S";
 
@@ -43,62 +32,10 @@ export default function PublicProfileScreen() {
   const topPadding = getScreenTopPadding(insets.top);
   const bottomPadding = getScreenBottomPadding(insets.bottom, 44);
 
-  const [profile, setProfile] = useState<UserProfile>({});
-  const [bio, setBio] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const raw = await AsyncStorage.getItem("userProfile");
-        const parsed: UserProfile = raw ? JSON.parse(raw) : {};
-        setProfile(parsed);
-        setBio(parsed.bio || "");
-      } catch {
-        setProfile({});
-        setBio("");
-      }
-    };
-
-    loadProfile();
-  }, []);
-
-  const savePublicProfile = async () => {
-    if (saving) return;
-
-    const trimmedBio = bio.trim();
-    if (trimmedBio.length > MAX_BIO_LENGTH) {
-      Alert.alert("글자 수 확인", `한줄 소개는 ${MAX_BIO_LENGTH}자 이내로 입력해주세요.`);
-      return;
-    }
-
-    try {
-      setSaving(true);
-      const currentUser = auth.currentUser;
-      const uid = currentUser?.uid || profile.uid;
-      const nextProfile = {
-        ...profile,
-        uid,
-        bio: trimmedBio,
-        updatedAt: Date.now(),
-      };
-
-      await AsyncStorage.setItem("userProfile", JSON.stringify(nextProfile));
-
-      if (uid) {
-        await update(ref(db, `users/${uid}`), {
-          bio: trimmedBio,
-          updatedAt: nextProfile.updatedAt,
-        });
-      }
-
-      router.back();
-    } catch {
-      Alert.alert("저장 실패", "공개 프로필을 저장하지 못했어요.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { profile, bio, saving, updateBio, savePublicProfile } =
+    usePublicProfileForm({
+      onSaved: () => router.back(),
+    });
 
   const name = profile.name || "Study User";
 
@@ -110,13 +47,7 @@ export default function PublicProfileScreen() {
         { paddingTop: topPadding, paddingBottom: bottomPadding },
       ]}
     >
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={20} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>공개 프로필</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <SettingsHeader title="공개 프로필" compactTitle />
 
       <View style={styles.previewCard}>
         <View style={styles.avatar}>
@@ -141,13 +72,13 @@ export default function PublicProfileScreen() {
       <TextInput
         style={styles.input}
         value={bio}
-        onChangeText={(value) => setBio(value.slice(0, MAX_BIO_LENGTH))}
+        onChangeText={updateBio}
         placeholder="예: 매일 조금씩 성장하는 중"
-        placeholderTextColor={C.text}
-        maxLength={MAX_BIO_LENGTH}
+        placeholderTextColor={C.subtle}
+        maxLength={PUBLIC_PROFILE_BIO_MAX_LENGTH}
         multiline
       />
-      <Text style={styles.counter}>{bio.length}/{MAX_BIO_LENGTH}</Text>
+      <Text style={styles.counter}>{bio.length}/{PUBLIC_PROFILE_BIO_MAX_LENGTH}</Text>
 
       <TouchableOpacity
         style={[styles.saveButton, saving && styles.saveButtonDisabled]}
@@ -168,31 +99,6 @@ const createStyles = (C: MonoTheme) =>
     },
     content: {
       paddingHorizontal: 20,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 22,
-    },
-    iconButton: {
-      width: 38,
-      height: 38,
-      borderWidth: 1,
-      borderBottomWidth: 3,
-      borderColor: C.border,
-      borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: C.surface,
-    },
-    headerSpacer: {
-      width: 38,
-    },
-    title: {
-      color: C.text,
-      fontSize: 21,
-      fontWeight: "900",
     },
     previewCard: {
       borderWidth: 1,

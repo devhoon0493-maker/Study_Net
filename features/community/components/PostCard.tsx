@@ -27,15 +27,21 @@ export function PostCard({
   onDelete: (post: CommunityPost) => void;
   onToggleLike: (postId: string) => void;
   onOpenComments: (post: CommunityPost) => void;
-  onBookmark: () => void;
-  onOpenGroup: () => void;
+  onBookmark: (postId: string) => void;
+  onOpenGroup: (post: CommunityPost) => void;
 }) {
   const isRecruiting = post.category === "그룹 모집";
 
   return (
     <View style={s.card}>
       <View style={s.cardTop}>
-        <TouchableOpacity style={s.avatar} onPress={() => onOpenProfile(post)} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={s.avatar}
+          onPress={() => onOpenProfile(post)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`${post.author} 프로필 열기`}
+        >
           {post.authorImage ? (
             <Image source={{ uri: post.authorImage }} style={s.avatarImage} />
           ) : (
@@ -44,7 +50,12 @@ export function PostCard({
         </TouchableOpacity>
 
         <View style={s.cardTopMeta}>
-          <TouchableOpacity onPress={() => onOpenProfile(post)} activeOpacity={0.8}>
+          <TouchableOpacity
+            onPress={() => onOpenProfile(post)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`${post.author} 프로필 열기`}
+          >
             <Text style={s.authorName}>{post.author}</Text>
           </TouchableOpacity>
 
@@ -66,7 +77,13 @@ export function PostCard({
           </View>
         </View>
         {post.authorId === uid ? (
-          <TouchableOpacity style={s.cardIconButton} onPress={() => onDelete(post)} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={s.cardIconButton}
+            onPress={() => onDelete(post)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="게시글 삭제"
+          >
             <Ionicons name="trash-outline" size={16} color={C.text} />
           </TouchableOpacity>
         ) : null}
@@ -79,7 +96,12 @@ export function PostCard({
       ) : null}
 
       <View style={s.cardActions}>
-        <TouchableOpacity style={s.actionBtn} onPress={() => onToggleLike(post.id)}>
+        <TouchableOpacity
+          style={s.actionBtn}
+          onPress={() => onToggleLike(post.id)}
+          accessibilityRole="button"
+          accessibilityLabel="게시글 응원"
+        >
           <Ionicons
             name={post.liked ? "heart" : "heart-outline"}
             size={17}
@@ -91,21 +113,42 @@ export function PostCard({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.actionBtn} onPress={() => onOpenComments(post)}>
+        <TouchableOpacity
+          style={s.actionBtn}
+          onPress={() => onOpenComments(post)}
+          accessibilityRole="button"
+          accessibilityLabel="댓글 열기"
+        >
           <Ionicons name="chatbubble-outline" size={16} color={C.text} />
           <Text style={s.actionCount}>댓글 {post.comments}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[s.actionBtn, s.actionBtnRight, isRecruiting && s.joinStudyAction]}
-          onPress={isRecruiting ? onOpenGroup : onBookmark}
+          onPress={isRecruiting ? () => onOpenGroup(post) : () => onBookmark(post.id)}
+          accessibilityRole="button"
+          accessibilityLabel={isRecruiting ? "그룹 입장" : "게시글 저장"}
         >
           <Ionicons
-            name={isRecruiting ? "people-outline" : "bookmark-outline"}
+            name={
+              isRecruiting
+                ? "people-outline"
+                : post.bookmarked
+                  ? "bookmark"
+                  : "bookmark-outline"
+            }
             size={16}
             color={C.text}
           />
-          <Text style={s.actionCount}>{isRecruiting ? "같이 공부" : "저장"}</Text>
+          <Text style={s.actionCount}>
+            {isRecruiting
+              ? post.groupCode
+                ? "바로 입장"
+                : "같이 공부"
+              : post.bookmarked
+                ? "저장됨"
+                : "저장"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

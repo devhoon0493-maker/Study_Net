@@ -19,6 +19,7 @@ import {
   getScreenTopPadding,
 } from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
+import { loadStoredUserProfile } from "../utils/userProfileStorage";
 
 const SUBJECT_MAP: Record<string, string[]> = {
   초등학생: ["국어", "수학", "영어", "사회", "과학", "체육", "음악", "미술"],
@@ -48,19 +49,23 @@ export default function SubjectSelect() {
   }, []);
 
   const loadSubjects = async () => {
-    const profileRaw = await AsyncStorage.getItem("userProfile");
-    const profile = profileRaw ? JSON.parse(profileRaw) : null;
+    const profile = await loadStoredUserProfile();
     const currentUserType = profile?.userType || "";
 
-    if (!currentUserType) {
-      setSubjects(["자유 공부", "국어", "수학", "영어"]);
-      return;
-    }
-
-    const storageKey = `custom_subjects_${currentUserType}`;
+    const storageKey = `custom_subjects_${currentUserType || "default"}`;
     const customRaw = await AsyncStorage.getItem(storageKey);
-    const custom = customRaw ? JSON.parse(customRaw) : [];
-    const baseSubjects = SUBJECT_MAP[currentUserType] || [];
+    let custom: string[] = [];
+    try {
+      const parsed = customRaw ? JSON.parse(customRaw) : [];
+      custom = Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
+    } catch {
+      custom = [];
+    }
+    const baseSubjects = currentUserType
+      ? SUBJECT_MAP[currentUserType] || []
+      : ["자유 공부", "국어", "수학", "영어"];
 
     setUserType(currentUserType);
     setCustomSubjects(custom);
@@ -68,14 +73,19 @@ export default function SubjectSelect() {
   };
 
   const addCustomSubject = async () => {
-    if (!newSubject.trim()) return;
+    const subject = newSubject.trim();
+    if (!subject) return;
+    if (subjects.some((item) => item.trim().toLowerCase() === subject.toLowerCase())) {
+      Alert.alert("중복 과목", "이미 목록에 있는 과목이에요.");
+      return;
+    }
 
     const storageKey = `custom_subjects_${userType || "default"}`;
-    const updated = [...customSubjects, newSubject.trim()];
+    const updated = [...customSubjects, subject];
 
     await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
     setCustomSubjects(updated);
-    setSubjects((prev) => [...prev, newSubject.trim()]);
+    setSubjects((prev) => [...prev, subject]);
     setNewSubject("");
     setShowInput(false);
   };
@@ -118,7 +128,11 @@ export default function SubjectSelect() {
           ) : null}
         </View>
 
-        <TouchableOpacity style={styles.plusButton} onPress={() => setShowInput(true)}>
+        <TouchableOpacity
+          testID="subject-add-open-button"
+          style={styles.plusButton}
+          onPress={() => setShowInput(true)}
+        >
           <Text style={styles.plus}>+</Text>
         </TouchableOpacity>
       </View>
@@ -126,8 +140,9 @@ export default function SubjectSelect() {
       {showInput && (
         <View style={styles.inputCard}>
           <TextInput
+            testID="subject-custom-input"
             placeholder="새 과목 입력"
-            placeholderTextColor={C.text}
+            placeholderTextColor={C.subtle}
             value={newSubject}
             onChangeText={setNewSubject}
             style={styles.input}
@@ -136,6 +151,7 @@ export default function SubjectSelect() {
 
           <View style={styles.inputButtons}>
             <TouchableOpacity
+              testID="subject-custom-cancel-button"
               style={styles.cancelBtn}
               onPress={() => {
                 setNewSubject("");
@@ -145,7 +161,11 @@ export default function SubjectSelect() {
               <Text style={styles.cancelText}>취소</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.addButton} onPress={addCustomSubject}>
+            <TouchableOpacity
+              testID="subject-custom-add-button"
+              style={styles.addButton}
+              onPress={addCustomSubject}
+            >
               <Text style={styles.addButtonText}>추가</Text>
             </TouchableOpacity>
           </View>
@@ -156,11 +176,12 @@ export default function SubjectSelect() {
         data={subjects}
         keyExtractor={(item, index) => item + index}
         contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const isCustom = customSubjects.includes(item);
 
           return (
             <TouchableOpacity
+              testID={`subject-card-${index}`}
               style={styles.subjectCard}
               onPress={() => selectSubject(item)}
               onLongPress={() => isCustom && deleteSubject(item)}

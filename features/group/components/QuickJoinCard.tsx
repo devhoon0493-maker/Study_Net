@@ -46,6 +46,9 @@ export function QuickJoinCard({
           autoCorrect={false}
           maxLength={CODE_LENGTH}
           selectionColor={C.purple}
+          returnKeyType="join"
+          onSubmitEditing={codeInput.length === CODE_LENGTH && !joining ? onJoin : undefined}
+          accessibilityLabel="초대 코드 입력"
         />
         <TouchableOpacity
           style={[
@@ -57,6 +60,8 @@ export function QuickJoinCard({
           disabled={codeInput.length < CODE_LENGTH || joining}
           onPress={onJoin}
           activeOpacity={0.84}
+          accessibilityRole="button"
+          accessibilityLabel="초대 코드로 그룹 입장"
         >
           {joining ? (
             <ActivityIndicator color={C.inverse} />

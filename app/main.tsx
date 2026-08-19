@@ -7,6 +7,7 @@ import {
   StatusBar,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -39,14 +40,23 @@ import {
   loadPrimaryDdayGoal,
   type DdayGoal,
 } from "../utils/dday";
+import { auth } from "../utils/firebaseConfig";
+import {
+  buildCommunityNotifications,
+  countUnreadCommunityNotifications,
+  loadCommunityNotificationsReadAt,
+  type CommunityNotificationSources,
+  subscribeCommunityNotificationSources,
+} from "../utils/communityNotifications";
 
 function MainScreenInner() {
   const router = useRouter();
   const { added } = useLocalSearchParams();
   const { theme } = useMonoTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const C = useMemo(() => createHomeTheme(theme), [theme]);
-  const styles = useMemo(() => createStyles(C), [C]);
+  const styles = useMemo(() => createStyles(C, { compact: width < 700 }), [C, width]);
   const bottomSpace = getBottomNavSpace(insets.bottom);
   const topPadding = getScreenTopPadding(insets.top);
 
@@ -63,13 +73,17 @@ function MainScreenInner() {
   const [dailyGoal, setDailyGoal] = useState(60 * 60 * 3);
   const [ddayGoal, setDdayGoal] = useState<DdayGoal>(DEFAULT_DDAY_GOAL);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const uid = auth.currentUser?.uid;
 
   const loadSessions = useCallback(async () => {
     try {
       setLoadError(null);
 
-      const savedGoal = await AsyncStorage.getItem("daily_goal_seconds");
-      if (savedGoal) setDailyGoal(Number(savedGoal));
+      const savedGoal = Number(await AsyncStorage.getItem("daily_goal_seconds"));
+      if (Number.isFinite(savedGoal) && savedGoal > 0) {
+        setDailyGoal(savedGoal);
+      }
 
       setDdayGoal(await loadPrimaryDdayGoal());
 
@@ -118,6 +132,48 @@ function MainScreenInner() {
     loadSessions();
     refreshSession();
   }, [added, loadSessions, refreshSession]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!uid) {
+        setNotificationCount(0);
+        return;
+      }
+
+      let readAt = 0;
+      let active = true;
+      let lastSources: CommunityNotificationSources = {
+        posts: null,
+        cheers: null,
+        comments: null,
+        users: null,
+      };
+
+      const sync = () => {
+        if (!active) return;
+        const notifications = buildCommunityNotifications({
+          ...lastSources,
+          uid,
+        });
+        setNotificationCount(countUnreadCommunityNotifications(notifications, readAt));
+      };
+
+      const unsubscribe = subscribeCommunityNotificationSources((sources) => {
+        lastSources = sources;
+        sync();
+      });
+
+      loadCommunityNotificationsReadAt(uid).then((value) => {
+        readAt = value;
+        sync();
+      });
+
+      return () => {
+        active = false;
+        unsubscribe();
+      };
+    }, [uid]),
+  );
 
   const safeDailyGoal = Math.max(dailyGoal, 1);
   const todaySeconds = savedSeconds + liveExtra;
@@ -183,8 +239,6 @@ function MainScreenInner() {
   const ddayLeft = getDdayCount(ddayGoal.targetDate);
   const ddayText = formatDdayCount(ddayLeft);
   const ddayDate = formatDdayDate(ddayGoal.targetDate);
-  const notificationCount = 3;
-
   const goStudy = () => {
     if (activeSession) {
       router.push({
@@ -206,6 +260,7 @@ function MainScreenInner() {
         styles={styles}
         C={C}
         topPadding={topPadding}
+        onOpenNotifications={() => router.push("/notifications")}
         onOpenSettings={() => router.push("/setting")}
       />
 

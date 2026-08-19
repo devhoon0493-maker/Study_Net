@@ -1,0 +1,30 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Text, TouchableOpacity, View } from "react-native";
+
+import type { GroupStyles } from "../groupStyles";
+import type { GroupTheme } from "../groupTheme";
+
+type GroupLobbyHeaderBarProps = {
+  roomsCount: number;
+  onBack: () => void;
+  s: GroupStyles;
+  C: GroupTheme;
+};
+
+export function GroupLobbyHeaderBar({
+  roomsCount,
+  onBack,
+  s,
+  C,
+}: GroupLobbyHeaderBarProps) {
+  return (
+    <View style={s.header}>
+      <TouchableOpacity style={s.backBtn} onPress={onBack}>
+        <Ionicons name="chevron-down" size={18} color={C.textSecondary} />
+      </TouchableOpacity>
+      <View style={s.roomCountBadge}>
+        <Text style={s.roomCountText}>{roomsCount}개 그룹</Text>
+      </View>
+    </View>
+  );
+}
