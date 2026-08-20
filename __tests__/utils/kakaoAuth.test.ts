@@ -125,19 +125,21 @@ describe("kakao auth helpers", () => {
   });
 
   it("maps Kakao auth errors to user-facing messages", () => {
-    expect(getKakaoConfigErrorMessage()).toMatch(/\S+/);
+    expect(getKakaoConfigErrorMessage()).toContain("Kakao REST API 키");
     expect(getKakaoAuthErrorMessage(new Error("kakao/not-configured"))).toBe(
       getKakaoConfigErrorMessage(),
     );
     expect(getKakaoAuthErrorMessage(new Error("kakao/missing-id-token"))).toMatch(
-      /\S+/,
+      /OpenID Connect 응답/,
     );
     expect(
       getKakaoAuthErrorMessage({ code: "auth/invalid-credential" }),
-    ).toMatch(/\S+/);
+    ).toMatch(/oidc\.kakao/);
     expect(
       getKakaoAuthErrorMessage({ code: "auth/operation-not-allowed" }),
-    ).toMatch(/\S+/);
-    expect(getKakaoAuthErrorMessage(new Error("Other"))).toMatch(/\S+/);
+    ).toMatch(/oidc\.kakao/);
+    expect(getKakaoAuthErrorMessage(new Error("Other"))).toContain(
+      "Kakao 인증에 실패",
+    );
   });
 });

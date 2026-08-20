@@ -80,18 +80,22 @@ describe("google auth helpers", () => {
       configurable: true,
       value: originalOS,
     });
-    expect(getGoogleRuntimeErrorMessage()).toMatch(/\S+/);
+    expect(getGoogleRuntimeErrorMessage()).toContain("Android 개발 빌드");
   });
 
   it("maps known Google auth errors to user-facing messages", () => {
     expect(getGoogleAuthErrorMessage({ code: "SIGN_IN_CANCELLED" })).toMatch(
-      /\S+/,
+      /취소/,
     );
-    expect(getGoogleAuthErrorMessage({ code: "IN_PROGRESS" })).toMatch(/\S+/);
+    expect(getGoogleAuthErrorMessage({ code: "IN_PROGRESS" })).toMatch(
+      /진행 중/,
+    );
     expect(
       getGoogleAuthErrorMessage({ code: "PLAY_SERVICES_NOT_AVAILABLE" }),
-    ).toMatch(/\S+/);
-    expect(getGoogleAuthErrorMessage(new Error("Other"))).toMatch(/\S+/);
+    ).toMatch(/Google Play 서비스/);
+    expect(getGoogleAuthErrorMessage(new Error("Other"))).toContain(
+      "Google 인증에 실패",
+    );
   });
 
   it("returns null when Google sign-in is cancelled", async () => {

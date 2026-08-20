@@ -37,7 +37,7 @@ export const isGoogleAuthSupportedInCurrentRuntime = () =>
   !(Platform.OS === "android" && Constants.appOwnership === "expo");
 
 export const getGoogleRuntimeErrorMessage = () =>
-  "Google 로그인은 Expo Go가 아니라 Android 개발 빌드나 설치 빌드에서 테스트해주세요.";
+  "Google 로그인은 Expo Go가 아닌 Android 개발 빌드나 설치 빌드에서 테스트해주세요.";
 
 export const getGoogleAuthErrorMessage = (error?: unknown) => {
   if (isErrorWithCode(error)) {
