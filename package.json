@@ -14,6 +14,7 @@
     "test:coverage": "jest --coverage --runInBand",
     "typecheck": "tsc --noEmit",
     "validate:config": "node ./scripts/validate-config.js",
+    "backfill:user-rooms": "node ./scripts/build-user-rooms-backfill.js",
     "validate": "npm run lint && npm run typecheck && npm run validate:config"
   },
   "dependencies": {

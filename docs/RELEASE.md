@@ -31,7 +31,13 @@
 - Deploy Firebase Storage rules to staging before production.
 - Confirm `firebase.json` points to `database.rules.json` and `storage.rules`.
 - Confirm `users/{uid}` is readable only by the owner and `publicProfiles/{uid}` contains only public display fields.
-- Backfill `userRooms/{uid}/{roomId}` from existing `rooms/{roomId}/members/{uid}` data before using existing production rooms.
+- Backfill `userRooms/{uid}/{roomId}` from existing `rooms/{roomId}/members/{uid}` data before using existing production rooms:
+
+```bash
+npm.cmd run backfill:user-rooms -- --input ./database-export.json --output ./userRooms-backfill.json
+```
+
+- Review `userRooms-backfill.json`, apply it as a multi-location Realtime Database update, then confirm a migrated account can see and sync only its joined rooms.
 - Smoke test signup/login, public group join, private code join, profile image upload, community write flows, and account deletion.
 - Confirm public reads/writes are not accidentally enabled.
 - If a visible public group cannot be joined, compare deployed rules with local `database.rules.json`.
