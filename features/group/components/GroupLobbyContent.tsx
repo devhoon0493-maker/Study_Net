@@ -27,6 +27,7 @@ type GroupLobbyContentProps = {
   onChangeCode: (value: string) => void;
   onJoinCode: () => void;
   onJoinRoom: (room: Room) => void;
+  currentMemberId?: string;
   s: GroupStyles;
   C: GroupTheme;
 };
@@ -47,6 +48,7 @@ export function GroupLobbyContent({
   onChangeCode,
   onJoinCode,
   onJoinRoom,
+  currentMemberId,
   s,
   C,
 }: GroupLobbyContentProps) {
@@ -112,6 +114,7 @@ export function GroupLobbyContent({
             <PublicGroupCard
               key={room.id}
               room={room}
+              currentMemberId={currentMemberId}
               joining={joining}
               livePulse={livePulse}
               onPress={() => onJoinRoom(room)}

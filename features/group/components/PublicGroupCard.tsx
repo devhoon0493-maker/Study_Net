@@ -9,6 +9,7 @@ import { MemberPreview } from "./MemberPreview";
 
 export function PublicGroupCard({
   room,
+  currentMemberId,
   joining,
   livePulse,
   onPress,
@@ -16,6 +17,7 @@ export function PublicGroupCard({
   C,
 }: {
   room: Room;
+  currentMemberId?: string;
   joining: boolean;
   livePulse: Animated.Value;
   onPress: () => void;
@@ -23,7 +25,8 @@ export function PublicGroupCard({
   C: GroupTheme;
 }) {
   const studyingCount = room.members.filter(isMemberStudying).length;
-  const full = room.members.length >= room.max;
+  const alreadyJoined = room.members.some((member) => member.id === currentMemberId);
+  const full = room.members.length >= room.max && !alreadyJoined;
 
   return (
     <TouchableOpacity

@@ -11,6 +11,9 @@
     ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.parkhun.StudyNet"
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -43,6 +46,7 @@
       ],
       "expo-notifications",
       "expo-web-browser",
+      "expo-apple-authentication",
       "@react-native-google-signin/google-signin"
     ],
     "experiments": {

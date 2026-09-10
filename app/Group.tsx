@@ -54,9 +54,9 @@ export default function GroupScreen() {
   const topPadding = getScreenTopPadding(insets.top);
   const [screen, setScreen] = useState<Screen>("lobby");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const rooms = useGroupRooms();
   const member = useGroupMemberProfile();
   const [loadError, setLoadError] = useState("");
+  const rooms = useGroupRooms(member?.id, setLoadError);
 
   const now = useNow();
   const livePulse = useLivePulse();
@@ -157,7 +157,7 @@ export default function GroupScreen() {
     lobbyRooms,
     lobbyStudyingMembers,
     lobbyStudyingCount,
-  } = useGroupLobbyStats(rooms, now);
+  } = useGroupLobbyStats(rooms, now, member?.id);
   const {
     myMember,
     memberCountText,
@@ -196,6 +196,7 @@ export default function GroupScreen() {
           onChangeCode={updateCodeInput}
           onJoinCode={handleCodeJoin}
           onJoinRoom={joinLobbyRoom}
+          currentMemberId={member?.id}
           s={s}
           C={C}
         />

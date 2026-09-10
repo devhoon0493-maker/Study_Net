@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -29,6 +30,12 @@ import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import { getErrorCode } from "../utils/errorMessages";
 import { auth, db } from "../utils/firebaseConfig";
 import { publicProfileUpdate } from "../utils/publicProfile";
+import {
+  getAppleAuthErrorMessage,
+  getAppleRuntimeErrorMessage,
+  isAppleAuthAvailable,
+  signInWithApple,
+} from "../utils/appleAuth";
 import {
   getGoogleAuthErrorMessage,
   getGoogleRuntimeErrorMessage,
@@ -71,6 +78,7 @@ export default function SignupScreen() {
   const { height } = useWindowDimensions();
   const compact = height < 760;
   const veryCompact = height < 700;
+  const short = height < 640;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,6 +87,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
@@ -109,14 +118,21 @@ export default function SignupScreen() {
     createdAt: number;
     privacyPolicyAgreedAt: number;
   }) => {
-    await Promise.all([
-      set(ref(db, `users/${profile.uid}`), profile),
-      set(
-        ref(db, `publicProfiles/${profile.uid}`),
-        publicProfileUpdate(profile.uid, profile)[`publicProfiles/${profile.uid}`],
-      ),
-      saveStoredUserProfile(profile),
-    ]);
+    await saveStoredUserProfile(profile).catch((error) => {
+      console.warn("Local profile cache after signup failed:", error);
+    });
+
+    try {
+      await Promise.all([
+        set(ref(db, `users/${profile.uid}`), profile),
+        set(
+          ref(db, `publicProfiles/${profile.uid}`),
+          publicProfileUpdate(profile.uid, profile)[`publicProfiles/${profile.uid}`],
+        ),
+      ]);
+    } catch (error) {
+      console.warn("Profile sync after signup failed:", error);
+    }
   };
 
   useEffect(() => {
@@ -290,6 +306,47 @@ export default function SignupScreen() {
     }
   };
 
+  const handleAppleSignup = async () => {
+    if (appleLoading) return;
+    if (!privacyAgreed) {
+      setErrorMsg("개인정보 처리방침에 동의해주세요.");
+      return;
+    }
+
+    try {
+      setAppleLoading(true);
+      setErrorMsg("");
+      const available = await isAppleAuthAvailable();
+      if (!available) {
+        setErrorMsg(getAppleRuntimeErrorMessage());
+        return;
+      }
+
+      const result = await signInWithApple();
+      const user = result.user;
+      const email = user.email || result.email || "";
+      const fallbackName = email.split("@")[0] || "Study User";
+      const agreedAt = Date.now();
+
+      await saveUserProfile({
+        uid: user.uid,
+        name: user.displayName || result.fullName || fallbackName,
+        email,
+        image: user.photoURL || null,
+        userType,
+        createdAt: agreedAt,
+        privacyPolicyAgreedAt: agreedAt,
+      });
+
+      router.replace("/main");
+    } catch (error) {
+      console.warn("Apple signup error:", error);
+      setErrorMsg(getAppleAuthErrorMessage(error));
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={s.safe}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
@@ -298,26 +355,38 @@ export default function SignupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={s.kav}
       >
-        <View style={[s.content, compact && s.contentCompact, veryCompact && s.contentVeryCompact]}>
-          <TouchableOpacity
-            testID="signup-back-button"
-            style={[s.backButton, compact && s.backButtonCompact]}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color={C.text} />
-          </TouchableOpacity>
-
-          <View style={[s.header, compact && s.headerCompact]}>
-            <Text style={s.title}>StudyNet 시작하기</Text>
-            {!veryCompact && (
-              <Text style={s.subtitle}>계정을 만들고 오늘의 공부를 기록해보세요.</Text>
-            )}
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            s.content,
+            compact && s.contentCompact,
+            veryCompact && s.contentVeryCompact,
+            short && s.contentShort,
+          ]}
+        >
+          <View style={[s.topBar, compact && s.topBarCompact, short && s.topBarShort]}>
+            <TouchableOpacity
+              testID="signup-back-button"
+              style={[
+                s.backButton,
+                compact && s.backButtonCompact,
+                short && s.backButtonShort,
+              ]}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={short ? 20 : 24} color={C.text} />
+            </TouchableOpacity>
+            <Text testID="signup-screen-title" style={[s.topTitle, short && s.topTitleShort]}>
+              회원가입
+            </Text>
+            <View style={[s.topSpacer, compact && s.topSpacerCompact, short && s.topSpacerShort]} />
           </View>
 
-          <View style={[s.card, compact && s.cardCompact]}>
-            <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="person-outline" size={18} color={C.text} />
+          <View style={[s.card, compact && s.cardCompact, short && s.cardShort]}>
+            <View style={[s.field, compact && s.fieldCompact, short && s.fieldShort]}>
+              <Ionicons name="person-outline" size={short ? 16 : 18} color={C.text} />
               <TextInput
                 testID="signup-name-input"
                 style={s.input}
@@ -333,8 +402,8 @@ export default function SignupScreen() {
               />
             </View>
 
-            <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="mail-outline" size={18} color={C.text} />
+            <View style={[s.field, compact && s.fieldCompact, short && s.fieldShort]}>
+              <Ionicons name="mail-outline" size={short ? 16 : 18} color={C.text} />
               <TextInput
                 testID="signup-email-input"
                 style={s.input}
@@ -352,8 +421,8 @@ export default function SignupScreen() {
               />
             </View>
 
-            <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="lock-closed-outline" size={18} color={C.text} />
+            <View style={[s.field, compact && s.fieldCompact, short && s.fieldShort]}>
+              <Ionicons name="lock-closed-outline" size={short ? 16 : 18} color={C.text} />
               <TextInput
                 testID="signup-password-input"
                 style={s.input}
@@ -370,14 +439,14 @@ export default function SignupScreen() {
               <TouchableOpacity
                 testID="signup-password-visibility-button"
                 onPress={() => setShowPassword((v) => !v)}
-                style={s.eyeBtn}
+                style={[s.eyeBtn, short && s.eyeBtnShort]}
               >
-                <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={18} color={C.text} />
+                <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={short ? 16 : 18} color={C.text} />
               </TouchableOpacity>
             </View>
 
-            <View style={[s.field, compact && s.fieldCompact]}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={C.text} />
+            <View style={[s.field, compact && s.fieldCompact, short && s.fieldShort]}>
+              <Ionicons name="shield-checkmark-outline" size={short ? 16 : 18} color={C.text} />
               <TextInput
                 testID="signup-confirm-password-input"
                 style={s.input}
@@ -394,9 +463,9 @@ export default function SignupScreen() {
               />
             </View>
 
-            <View style={s.typeSection}>
-              <Text style={s.typeLabel}>사용자 유형</Text>
-              <View style={s.typeGrid}>
+            <View style={[s.typeSection, short && s.typeSectionShort]}>
+              <Text style={[s.typeLabel, short && s.typeLabelShort]}>사용자 유형</Text>
+              <View style={[s.typeGrid, short && s.typeGridShort]}>
                 {userTypes.map((type) => {
                   const active = userType === type;
 
@@ -404,14 +473,26 @@ export default function SignupScreen() {
                     <TouchableOpacity
                       testID={`signup-user-type-${type}`}
                       key={type}
-                      style={[s.typeChip, active && s.typeChipActive]}
+                      style={[
+                        s.typeChip,
+                        short && s.typeChipShort,
+                        active && s.typeChipActive,
+                      ]}
                       onPress={() => {
                         setUserType(type);
                         setErrorMsg("");
                       }}
                       activeOpacity={0.82}
                     >
-                      <Text style={[s.typeChipText, active && s.typeChipTextActive]}>{type}</Text>
+                      <Text
+                        style={[
+                          s.typeChipText,
+                          short && s.typeChipTextShort,
+                          active && s.typeChipTextActive,
+                        ]}
+                      >
+                        {type}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -420,16 +501,16 @@ export default function SignupScreen() {
 
             <TouchableOpacity
               testID="signup-privacy-agreement-button"
-              style={s.agreementRow}
+              style={[s.agreementRow, short && s.agreementRowShort]}
               onPress={() => {
                 setPrivacyAgreed((value) => !value);
                 setErrorMsg("");
               }}
               activeOpacity={0.82}
             >
-              <View style={[s.checkBox, privacyAgreed && s.checkBoxActive]}>
+              <View style={[s.checkBox, short && s.checkBoxShort, privacyAgreed && s.checkBoxActive]}>
                 {privacyAgreed && (
-                  <Ionicons name="checkmark" size={15} color={C.inverse} />
+                  <Ionicons name="checkmark" size={short ? 13 : 15} color={C.inverse} />
                 )}
               </View>
               <Text style={s.agreementText}>
@@ -439,7 +520,7 @@ export default function SignupScreen() {
 
             <TouchableOpacity
               testID="signup-privacy-link"
-              style={s.policyLinkButton}
+              style={[s.policyLinkButton, short && s.policyLinkButtonShort]}
               onPress={() => router.push("/setting/privacy")}
               activeOpacity={0.75}
             >
@@ -455,7 +536,12 @@ export default function SignupScreen() {
 
             <TouchableOpacity
               testID="signup-submit-button"
-              style={[s.submitBtn, compact && s.submitBtnCompact, !isValid && s.submitBtnDisabled]}
+              style={[
+                s.submitBtn,
+                compact && s.submitBtnCompact,
+                short && s.submitBtnShort,
+                !isValid && s.submitBtnDisabled,
+              ]}
               activeOpacity={isValid ? 0.85 : 1}
               disabled={!isValid || loading}
               onPress={handleSignup}
@@ -471,7 +557,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[s.divider, compact && s.dividerCompact]}>
+          <View style={[s.divider, compact && s.dividerCompact, short && s.dividerShort]}>
             <View style={s.line} />
             <Text style={s.dividerText}>간편 가입</Text>
             <View style={s.line} />
@@ -480,7 +566,12 @@ export default function SignupScreen() {
           <View style={s.providerRow}>
             <TouchableOpacity
               testID="signup-google-button"
-              style={[s.providerBtn, compact && s.providerBtnCompact, googleLoading && s.providerBtnDisabled]}
+              style={[
+                s.providerBtn,
+                compact && s.providerBtnCompact,
+                short && s.providerBtnShort,
+                googleLoading && s.providerBtnDisabled,
+              ]}
               onPress={handleGoogleSignup}
               activeOpacity={!googleLoading ? 0.75 : 1}
               disabled={googleLoading}
@@ -488,12 +579,35 @@ export default function SignupScreen() {
               {googleLoading ? (
                 <ActivityIndicator color={C.text} size="small" />
               ) : (
-                <Ionicons name="logo-google" size={18} color={C.text} />
+                <Ionicons name="logo-google" size={short ? 17 : 18} color={C.text} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="signup-apple-button"
+              style={[
+                s.providerBtn,
+                compact && s.providerBtnCompact,
+                short && s.providerBtnShort,
+                appleLoading && s.providerBtnDisabled,
+              ]}
+              onPress={handleAppleSignup}
+              activeOpacity={!appleLoading ? 0.75 : 1}
+              disabled={appleLoading}
+            >
+              {appleLoading ? (
+                <ActivityIndicator color={C.text} size="small" />
+              ) : (
+                <Ionicons name="logo-apple" size={short ? 17 : 18} color={C.text} />
               )}
             </TouchableOpacity>
             <TouchableOpacity
               testID="signup-kakao-button"
-              style={[s.providerBtn, compact && s.providerBtnCompact, kakaoLoading && s.providerBtnDisabled]}
+              style={[
+                s.providerBtn,
+                compact && s.providerBtnCompact,
+                short && s.providerBtnShort,
+                kakaoLoading && s.providerBtnDisabled,
+              ]}
               onPress={handleKakaoSignup}
               activeOpacity={kakaoRequest && !kakaoLoading ? 0.75 : 1}
               disabled={!kakaoRequest || kakaoLoading}
@@ -501,12 +615,12 @@ export default function SignupScreen() {
               {kakaoLoading ? (
                 <ActivityIndicator color={C.text} size="small" />
               ) : (
-                <Ionicons name="chatbubble" size={18} color={C.text} />
+                <Ionicons name="chatbubble" size={short ? 17 : 18} color={C.text} />
               )}
             </TouchableOpacity>
           </View>
 
-          <View style={[s.loginRow, compact && s.loginRowCompact]}>
+          <View style={[s.loginRow, compact && s.loginRowCompact, short && s.loginRowShort]}>
             <Text style={s.loginText}>이미 계정이 있으신가요?</Text>
             <TouchableOpacity
               testID="signup-login-link"
@@ -516,12 +630,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          {!veryCompact && (
-            <Text style={s.notice}>
-              동의 내용은 계정 프로필에 저장되며 설정에서 개인정보 처리방침을 다시 확인할 수 있습니다.
-            </Text>
-          )}
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -537,9 +646,9 @@ const createStyles = (C: MonoTheme) =>
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: 14,
+    paddingTop: 12,
     paddingBottom: 18,
     justifyContent: "center",
   },
@@ -551,6 +660,26 @@ const createStyles = (C: MonoTheme) =>
   contentVeryCompact: {
     paddingHorizontal: 22,
   },
+  contentShort: {
+    paddingHorizontal: 18,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  topBar: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  },
+  topBarCompact: {
+    minHeight: 40,
+    marginBottom: 10,
+  },
+  topBarShort: {
+    minHeight: 34,
+    marginBottom: 7,
+  },
   backButton: {
     width: 42,
     height: 42,
@@ -560,30 +689,39 @@ const createStyles = (C: MonoTheme) =>
     borderColor: C.border,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 28,
+    marginBottom: 0,
   },
   backButtonCompact: {
     width: 38,
     height: 38,
     borderRadius: 11,
-    marginBottom: 14,
+    marginBottom: 0,
   },
-  header: {
-    marginBottom: 22,
+  backButtonShort: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    marginBottom: 0,
   },
-  headerCompact: {
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "900",
+  topTitle: {
     color: C.text,
-    marginBottom: 8,
+    fontSize: 17,
+    fontWeight: "900",
   },
-  subtitle: {
-    fontSize: 14,
-    color: C.muted,
-    lineHeight: 20,
+  topTitleShort: {
+    fontSize: 15,
+  },
+  topSpacer: {
+    width: 42,
+    height: 42,
+  },
+  topSpacerCompact: {
+    width: 38,
+    height: 38,
+  },
+  topSpacerShort: {
+    width: 32,
+    height: 32,
   },
   card: {
     backgroundColor: C.surface,
@@ -596,6 +734,10 @@ const createStyles = (C: MonoTheme) =>
   cardCompact: {
     borderRadius: 16,
     padding: 14,
+  },
+  cardShort: {
+    borderRadius: 14,
+    padding: 10,
   },
   field: {
     minHeight: 52,
@@ -615,6 +757,13 @@ const createStyles = (C: MonoTheme) =>
     borderRadius: 11,
     paddingHorizontal: 12,
   },
+  fieldShort: {
+    minHeight: 38,
+    marginBottom: 6,
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    gap: 8,
+  },
   input: {
     flex: 1,
     minWidth: 0,
@@ -628,8 +777,15 @@ const createStyles = (C: MonoTheme) =>
     justifyContent: "center",
     alignItems: "center",
   },
+  eyeBtnShort: {
+    width: 28,
+    height: 28,
+  },
   typeSection: {
     marginBottom: 12,
+  },
+  typeSectionShort: {
+    marginBottom: 6,
   },
   typeLabel: {
     color: C.text,
@@ -637,10 +793,17 @@ const createStyles = (C: MonoTheme) =>
     fontWeight: "900",
     marginBottom: 8,
   },
+  typeLabelShort: {
+    fontSize: 11,
+    marginBottom: 4,
+  },
   typeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  typeGridShort: {
+    gap: 6,
   },
   typeChip: {
     minHeight: 38,
@@ -655,6 +818,12 @@ const createStyles = (C: MonoTheme) =>
     backgroundColor: C.surface,
     paddingHorizontal: 8,
   },
+  typeChipShort: {
+    minHeight: 28,
+    borderBottomWidth: 2,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+  },
   typeChipActive: {
     backgroundColor: C.primary,
   },
@@ -663,6 +832,9 @@ const createStyles = (C: MonoTheme) =>
     fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
+  },
+  typeChipTextShort: {
+    fontSize: 11,
   },
   typeChipTextActive: {
     color: C.inverse,
@@ -680,6 +852,14 @@ const createStyles = (C: MonoTheme) =>
     marginBottom: 12,
     backgroundColor: C.surfaceAlt,
   },
+  agreementRowShort: {
+    minHeight: 34,
+    borderBottomWidth: 2,
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    marginBottom: 6,
+    gap: 7,
+  },
   checkBox: {
     width: 24,
     height: 24,
@@ -689,6 +869,11 @@ const createStyles = (C: MonoTheme) =>
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: C.surfaceAlt,
+  },
+  checkBoxShort: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
   },
   checkBoxActive: {
     backgroundColor: C.primary,
@@ -706,6 +891,11 @@ const createStyles = (C: MonoTheme) =>
     marginTop: -6,
     marginBottom: 12,
     paddingHorizontal: 2,
+  },
+  policyLinkButtonShort: {
+    minHeight: 22,
+    marginTop: -4,
+    marginBottom: 6,
   },
   policyLinkText: {
     color: C.primary,
@@ -746,6 +936,11 @@ const createStyles = (C: MonoTheme) =>
     height: 48,
     borderRadius: 12,
   },
+  submitBtnShort: {
+    height: 38,
+    borderBottomWidth: 2,
+    borderRadius: 10,
+  },
   submitBtnDisabled: {
     opacity: 0.42,
   },
@@ -763,6 +958,10 @@ const createStyles = (C: MonoTheme) =>
   dividerCompact: {
     marginTop: 14,
     marginBottom: 10,
+  },
+  dividerShort: {
+    marginTop: 8,
+    marginBottom: 6,
   },
   line: {
     flex: 1,
@@ -794,6 +993,11 @@ const createStyles = (C: MonoTheme) =>
     height: 42,
     borderRadius: 11,
   },
+  providerBtnShort: {
+    height: 36,
+    borderBottomWidth: 2,
+    borderRadius: 9,
+  },
   providerBtnDisabled: {
     opacity: 0.55,
   },
@@ -805,6 +1009,9 @@ const createStyles = (C: MonoTheme) =>
   },
   loginRowCompact: {
     marginTop: 14,
+  },
+  loginRowShort: {
+    marginTop: 8,
   },
   loginText: {
     color: C.text,

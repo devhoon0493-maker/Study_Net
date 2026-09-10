@@ -170,23 +170,57 @@ describe("group action hooks", () => {
       await result.current.joinByCode("abc123");
     });
 
-    expect(update).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(update).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ path: "rooms/room-1/members/member-1" }),
       expect.objectContaining({
-        "rooms/room-1/members/member-1": expect.objectContaining({
-          name: "Member",
-          studyStatusPublic: false,
-          status: "Math",
-          studyStartEpoch: 123,
-          online: true,
-          lastSeenAt: 10_000,
-          joinedAt: 500,
-        }),
-        "userRooms/member-1/room-1": true,
+        name: "Member",
+        studyStatusPublic: false,
+        status: "Math",
+        studyStartEpoch: 123,
+        online: true,
+        lastSeenAt: 10_000,
+        joinedAt: 500,
       }),
     );
+    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
+      "userRooms/member-1/room-1": true,
+    });
     expect(result.current.codeInput).toBe("");
     expect(onJoined).toHaveBeenCalledWith("room-1");
+    expect(result.current.joining).toBe(false);
+  });
+
+  it("does not rewrite the database when the member is already in the target room", async () => {
+    jest.mocked(get).mockResolvedValueOnce({
+      exists: () => true,
+      val: () => ({
+        ownerId: "owner",
+        name: "Already Joined",
+        max: 6,
+        members: {
+          "member-1": { name: "Member", joinedAt: 999 },
+        },
+      }),
+    } as never);
+
+    const onJoined = jest.fn();
+    const onLobbyError = jest.fn();
+    const { result } = await renderHook(() =>
+      useGroupJoinActions({
+        member,
+        onJoined,
+        onLobbyError,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.joinLobbyRoom(makeRoom({ id: "already-joined" }));
+    });
+
+    expect(update).not.toHaveBeenCalled();
+    expect(onJoined).toHaveBeenCalledWith("already-joined");
+    expect(onLobbyError).not.toHaveBeenCalled();
     expect(result.current.joining).toBe(false);
   });
 
@@ -266,18 +300,19 @@ describe("group action hooks", () => {
       await result.current.joinByCode("ROOM33");
     });
 
-    expect(update).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(update).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ path: "rooms/room-3/members/member-2" }),
       expect.objectContaining({
-        "rooms/room-3/members/member-2": expect.objectContaining({
-          image: null,
-          userType: "",
-          bio: "",
-          joinedAt: 10_000,
-        }),
-        "userRooms/member-2/room-3": true,
+        image: null,
+        userType: "",
+        bio: "",
+        joinedAt: 10_000,
       }),
     );
+    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
+      "userRooms/member-2/room-3": true,
+    });
 
     jest
       .mocked(get)
@@ -305,16 +340,17 @@ describe("group action hooks", () => {
     await act(async () => {
       await nullishHook.result.current.joinByCode("ROOM44");
     });
-    expect(update).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(update).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ path: "rooms/room-4/members/member-3" }),
       expect.objectContaining({
-        "rooms/room-4/members/member-3": expect.objectContaining({
-          userType: "",
-          bio: "",
-        }),
-        "userRooms/member-3/room-4": true,
+        userType: "",
+        bio: "",
       }),
     );
+    expect(update).toHaveBeenNthCalledWith(4, expect.anything(), {
+      "userRooms/member-3/room-4": true,
+    });
   });
 
   it("handles missing code, stale room, full room, and join failures", async () => {
@@ -531,6 +567,7 @@ describe("group action hooks", () => {
     });
     expect(update).toHaveBeenNthCalledWith(3, expect.anything(), {
       "rooms/room-new": null,
+      "userRooms/member-1/room-new": null,
     });
     expect(onCreated).not.toHaveBeenCalled();
     expect(onError).toHaveBeenCalledWith(expect.stringMatching(/\S+/));
@@ -566,6 +603,7 @@ describe("group action hooks", () => {
 
     expect(update).toHaveBeenNthCalledWith(3, expect.anything(), {
       "rooms/room-new": null,
+      "userRooms/member-1/room-new": null,
     });
     expect(onCleanupError).toHaveBeenCalledWith(expect.stringMatching(/\S+/));
     expect(onCreated).not.toHaveBeenCalled();

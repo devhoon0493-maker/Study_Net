@@ -19,6 +19,7 @@ Use this checklist before a release candidate. Run automated validation first, t
 - Google login/signup work with the configured Firebase client IDs.
 - Google login/signup use the native Google Sign-In SDK and return an ID token accepted by Firebase Auth.
 - Google login/signup are tested on an Android development or installed build, not Expo Go.
+- Apple login/signup work on a supported iOS build with the Firebase Apple provider enabled.
 - Kakao login/signup work only after Kakao OpenID Connect and Firebase OIDC provider `oidc.kakao` are configured.
 - If `EXPO_PUBLIC_KAKAO_REST_API_KEY` or Kakao OIDC setup is missing, the app shows a configuration error instead of silently failing.
 

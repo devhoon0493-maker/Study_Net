@@ -24,35 +24,46 @@ export function useGroupJoinActions({
   const [codeError, setCodeError] = useState("");
 
   const addMeToRoom = useCallback(
-    async (room: Room, onError: (message: string) => void) => {
+    async (
+      room: Room,
+      onError: (message: string) => void,
+      onAlreadyJoined?: () => void,
+    ) => {
       /* istanbul ignore next -- public join entrypoints already guard member presence. */
       if (!member) return false;
       const alreadyJoined = room.members.some((m) => m.id === member.id);
       const nowMs = Date.now();
-      if (room.members.length >= room.max && !alreadyJoined) {
+
+      if (alreadyJoined) {
+        onAlreadyJoined?.();
+        return true;
+      }
+
+      if (room.members.length >= room.max) {
         onError("이 방은 현재 꽉 찼어요.");
         return false;
       }
 
       const session = await getCurrentStudySession();
       const studyStatusPublic = await loadStudyStatusPublic();
+      await update(ref(db, `rooms/${room.id}/members/${member.id}`), {
+        name: member.name,
+        color: member.color,
+        image: member.image ?? null,
+        userType: member.userType ?? "",
+        bio: member.bio ?? "",
+        studyStatusPublic,
+        speaking: false,
+        ...session,
+        online: true,
+        lastSeenAt: nowMs,
+        joinedAt: nowMs,
+      });
+
       await update(ref(db), {
-        [`rooms/${room.id}/members/${member.id}`]: {
-          name: member.name,
-          color: member.color,
-          image: member.image ?? null,
-          userType: member.userType ?? "",
-          bio: member.bio ?? "",
-          studyStatusPublic,
-          speaking: false,
-          ...session,
-          online: true,
-          lastSeenAt: nowMs,
-          joinedAt: alreadyJoined
-            ? (room.members.find((m) => m.id === member.id)?.joinedAt ?? nowMs)
-            : nowMs,
-        },
         [`userRooms/${member.id}/${room.id}`]: true,
+      }).catch((error) => {
+        console.warn("Joined room index sync failed:", error);
       });
       return true;
     },
@@ -82,16 +93,21 @@ export function useGroupJoinActions({
         const roomId = codeSnapshot.val();
         const roomSnapshot = await get(ref(db, `rooms/${roomId}`));
         if (!roomSnapshot.exists()) {
-          await update(ref(db), { [`roomCodes/${trimmed}`]: null });
+          await update(ref(db), { [`roomCodes/${trimmed}`]: null }).catch(() => {});
           setCodeError("이미 종료된 방이에요.");
           return;
         }
 
         const room = snapshotToRoom(roomId, roomSnapshot.val());
-        const ok = await addMeToRoom(room, setCodeError);
+        let alreadyJoined = false;
+        const ok = await addMeToRoom(room, setCodeError, () => {
+          alreadyJoined = true;
+        });
         if (!ok) return;
 
-        setCodeInput("");
+        if (!alreadyJoined) {
+          setCodeInput("");
+        }
         onJoined(room.id);
       } catch (error) {
         setCodeError(getGroupJoinErrorMessage(error));
@@ -131,9 +147,15 @@ export function useGroupJoinActions({
         }
 
         const latestRoom = snapshotToRoom(room.id, roomSnapshot.val());
-        const ok = await addMeToRoom(latestRoom, onLobbyError);
+        let alreadyJoined = false;
+        const ok = await addMeToRoom(latestRoom, onLobbyError, () => {
+          alreadyJoined = true;
+        });
         if (!ok) return;
 
+        if (!alreadyJoined) {
+          onLobbyError("");
+        }
         onJoined(latestRoom.id);
       } catch (error) {
         onLobbyError(getGroupJoinErrorMessage(error));

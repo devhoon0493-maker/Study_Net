@@ -13,12 +13,17 @@ export function useGroupMemberProfile() {
 
   useEffect(() => {
     let profileUnsubscribe: (() => void) | null = null;
+    let authRunId = 0;
 
     const loadLocalMember = async () => {
       const raw = await AsyncStorage.getItem(MEMBER_KEY);
       if (raw) {
-        setMember(JSON.parse(raw));
-        return;
+        try {
+          setMember(JSON.parse(raw));
+          return;
+        } catch {
+          await AsyncStorage.removeItem(MEMBER_KEY);
+        }
       }
 
       const newMember = {
@@ -34,6 +39,7 @@ export function useGroupMemberProfile() {
     };
 
     const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      const currentRunId = ++authRunId;
       profileUnsubscribe?.();
       profileUnsubscribe = null;
 
@@ -42,26 +48,66 @@ export function useGroupMemberProfile() {
         return;
       }
 
-      profileUnsubscribe = onValue(ref(db, `users/${user.uid}`), (snapshot) => {
-        const profile = snapshot.val() ?? {};
-        const nextMember = {
+      const prepareFallbackMember = async () => {
+        const raw = await AsyncStorage.getItem(MEMBER_KEY);
+        let storedMember: StoredMember | null = null;
+
+        if (raw) {
+          try {
+            storedMember = JSON.parse(raw) as StoredMember;
+          } catch {
+            await AsyncStorage.removeItem(MEMBER_KEY);
+          }
+        }
+
+        if (currentRunId !== authRunId) return null;
+
+        const matchingStoredMember =
+          storedMember?.id === user.uid ? storedMember : null;
+        const fallbackMember = {
           id: user.uid,
           name:
-            profile.name ||
+            matchingStoredMember?.name ||
             user.displayName ||
             user.email?.split("@")[0] ||
             "학생",
-          color: profile.color || getColorFromId(user.uid),
-          image: profile.image ?? user.photoURL ?? null,
-          userType: profile.userType || "",
-          bio: profile.bio || "",
+          color: matchingStoredMember?.color || getColorFromId(user.uid),
+          image: user.photoURL ?? matchingStoredMember?.image ?? null,
+          userType: matchingStoredMember?.userType ?? "",
+          bio: matchingStoredMember?.bio ?? "",
         };
-        AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(nextMember));
-        setMember(nextMember);
+        await AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(fallbackMember));
+        setMember(fallbackMember);
+        return fallbackMember;
+      };
+
+      void prepareFallbackMember().then(() => {
+        if (currentRunId !== authRunId) return;
+
+        profileUnsubscribe = onValue(ref(db, `users/${user.uid}`), (snapshot) => {
+          const profile = snapshot.val() ?? {};
+          const nextMember = {
+            id: user.uid,
+            name:
+              profile.name ||
+              user.displayName ||
+              user.email?.split("@")[0] ||
+              "학생",
+            color: profile.color || getColorFromId(user.uid),
+            image: profile.image ?? user.photoURL ?? null,
+            userType: profile.userType || "",
+            bio: profile.bio || "",
+          };
+          AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(nextMember));
+          setMember(nextMember);
+        }, (error) => {
+          console.warn("Group member profile sync failed:", error);
+        });
       });
     });
 
     return () => {
+      authRunId += 1;
       authUnsubscribe();
       profileUnsubscribe?.();
     };

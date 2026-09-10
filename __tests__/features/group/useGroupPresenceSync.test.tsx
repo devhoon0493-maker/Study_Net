@@ -114,7 +114,20 @@ describe("useGroupPresenceSync", () => {
     const { unmount } = await renderHook(() =>
       useGroupPresenceSync({
         member,
-        rooms: [],
+        rooms: [
+          makeRoom({
+            id: "room-1",
+            members: [
+              {
+                id: "member-1",
+                name: "Old",
+                color: COLORS[1],
+                joinedAt: 777,
+                speaking: true,
+              },
+            ],
+          }),
+        ],
         selectedRoomId: "room-1",
         screen: "room",
         onError: jest.fn(),
@@ -131,6 +144,8 @@ describe("useGroupPresenceSync", () => {
           studyStartEpoch: 123,
           online: true,
           lastSeenAt: 10_000,
+          joinedAt: 777,
+          speaking: true,
         }),
       );
     });

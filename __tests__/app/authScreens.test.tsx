@@ -10,6 +10,7 @@ import { get, set } from "firebase/database";
 
 import LoginScreen from "../../app/login";
 import SignupScreen from "../../app/signup";
+import * as appleAuth from "../../utils/appleAuth";
 import * as googleAuth from "../../utils/googleAuth";
 import * as kakaoAuth from "../../utils/kakaoAuth";
 import { USER_PROFILE_KEY } from "../../utils/userProfileStorage";
@@ -44,6 +45,24 @@ jest.mock("../../utils/googleAuth", () => ({
   getGoogleRuntimeErrorMessage: jest.fn(() => "Google runtime unsupported"),
   isGoogleAuthSupportedInCurrentRuntime: jest.fn(() => false),
   signInWithGoogle: jest.fn(() => Promise.resolve("google-id-token")),
+}));
+
+jest.mock("../../utils/appleAuth", () => ({
+  getAppleAuthErrorMessage: jest.fn(() => "Apple auth failed"),
+  getAppleRuntimeErrorMessage: jest.fn(() => "Apple runtime unsupported"),
+  isAppleAuthAvailable: jest.fn(() => Promise.resolve(false)),
+  signInWithApple: jest.fn(() =>
+    Promise.resolve({
+      user: {
+        uid: "apple-user",
+        email: "apple@example.com",
+        displayName: "Apple User",
+        photoURL: null,
+      },
+      email: "apple@example.com",
+      fullName: "Apple User",
+    }),
+  ),
 }));
 
 jest.mock("../../utils/kakaoAuth", () => ({
@@ -196,6 +215,17 @@ describe("auth screens", () => {
     expect(googleAuth.signInWithGoogle).not.toHaveBeenCalled();
   });
 
+  it("shows an error when Apple login is unsupported in the current runtime", async () => {
+    const { getByTestId, getByText } = await render(<LoginScreen />);
+
+    await fireEvent.press(getByTestId("login-apple-button"));
+
+    await waitFor(() => {
+      expect(getByText("Apple runtime unsupported")).toBeTruthy();
+    });
+    expect(appleAuth.signInWithApple).not.toHaveBeenCalled();
+  });
+
   it("shows an error when Kakao login is not configured", async () => {
     const { getByTestId, getByText } = await render(<LoginScreen />);
 
@@ -208,7 +238,7 @@ describe("auth screens", () => {
   it("renders signup fields and ignores submit until valid input and agreement", async () => {
     const { getByTestId, getByText } = await render(<SignupScreen />);
 
-    expect(getByText(/StudyNet/)).toBeTruthy();
+    expect(getByTestId("signup-screen-title")).toBeTruthy();
     await fireEvent.press(getByTestId("signup-submit-button"));
     expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
 
@@ -290,9 +320,11 @@ describe("auth screens", () => {
     const { getByTestId } = await render(<SignupScreen />);
 
     await fireEvent.press(getByTestId("signup-google-button"));
+    await fireEvent.press(getByTestId("signup-apple-button"));
     await fireEvent.press(getByTestId("signup-kakao-button"));
 
     expect(googleAuth.signInWithGoogle).not.toHaveBeenCalled();
+    expect(appleAuth.signInWithApple).not.toHaveBeenCalled();
     expect(mockPromptKakaoAsync).not.toHaveBeenCalled();
   });
 
@@ -304,6 +336,18 @@ describe("auth screens", () => {
 
     expect(getByText("Google runtime unsupported")).toBeTruthy();
     expect(googleAuth.signInWithGoogle).not.toHaveBeenCalled();
+  });
+
+  it("shows an error when Apple signup is unsupported after agreement", async () => {
+    const { getByTestId, getByText } = await render(<SignupScreen />);
+
+    await fireEvent.press(getByTestId("signup-privacy-agreement-button"));
+    await fireEvent.press(getByTestId("signup-apple-button"));
+
+    await waitFor(() => {
+      expect(getByText("Apple runtime unsupported")).toBeTruthy();
+    });
+    expect(appleAuth.signInWithApple).not.toHaveBeenCalled();
   });
 
   it("shows an error when Kakao signup is not configured after agreement", async () => {

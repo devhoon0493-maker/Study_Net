@@ -93,6 +93,10 @@ describe("google auth helpers", () => {
     expect(
       getGoogleAuthErrorMessage({ code: "PLAY_SERVICES_NOT_AVAILABLE" }),
     ).toMatch(/Google Play 서비스/);
+    expect(getGoogleAuthErrorMessage({ code: "10" })).toMatch(/SHA-1/);
+    expect(
+      getGoogleAuthErrorMessage(new Error("DEVELOPER_ERROR")),
+    ).toMatch(/앱 서명/);
     expect(getGoogleAuthErrorMessage(new Error("Other"))).toContain(
       "Google 인증에 실패",
     );

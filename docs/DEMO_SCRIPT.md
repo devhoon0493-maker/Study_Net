@@ -1,106 +1,134 @@
 # StudyNet Demo Script
 
-이 문서는 포트폴리오 제출용 60-90초 시연 영상을 찍을 때 사용할 흐름입니다. 화면 전환이 많은 앱이므로 한 기능을 오래 설명하기보다, 실제 사용자가 하루 공부를 기록하고 그룹/커뮤니티까지 이어가는 흐름을 보여주는 구성이 좋습니다.
+This script is for a 60-90 second portfolio demo video. The goal is to show a realistic user flow instead of narrating every feature.
 
-## 촬영 전 준비
+## Before Recording
 
-- 테스트 계정 1개를 준비합니다.
-- Firebase dev 또는 staging 프로젝트에 연결합니다.
-- 공개 그룹 1개와 초대 코드가 있는 비공개 그룹 1개를 준비합니다.
-- 커뮤니티 피드에는 모집글 1개와 일반 글 1개가 보이도록 준비합니다.
-- 알림 권한은 허용 상태로 두고, 알림 화면에 댓글/응원 알림이 보이도록 테스트 데이터를 준비합니다.
-- 개인정보가 보이는 이메일, 실명, 실제 프로필 사진은 데모용 데이터로 교체합니다.
+- Prepare one test account.
+- Connect the app to a Firebase development or staging project.
+- Prepare one public group and one private group with an invite code.
+- Prepare the community feed with one regular post and one recruitment post.
+- Allow notification permission if the recording includes notification behavior.
+- Replace personal email, name, and profile image data with demo-safe data.
 
-## 60-90초 추천 흐름
+## Recommended 60-90 Second Flow
 
-### 0-10초: 앱 진입
+### 0-10s: Entry
 
-보여줄 화면:
-- 로그인 또는 인증 게이트.
-- 홈 대시보드.
+Show:
 
-말할 포인트:
-- "StudyNet은 개인 공부 기록, 그룹 스터디, 커뮤니티를 한 흐름으로 묶은 학습 관리 앱입니다."
+- Login/signup or auth gate.
+- Home dashboard.
 
-### 10-25초: 공부 세션
-
-보여줄 화면:
-- 과목 선택.
-- 타이머 시작.
-- 일시정지와 재개.
-- 최소화 후 홈의 진행 중 세션 배너.
-
-말할 포인트:
-- "타이머는 실행 중에는 시작 시간을 기준으로 계산하고, 일시정지 상태는 저장된 초를 기준으로 유지해 앱 전환 중에도 시간이 틀어지지 않게 처리했습니다."
-
-### 25-38초: 기록과 통계
-
-보여줄 화면:
-- 세션 종료.
-- 홈 최근 기록.
-- 캘린더.
-- 통계 화면.
-
-말할 포인트:
-- "완료된 공부 기록은 로컬에 저장되고, 홈/캘린더/통계에서 같은 데이터를 각 화면 목적에 맞게 보여줍니다."
-
-### 38-55초: 그룹 스터디
-
-보여줄 화면:
-- 그룹 로비.
-- 공개 그룹 입장 또는 초대 코드 입력.
-- 그룹 방 멤버 상태.
-
-말할 포인트:
-- "그룹은 Firebase Realtime Database로 멤버 접속 상태와 공부 상태를 동기화합니다. 공개/비공개 방과 초대 코드 흐름을 분리했습니다."
-
-### 55-72초: 커뮤니티
-
-보여줄 화면:
-- 커뮤니티 피드.
-- 글 작성 또는 이미지 첨부.
-- 댓글/응원/북마크.
-- 모집글에서 그룹으로 이동.
-
-말할 포인트:
-- "커뮤니티는 게시글, 댓글, 응원, 북마크를 제공하고, 모집글에 있는 초대 코드로 그룹 입장까지 연결됩니다."
-
-### 72-90초: 설정과 품질
-
-보여줄 화면:
-- 목표/D-Day 설정.
-- 알림 설정.
-- 저장 상태.
-- README 또는 테스트 결과 캡처.
-
-말할 포인트:
-- "설정에는 목표, 알림, 공개 범위, 저장 상태, 계정 삭제 흐름이 포함되어 있고, 현재 49개 테스트 스위트와 287개 자동화 테스트, 수집 대상 100% 커버리지를 통과합니다."
-
-## 화면 캡처 추천 목록
-
-- 로그인/회원가입.
-- 홈 대시보드.
-- 공부 타이머 실행/일시정지.
-- 캘린더.
-- 통계.
-- 그룹 로비.
-- 그룹 방.
-- 커뮤니티 피드.
-- 글 작성/댓글.
-- 알림.
-- 설정 메인.
-- 저장 상태.
-
-## 제출용 설명 문구
-
-짧은 버전:
+Talk track:
 
 ```text
-StudyNet은 React Native + Expo로 구현한 학습 관리 앱입니다. 공부 타이머, 로컬 기록/통계, Firebase 기반 그룹 스터디룸, 커뮤니티, 알림/설정/계정 관리까지 포함해 실제 제품 흐름 중심으로 구성했습니다.
+StudyNet is a React Native and Expo study app that combines a personal timer, local study records, group study rooms, and a community feed in one product flow.
 ```
 
-기술 강조 버전:
+### 10-25s: Study Session
+
+Show:
+
+- Subject selection.
+- Timer start.
+- Pause and resume.
+- Minimize to home.
+- Active session banner restore.
+
+Talk track:
 
 ```text
-Expo Router와 TypeScript로 다중 화면 모바일 앱을 구성하고, AsyncStorage 기반 로컬 학습 기록과 Firebase Auth/Realtime Database/Storage 기반 원격 데이터를 분리했습니다. Jest 테스트 287개와 수집 대상 features/utils 100% 커버리지를 유지하며, QA/릴리즈/데이터 스키마/운영 문서를 함께 정리했습니다.
+The timer stores running sessions by start time and paused sessions by saved seconds, so elapsed time survives navigation and app backgrounding without counting time while paused.
+```
+
+### 25-38s: Records and Progress
+
+Show:
+
+- Finish the session.
+- Home recent activity.
+- Calendar.
+- Statistics.
+
+Talk track:
+
+```text
+Finished sessions are saved locally and reused across home, calendar, and statistics views so the user sees the same study history in different contexts.
+```
+
+### 38-55s: Group Study
+
+Show:
+
+- Group lobby.
+- Join a public room or enter a private invite code.
+- Group room member cards and study status.
+
+Talk track:
+
+```text
+Groups use Firebase Realtime Database to sync membership, presence, public profile details, and study status. Public rooms and invite-code rooms are handled as separate flows.
+```
+
+### 55-72s: Community
+
+Show:
+
+- Community feed.
+- Create or open a post.
+- Cheer, comment, bookmark.
+- Open a recruitment post and enter the linked group.
+
+Talk track:
+
+```text
+The community feed supports posts, images, comments, cheers, bookmarks, notifications, and recruitment posts that connect directly to group rooms by invite code.
+```
+
+### 72-90s: Settings and Quality
+
+Show:
+
+- Goal or D-Day settings.
+- Notification settings.
+- Privacy or storage status.
+- Test result or README validation section.
+
+Talk track:
+
+```text
+The settings flow covers goals, notifications, privacy, storage status, password and account management. The project currently passes lint, TypeScript, config validation, and 293 Jest tests across 50 suites.
+```
+
+## Screenshot Checklist
+
+- Login or signup
+- Email verification
+- Home dashboard
+- Subject picker
+- Study timer running
+- Study timer paused
+- Active session banner
+- Calendar
+- Statistics
+- Group lobby
+- Group room
+- Community feed
+- Compose/comment UI
+- Notifications
+- Settings main
+- Goal/D-Day settings
+- Privacy/storage settings
+
+## Short Submission Description
+
+```text
+StudyNet is a React Native + Expo study management app with a personal study timer, local records/statistics, Firebase-backed group rooms, a community feed, notifications, profile/privacy settings, and account cleanup flows. It is structured as a product-style portfolio project with automated tests, Firebase rules, QA docs, release docs, and data-schema documentation.
+```
+
+## Technical Emphasis Description
+
+```text
+StudyNet uses Expo Router and TypeScript across a multi-screen mobile app. Local study records are stored with AsyncStorage, while shared account, group, community, and profile-image data are separated into Firebase Auth, Realtime Database, and Storage. The project currently passes lint, TypeScript, config validation, and 293 Jest tests across 50 suites.
 ```

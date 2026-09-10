@@ -95,17 +95,24 @@ export function useGroupRoomActions({
 
         await update(ref(db), {
           [`rooms/${roomId}`]: room,
-          [`userRooms/${member.id}/${roomId}`]: true,
         });
         createdRoomId = roomId;
         await update(ref(db), { [`roomCodes/${code}`]: roomId });
+        await update(ref(db), {
+          [`userRooms/${member.id}/${roomId}`]: true,
+        }).catch((error) => {
+          console.warn("Created room index sync failed:", error);
+        });
         createdRoomId = null;
         onError("");
         onCreated(roomId);
       } catch (error) {
         if (createdRoomId) {
           try {
-            await update(ref(db), { [`rooms/${createdRoomId}`]: null });
+            await update(ref(db), {
+              [`rooms/${createdRoomId}`]: null,
+              [`userRooms/${member.id}/${createdRoomId}`]: null,
+            });
           } catch {
             // Keep the original create failure as the user-facing error.
           }

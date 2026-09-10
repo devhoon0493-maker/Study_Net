@@ -3,6 +3,7 @@ import { onValue, ref } from "firebase/database";
 
 import { useGroupLobbyStats } from "../../../features/group/useGroupLobbyStats";
 import { useGroupRoomMemberStats } from "../../../features/group/useGroupRoomMemberStats";
+import { useGroupRooms } from "../../../features/group/useGroupRooms";
 import { useLivePulse } from "../../../features/group/useLivePulse";
 import { useNow } from "../../../features/group/useNow";
 import { useSelectedGroupRoom } from "../../../features/group/useSelectedGroupRoom";
@@ -113,7 +114,9 @@ describe("group hooks", () => {
       }),
     ];
 
-    const { result } = await renderHook(() => useGroupLobbyStats(rooms, now));
+    const { result } = await renderHook(() =>
+      useGroupLobbyStats(rooms, now, "private-studying"),
+    );
 
     await waitFor(() => {
       expect(result.current).not.toBeNull();
@@ -121,7 +124,10 @@ describe("group hooks", () => {
     expect(result.current.publicRooms.map((room) => room.id)).toEqual([
       "public",
     ]);
-    expect(result.current.lobbyRooms).toBe(result.current.publicRooms);
+    expect(result.current.lobbyRooms.map((room) => room.id)).toEqual([
+      "public",
+      "private",
+    ]);
     expect(
       result.current.lobbyStudyingMembers.map((member) => member.id),
     ).toEqual(["studying", "private-studying"]);
@@ -251,6 +257,85 @@ describe("group hooks", () => {
       unmount();
     });
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it("merges public rooms with rooms joined by the current user", async () => {
+    const unsubscribers: Array<jest.Mock> = [];
+    jest.mocked(onValue).mockImplementation((roomRef, callback) => {
+      const path = (roomRef as unknown as { path: string }).path;
+      const unsubscribe = jest.fn();
+      unsubscribers.push(unsubscribe);
+
+      if (path === "rooms") {
+        callback({
+          exists: () => true,
+          val: () => ({
+            "public-room": {
+              ownerId: "owner",
+              name: "Public Room",
+              visibility: "public",
+              createdAt: 1,
+              members: {},
+            },
+          }),
+        } as never);
+      } else if (path === "userRooms/me") {
+        callback({
+          exists: () => true,
+          val: () => ({ "private-room": true, "public-room": true }),
+        } as never);
+      } else if (path === "rooms/private-room") {
+        callback({
+          exists: () => true,
+          val: () => ({
+            ownerId: "owner",
+            name: "Private Room",
+            visibility: "private",
+            createdAt: 2,
+            members: {
+              me: {
+                name: "Me",
+                online: true,
+              },
+            },
+          }),
+        } as never);
+      } else if (path === "rooms/public-room") {
+        callback({
+          exists: () => true,
+          val: () => ({
+            ownerId: "owner",
+            name: "Public Room",
+            visibility: "public",
+            createdAt: 1,
+            members: {},
+          }),
+        } as never);
+      }
+
+      return unsubscribe;
+    });
+
+    const { result, unmount } = await renderHook(() => useGroupRooms("me"));
+
+    await waitFor(() => {
+      expect(result.current.map((room) => room.id)).toEqual([
+        "private-room",
+        "public-room",
+      ]);
+    });
+    expect(onValue).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "userRooms/me" }),
+      expect.any(Function),
+      expect.any(Function),
+    );
+
+    await act(async () => {
+      unmount();
+    });
+    unsubscribers.forEach((unsubscribe) => {
+      expect(unsubscribe).toHaveBeenCalled();
+    });
   });
 
   it("notifies when a selected room snapshot is missing", async () => {

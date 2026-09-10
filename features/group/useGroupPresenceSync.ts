@@ -41,6 +41,10 @@ export function useGroupPresenceSync({
         const studyStatusPublic = await loadStudyStatusPublic();
         /* istanbul ignore next -- prevents updates after an unmount race. */
         if (!mounted) return;
+        const previousMember = roomsRef.current
+          .find((room) => room.id === selectedRoomId)
+          ?.members.find((roomMember) => roomMember.id === member.id);
+        const nowMs = Date.now();
         await update(ref(db, `rooms/${selectedRoomId}/members/${member.id}`), {
           name: member.name,
           color: member.color,
@@ -48,8 +52,10 @@ export function useGroupPresenceSync({
           userType: member.userType ?? "",
           bio: member.bio ?? "",
           studyStatusPublic,
+          speaking: previousMember?.speaking ?? false,
           online: true,
-          lastSeenAt: Date.now(),
+          lastSeenAt: nowMs,
+          joinedAt: previousMember?.joinedAt ?? nowMs,
           ...session,
         });
       } catch (error) {

@@ -1,123 +1,113 @@
 # StudyNet Portfolio Case Study
 
-## 한 줄 소개
+## Summary
 
-StudyNet은 개인 공부 타이머, 로컬 학습 기록, Firebase 기반 그룹 스터디룸, 커뮤니티를 하나의 흐름으로 묶은 React Native + Expo 모바일 앱입니다.
+StudyNet is a React Native + Expo mobile app that connects personal study tracking with real-time group study and a lightweight study community. The project is organized as a product-ready portfolio case: it includes app flows, Firebase-backed data paths, local persistence, release checks, failure-case documentation, and automated tests.
 
-## 문제 정의
+## Problem
 
-많은 공부 앱은 시간을 재고 기록하는 기능에서 끝납니다. StudyNet은 학생이 매일 반복하는 전체 학습 흐름을 제품 단위로 다룹니다.
+Many study timer apps stop at measuring elapsed time. StudyNet treats studying as a complete loop:
 
-1. 공부할 과목을 고른다.
-2. 공부 세션을 시작, 일시정지, 재개, 최소화한다.
-3. 홈, 캘린더, 통계에서 진행 상황을 확인한다.
-4. 그룹 접속 상태와 커뮤니티 상호작용으로 동기를 유지한다.
-5. 설정에서 목표, 알림, 공개 범위, 계정 데이터를 관리한다.
+1. Start with account setup and email verification.
+2. Pick or create a subject.
+3. Run a focused study timer that survives navigation and app backgrounding.
+4. Save the result into local study history.
+5. Review progress through home, calendar, and statistics surfaces.
+6. Join group study rooms and expose only the public study/profile state the user chooses.
+7. Participate in a community feed with posts, comments, cheers, bookmarks, notifications, and recruitment links.
+8. Manage goals, D-Day, notifications, privacy, storage, password, and account deletion from settings.
 
-포트폴리오 목표는 단일 화면 구현이 아니라, 실제 사용자 흐름과 운영 경계를 가진 모바일 제품을 보여주는 것입니다.
+The portfolio goal is to show a working mobile product surface, not just isolated screens.
 
-## 제품 범위
+## Product Scope
 
-구현된 사용자 기능:
+Implemented user-facing areas:
 
-- 인증 게이트, 이메일 회원가입/로그인, 이메일 인증, 비밀번호 재설정, Google/Kakao 인증 연동 경로.
-- 시작, 일시정지, 재개, 최소화, 종료, 0초 세션 방어를 포함한 공부 타이머.
-- 오늘 진행률, 연속 공부일, 최근 기록, 진행 중 세션 배너, 주간 통계, 알림, 설정 접근을 포함한 홈 대시보드.
-- 로컬 공부 기록을 확인하는 캘린더와 통계 화면.
-- 사용자 과목 저장, 삭제, 중복 방지를 포함한 과목 선택 화면.
-- 공개/비공개 그룹 스터디룸, 초대 코드 입장, 멤버 접속 상태, 공부 상태, 방장/멤버 나가기 흐름.
-- 커뮤니티 피드, 글 작성, 이미지 첨부, 댓글, 응원, 북마크, 프로필 미리보기, 알림, 모집글 기반 그룹 입장.
-- 프로필, 공개 프로필, 목표, D-Day, 알림, 저장 상태, 공부 데이터 초기화, 문의, 개인정보, 비밀번호, 로그아웃, 회원 탈퇴 설정.
+- Email/password signup, login, password reset, and email verification gate.
+- Google and Kakao authentication integration paths with clear configuration failure states.
+- Study timer with start, pause, resume, minimize, restore, goal adjustment, finish, and short-session protection.
+- Local study sessions saved through AsyncStorage.
+- Home dashboard with today progress, active-session banner, recent sessions, and weekly statistics.
+- Calendar and statistics screens backed by the same local study data.
+- Subject selection with custom subject add/remove support.
+- Public/private group study rooms with invite-code entry.
+- Group member presence, profile preview, and study status sync through Firebase Realtime Database.
+- Community feed with post creation, image attachment, cheers, comments, bookmarks, notifications, deletion, and profile preview.
+- Community recruitment posts that can route directly into matching group rooms by invite code.
+- Settings for profile, public profile, privacy, notifications, goals, D-Day, storage status, contact, password change, reset-study-data, logout, and account deletion.
 
-## 기술적 포인트
+## Technical Design
 
-### 상태 저장 경계
+### State and Storage
 
-- 공부 기록은 AsyncStorage에 로컬 저장해 빠르게 조회하고 네트워크와 분리했습니다.
-- 계정, 그룹, 커뮤니티, 프로필 이미지는 Firebase Auth, Realtime Database, Storage를 사용했습니다.
-- 진행 중인 공부 세션은 로컬에 저장해 화면 이동과 앱 백그라운드 전환에도 상태를 유지합니다.
-- 실행 중 세션은 `startEpoch`, 일시정지 세션은 `savedSeconds`를 저장해 시간이 잘못 증가하지 않도록 했습니다.
+- Finished study sessions are stored locally with AsyncStorage for fast local review.
+- Running sessions store `startEpoch`; elapsed time is recalculated from the current clock so navigation and background transitions do not lose time.
+- Paused sessions store `savedSeconds`; time does not accidentally increase while paused.
+- Firebase Auth owns authentication and verified email state.
+- Firebase Realtime Database stores account profiles, public profiles, group rooms, invite codes, community posts, comments, cheers, and notification-related community activity.
+- Firebase Storage stores profile avatar images.
 
-### Firebase 데이터 설계
+### Firebase Rules Contract
 
-- `users/{uid}`는 계정 프로필과 공개 범위 플래그를 저장합니다.
-- `rooms/{roomId}`와 `roomCodes/{code}`는 공개/비공개 그룹 탐색과 코드 기반 입장을 담당합니다.
-- `rooms/{roomId}/members/{uid}`는 접속 상태, 공개 프로필, 공부 상태 공개 여부, 현재 공부 상태를 저장합니다.
-- `communityPosts`, `communityPostComments`, `communityPostCheers`는 커뮤니티 피드를 구성합니다.
-- Firebase Rules는 방장, 작성자, 댓글 작성자, 현재 멤버 경로에만 쓰기를 허용하도록 제한합니다.
+The rules separate private and public data:
 
-### 실패 처리
+- `users/{uid}` is owner-only.
+- `publicProfiles/{uid}` is readable by signed-in users and writable only by the owner.
+- `rooms/{roomId}` uses owner-controlled room updates and member-controlled membership writes.
+- `roomCodes/{code}` maps invite codes to rooms and is constrained by room ownership.
+- `communityPosts`, `communityPostComments`, and `communityPostCheers` enforce author-owned writes and cleanup boundaries.
+- `profileImages/{uid}/avatar.jpg` is writable only by the signed-in owner and limited to images under 2 MB.
 
-- 인증, 프로필, 커뮤니티, 그룹, 알림, 회원 탈퇴 흐름에서 사용자에게 보이는 실패 메시지를 제공합니다.
-- `utils/errorMessages.ts`에서 Firebase 권한/네트워크/오프라인 오류 문구를 공통화했습니다.
-- OAuth 콘솔 설정, 알림 권한, Firebase Rules 배포, 프로필 이미지 업로드처럼 외부 환경이 필요한 리스크는 릴리즈 문서에 분리했습니다.
+The detailed contract is maintained in `docs/DATA_SCHEMA.md`.
 
-### 테스트 전략
+## Reliability Work
 
-- Firebase와 디바이스 API는 Jest에서 mock 처리해 테스트를 결정적으로 유지했습니다.
-- 현재 로컬 검증 상태:
-  - 49 test suites.
-  - 287 automated tests.
-  - 수집 대상 `features`와 `utils`의 statement, branch, function, line coverage 100%.
-- GitHub Actions는 `main` push와 pull request에서 validation과 coverage를 실행합니다.
+- Shared Firebase/user-facing error messages live in `utils/errorMessages.ts`.
+- Failure cases are documented in `docs/FAILURE_CASES.md`.
+- Release and QA checklists split automated validation from real-device/provider checks.
+- Account deletion cleanup covers user profile data, posts, cheers, comments, owned rooms, room-code mappings, memberships, and local keys.
+- Notification behavior is isolated in scheduler utilities and documented for device QA.
 
-## 구조 요약
+## Testing
 
-```text
-app/
-  Expo Router 화면과 라우트 단위 조합
+Current local result on 2026-09-08:
 
-features/
-  home/         홈 대시보드, 진행 중 세션 컨텍스트, UI 컴포넌트
-  study/        타이머 경험과 세션 저장
-  group/        그룹 룸 훅, 접속 상태 동기화, 그룹 UI
-  community/    피드 훅, 글/댓글 액션, 작성/댓글 UI
-  settings/     설정 폼, 저장 상태, 계정 액션
+- `npm.cmd run lint`: pass
+- `npm.cmd run typecheck`: pass
+- `npm.cmd run validate:config`: pass
+- `npm.cmd test`: 50 suites, 293 tests passed
 
-utils/
-  Firebase 설정, 로컬 저장 헬퍼, 알림 예약,
-  소셜 인증 헬퍼, 공개 범위 설정, 오류 메시지, 계정 정리
+Coverage focus:
 
-docs/
-  QA, 릴리즈, 데이터 스키마, 운영, 실패 케이스, 테스트, 포트폴리오
-```
+- Utility logic for Firebase config, dates, timers, notifications, email verification, privacy, errors, account cleanup, and study sessions.
+- Auth and route smoke tests.
+- Home/session context.
+- Study flow screens.
+- Calendar/statistics screens.
+- Group hooks, actions, mapping logic, presence sync, and screen flows.
+- Community hooks, actions, components, feed, comments, notifications, and screen flows.
+- Settings hooks and screen flows.
 
-## 시연 영상 구성
+Manual QA remains necessary for Google/Kakao provider setup, real Firebase deployment behavior, Android notifications, profile image upload, and Play Console release configuration.
 
-60-90초 포트폴리오 영상은 아래 순서가 적절합니다.
+## Demo Flow
 
-1. 회원가입 또는 로그인.
-2. 과목 선택 후 공부 타이머 시작.
-3. 일시정지, 재개, 최소화, 홈의 진행 중 세션 배너 복귀.
-4. 세션 종료 후 홈, 캘린더, 통계 반영 확인.
-5. 그룹 생성 또는 코드 입장 후 멤버 상태 확인.
-6. 커뮤니티 글 작성, 댓글, 응원, 북마크, 알림 이동 확인.
-7. 설정에서 목표, D-Day, 알림, 저장 상태, 공개 범위, 계정 관리 확인.
+A 60-90 second portfolio video should show:
 
-## 이 프로젝트가 보여주는 역량
+1. Signup/login and verified entry.
+2. Subject selection and study timer start.
+3. Pause/resume/minimize/restore behavior.
+4. Finished session reflected in home, calendar, and statistics.
+5. Group room join or creation with member presence.
+6. Community post, cheer/comment/bookmark, notification, and recruitment-to-group path.
+7. Settings for goals, D-Day, notifications, privacy, storage, and account management.
 
-- Expo Router와 TypeScript 기반의 다중 화면 모바일 앱 구성.
-- 로컬 우선 데이터와 Firebase 기반 협업 데이터를 분리하는 설계.
-- 깨진 로컬 저장소, 일시정지 타이머, 중복 과목, 잘못된 날짜, 알림 권한 상태, Firebase 쓰기 실패, 계정 삭제 정리 같은 실제 앱 경계값 처리.
-- 훅, 유틸, 화면 smoke flow, Firebase-facing action logic에 대한 테스트 작성.
-- QA, 릴리즈 준비, 데이터 계약, 운영 유지보수를 위한 문서화.
+The full script is in `docs/DEMO_SCRIPT.md`.
 
-## 수동 QA 경계
+## What This Project Shows
 
-레포지토리 수준의 자동화 검증은 통과하지만, 공개 배포 전에는 아래 영역을 실제 외부 서비스에서 확인해야 합니다.
-
-- Google/Kakao OAuth provider 설정.
-- Firebase Realtime Database와 Storage Rules 배포 상태.
-- Android 알림 권한, 채널 생성, 예약, 전달.
-- 실제 Android 빌드에서 프로필 이미지 업로드.
-- 스토어 등록용 데이터 보안 답변, 개인정보 처리방침 URL, 지원 이메일, 서명 fingerprint.
-
-## 검증 명령
-
-```bash
-npm.cmd run validate
-npm.cmd test
-npm.cmd run test:coverage
-```
-
-현재 로컬 결과: validation, test, coverage gate가 모두 통과합니다.
+- Expo Router and TypeScript app structure across many production-style screens.
+- Clear split between local-first study records and Firebase-backed shared data.
+- Handling for edge cases such as paused timers, short sessions, duplicate subjects, malformed dates, permission-denied Firebase writes, provider misconfiguration, and account deletion cleanup.
+- Automated tests around user flows and data helpers rather than only static rendering.
+- Documentation that supports release, QA, data schema review, failure handling, and portfolio presentation.

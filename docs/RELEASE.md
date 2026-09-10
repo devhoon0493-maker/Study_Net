@@ -19,6 +19,9 @@
 - Google native Sign-In is configured with `@react-native-google-signin/google-signin`, `google-services.json`, and the Firebase Web client ID.
 - EAS has `GOOGLE_SERVICES_JSON` configured as either a file path, raw JSON, or base64-encoded `google-services.json` content.
 - Google login/signup are tested in an Android development or installed build, not Expo Go.
+- Firebase Auth Apple provider is enabled.
+- Sign in with Apple is enabled for the iOS app identifier in Apple Developer.
+- Apple login/signup are tested on an iOS development or installed build.
 - Kakao Developers OpenID Connect is enabled.
 - Kakao redirect URI for the `studynet` scheme is registered.
 - `EXPO_PUBLIC_KAKAO_REST_API_KEY` is configured in the build environment.

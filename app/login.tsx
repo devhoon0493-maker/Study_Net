@@ -31,6 +31,12 @@ import { getErrorCode } from "../utils/errorMessages";
 import { auth, db } from "../utils/firebaseConfig";
 import { publicProfileUpdate } from "../utils/publicProfile";
 import {
+  getAppleAuthErrorMessage,
+  getAppleRuntimeErrorMessage,
+  isAppleAuthAvailable,
+  signInWithApple,
+} from "../utils/appleAuth";
+import {
   getGoogleAuthErrorMessage,
   getGoogleRuntimeErrorMessage,
   isGoogleAuthSupportedInCurrentRuntime,
@@ -68,8 +74,6 @@ const getLoginErrorMessage = (code?: string) => {
 };
 
 const persistUserProfile = async (user: User, userType = "일반 회원") => {
-  const userRef = ref(db, `users/${user.uid}`);
-  const snapshot = await get(userRef);
   const fallbackProfile = {
     uid: user.uid,
     name: user.displayName || user.email?.split("@")[0] || "Study User",
@@ -78,14 +82,31 @@ const persistUserProfile = async (user: User, userType = "일반 회원") => {
     userType,
     createdAt: Date.now(),
   };
-  const profile = snapshot.exists() ? { ...fallbackProfile, ...snapshot.val() } : fallbackProfile;
 
-  if (!snapshot.exists()) {
-    await set(userRef, profile);
+  let profile = fallbackProfile;
+
+  try {
+    const userRef = ref(db, `users/${user.uid}`);
+    const snapshot = await get(userRef);
+    profile = snapshot.exists()
+      ? { ...fallbackProfile, ...snapshot.val() }
+      : fallbackProfile;
+
+    if (!snapshot.exists()) {
+      await set(userRef, profile);
+    }
+
+    await set(
+      ref(db, `publicProfiles/${user.uid}`),
+      publicProfileUpdate(user.uid, profile)[`publicProfiles/${user.uid}`],
+    );
+  } catch (error) {
+    console.warn("Profile sync after login failed:", error);
   }
 
-  await set(ref(db, `publicProfiles/${user.uid}`), publicProfileUpdate(user.uid, profile)[`publicProfiles/${user.uid}`]);
-  await saveStoredUserProfile(profile);
+  await saveStoredUserProfile(profile).catch((error) => {
+    console.warn("Local profile cache after login failed:", error);
+  });
 };
 
 /* ─────────────────────────────────────────────
@@ -104,6 +125,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);        // ① 로딩 상태
   const [errorMsg, setErrorMsg] = useState("");         // 에러 메시지
   const [googleLoading, setGoogleLoading] = useState(false); // ✅ 구글 로그인 로딩
+  const [appleLoading, setAppleLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
 
   // ② 키보드 다음 필드 이동용 ref
@@ -195,6 +217,30 @@ export default function LoginScreen() {
       console.warn("Kakao prompt error:", error);
       setErrorMsg("Kakao 로그인을 시작하지 못했어요.");
       setKakaoLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (appleLoading) return;
+
+    setErrorMsg("");
+    try {
+      setAppleLoading(true);
+      const available = await isAppleAuthAvailable();
+      if (!available) {
+        setErrorMsg(getAppleRuntimeErrorMessage());
+        return;
+      }
+
+      const result = await signInWithApple();
+      await persistUserProfile(result.user, "Apple 회원");
+
+      router.replace("/main");
+    } catch (error) {
+      console.warn("Apple login error:", error);
+      setErrorMsg(getAppleAuthErrorMessage(error));
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -386,6 +432,16 @@ export default function LoginScreen() {
                 onPress={handleGoogleLogin}
                 disabled={googleLoading}
                 loading={googleLoading}
+                styles={socialStyles}
+              />
+              <SocialIconBtn
+                testID="login-apple-button"
+                name="logo-apple"
+                bg={C.surface}
+                iconColor={C.text}
+                onPress={handleAppleLogin}
+                disabled={appleLoading}
+                loading={appleLoading}
                 styles={socialStyles}
               />
               <SocialIconBtn
