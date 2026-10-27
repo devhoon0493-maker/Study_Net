@@ -82,6 +82,8 @@ export const getCurrentStudySession = async () => {
 export const snapshotToRoom = (id: string, raw: RoomRecord): Room => ({
   id,
   ownerId: raw.ownerId ?? "",
+  deputy1Id: raw.deputy1Id,
+  deputy2Id: raw.deputy2Id,
   name: raw.name ?? "스터디 그룹",
   emoji: raw.emoji ?? "📚",
   subjects: raw.subjects ?? "자유 공부",

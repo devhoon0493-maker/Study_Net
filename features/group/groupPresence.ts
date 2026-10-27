@@ -81,23 +81,40 @@ export const syncCurrentMemberToJoinedRooms = async ({
   const legacyRoomEntries = Object.entries(roomIndex).filter(
     ([, value]) => value && typeof value === "object",
   ) as Array<[string, RoomRecord]>;
-  if (indexedRoomIds.length === 0 && legacyRoomEntries.length === 0) return;
 
-  const roomEntries =
-    legacyRoomEntries.length > 0
-      ? legacyRoomEntries
-      : await Promise.all(
-          indexedRoomIds.map(async (roomId) => {
-            const snapshot = await get(ref(db, `rooms/${roomId}`));
-            return [roomId, (snapshot?.val() as RoomRecord | null) ?? null] as const;
-          }),
-        );
+  let roomEntries: Array<[string, RoomRecord | null]>;
+  let recoveredRoomIds: string[] = [];
+  if (legacyRoomEntries.length > 0) {
+    roomEntries = legacyRoomEntries;
+  } else if (indexedRoomIds.length > 0) {
+    roomEntries = await Promise.all(
+      indexedRoomIds.map(async (roomId) => {
+        const snapshot = await get(ref(db, `rooms/${roomId}`));
+        return [roomId, (snapshot.val() as RoomRecord | null) ?? null] as const;
+      }),
+    );
+  } else {
+    // Older memberships may predate the userRooms index. Recover them once
+    // from the rooms the signed-in user can read, then repair the index below.
+    const roomsSnapshot = await get(ref(db, "rooms"));
+    const allRooms =
+      (roomsSnapshot.val() as Record<string, RoomRecord> | null) ?? {};
+    roomEntries = Object.entries(allRooms).filter(([, room]) =>
+      Boolean(room.members?.[member.id]),
+    );
+    recoveredRoomIds = roomEntries.map(([roomId]) => roomId);
+  }
+  if (roomEntries.length === 0) return;
 
   const nextSession = session ?? (await getCurrentStudySession());
   const studyStatusPublic = await loadStudyStatusPublic();
   const now = Date.now();
   const updates: Record<string, unknown> = {};
   const disconnects: Promise<void>[] = [];
+
+  for (const roomId of recoveredRoomIds) {
+    updates[`userRooms/${member.id}/${roomId}`] = true;
+  }
 
   for (const [roomId, room] of roomEntries) {
     if (!room) {

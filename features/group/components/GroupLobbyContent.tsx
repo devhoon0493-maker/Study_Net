@@ -21,6 +21,7 @@ type GroupLobbyContentProps = {
   lobbyStudyingCount: number;
   codeInput: string;
   codeError: string;
+  codeNotice: string;
   joining: boolean;
   codeInputRef: RefObject<TextInput | null>;
   livePulse: Animated.Value;
@@ -42,6 +43,7 @@ export function GroupLobbyContent({
   lobbyStudyingCount,
   codeInput,
   codeError,
+  codeNotice,
   joining,
   codeInputRef,
   livePulse,
@@ -84,6 +86,7 @@ export function GroupLobbyContent({
       <QuickJoinCard
         codeInput={codeInput}
         codeError={codeError}
+        codeNotice={codeNotice}
         joining={joining}
         codeInputRef={codeInputRef}
         onChangeCode={onChangeCode}

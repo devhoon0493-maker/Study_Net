@@ -23,6 +23,8 @@ export type Member = {
 export type Room = {
   id: string;
   ownerId: string;
+  deputy1Id?: string;
+  deputy2Id?: string;
   name: string;
   emoji: string;
   subjects: string;
@@ -55,6 +57,8 @@ export type RoomMemberRecord = Partial<Member>;
 
 export type RoomRecord = {
   ownerId?: string;
+  deputy1Id?: string;
+  deputy2Id?: string;
   name?: string;
   emoji?: string;
   subjects?: string;

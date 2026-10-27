@@ -60,6 +60,18 @@ export const SETTINGS_LINK_GROUPS: SettingsLinkGroup[] = [
     ],
   },
   {
+    title: "친구",
+    icon: "people-outline",
+    items: [
+      {
+        icon: "person-remove-outline",
+        label: "차단된 목록",
+        description: "차단한 사용자 확인 및 차단 해제",
+        route: "/setting/friends",
+      },
+    ],
+  },
+  {
     title: "지원 및 정보",
     icon: "help-circle-outline",
     items: [

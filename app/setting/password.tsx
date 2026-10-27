@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
@@ -146,7 +147,7 @@ const createStyles = (C: MonoTheme) =>
     },
     card: {
       backgroundColor: C.surface,
-      borderRadius: 18,
+      borderRadius: RADIUS.card,
       padding: 20,
       borderWidth: 1,
       borderBottomWidth: 3,
@@ -154,19 +155,19 @@ const createStyles = (C: MonoTheme) =>
     },
     label: {
       color: C.text,
-      marginTop: 16,
+      marginTop: SPACE.lg,
       marginBottom: 6,
-      fontSize: 13,
+      fontSize: TYPE_SIZE.bodySmall,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: C.surface,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
-      paddingHorizontal: 12,
+      paddingHorizontal: SPACE.md,
     },
     input: {
       flex: 1,
@@ -179,26 +180,26 @@ const createStyles = (C: MonoTheme) =>
       borderWidth: 1,
       borderBottomWidth: 3,
       borderColor: C.border,
-      borderRadius: 8,
+      borderRadius: RADIUS.sm,
       alignItems: "center",
       justifyContent: "center",
     },
     eye: {
       color: C.text,
-      fontWeight: "600",
+      fontWeight: TYPE_WEIGHT.semibold,
     },
     validationBox: {
       marginTop: 10,
     },
     rule: {
       color: C.text,
-      fontSize: 12,
-      marginTop: 4,
+      fontSize: TYPE_SIZE.label,
+      marginTop: SPACE.xs,
       opacity: 0.5,
     },
     valid: {
       color: C.text,
-      fontWeight: "800",
+      fontWeight: TYPE_WEIGHT.strong,
       opacity: 1,
     },
     primaryBtn: {
@@ -206,17 +207,17 @@ const createStyles = (C: MonoTheme) =>
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       alignItems: "center",
       justifyContent: "center",
       minHeight: 52,
-      marginTop: 24,
+      marginTop: SPACE.xl,
     },
     primaryBtnDisabled: {
       opacity: 0.5,
     },
     primaryText: {
       color: C.text,
-      fontWeight: "800",
+      fontWeight: TYPE_WEIGHT.strong,
     },
   });

@@ -30,14 +30,24 @@ export const sortPosts = (nextPosts: CommunityPost[]) => {
   return [...nextPosts].sort((a, b) => b.createdAt - a.createdAt);
 };
 
-const getPublicStudyMemberCount = (members?: LiveStudyRoomRecord["members"]) =>
-  Object.values(members ?? {}).filter(
-    (member) =>
-      typeof member !== "object" ||
-      member === null ||
-      !("studyStatusPublic" in member) ||
-      member.studyStatusPublic !== false,
-  ).length;
+const getPublicStudyingMemberCount = (
+  members?: LiveStudyRoomRecord["members"],
+) =>
+  Object.values(members ?? {}).filter((member) => {
+    if (!member || typeof member !== "object") return false;
+
+    const studyMember = member as {
+      studyStatusPublic?: boolean;
+      studyStartEpoch?: number | null;
+      online?: boolean;
+    };
+    return (
+      typeof studyMember.studyStartEpoch === "number" &&
+      studyMember.studyStartEpoch > 0 &&
+      studyMember.online !== false &&
+      studyMember.studyStatusPublic !== false
+    );
+  }).length;
 
 export const snapshotToPosts = (
   rawPosts: Record<string, CommunityPostRecord> | null,
@@ -113,7 +123,7 @@ export const snapshotToRooms = (
       id,
       name: room.name ?? "스터디룸",
       subjects: room.subjects ?? "자유 공부",
-      memberCount: getPublicStudyMemberCount(room.members),
+      memberCount: getPublicStudyingMemberCount(room.members),
       code: room.code ?? "",
       createdAt: room.createdAt ?? 0,
     }))

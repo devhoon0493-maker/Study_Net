@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { StyleSheet } from "react-native";
 
 import type { MonoTheme } from "../../constants/mono";
@@ -13,7 +14,7 @@ export const createSettingsStyles = (C: MonoTheme) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 16,
+      marginBottom: SPACE.lg,
     },
     headerSpacer: {
       width: 40,
@@ -22,7 +23,7 @@ export const createSettingsStyles = (C: MonoTheme) =>
     backBtn: {
       width: 40,
       height: 40,
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       borderWidth: 1,
       borderBottomWidth: 3,
       borderColor: C.border,
@@ -32,8 +33,8 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     headerTitle: {
       color: C.text,
-      fontSize: 24,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.heading,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     scrollContent: {
       gap: 14,
@@ -42,8 +43,8 @@ export const createSettingsStyles = (C: MonoTheme) =>
       backgroundColor: C.surface,
       borderWidth: 1,
       borderColor: C.borderSoft,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: RADIUS.sheet,
+      padding: SPACE.lg,
       flexDirection: "row",
       alignItems: "center",
       shadowColor: C.shadow,
@@ -60,7 +61,7 @@ export const createSettingsStyles = (C: MonoTheme) =>
     avatar: {
       width: 58,
       height: 58,
-      borderRadius: 20,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.border,
       backgroundColor: C.primarySoft,
@@ -74,37 +75,37 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     avatarText: {
       color: C.primary,
-      fontWeight: "900",
-      fontSize: 22,
+      fontWeight: TYPE_WEIGHT.heavy,
+      fontSize: TYPE_SIZE.headingSmall,
     },
     profileName: {
       color: C.text,
-      fontWeight: "900",
-      fontSize: 17,
+      fontWeight: TYPE_WEIGHT.heavy,
+      fontSize: TYPE_SIZE.titleSmall,
     },
     profileEmail: {
       color: C.muted,
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 3,
     },
     badge: {
       alignSelf: "flex-start",
       backgroundColor: C.surfaceAlt,
       paddingHorizontal: 9,
-      paddingVertical: 4,
-      borderRadius: 999,
-      marginTop: 8,
+      paddingVertical: SPACE.xs,
+      borderRadius: RADIUS.pill,
+      marginTop: SPACE.sm,
     },
     badgeText: {
       color: C.text,
-      fontSize: 11,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     editBtn: {
       width: 38,
       height: 38,
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       backgroundColor: C.primarySoft,
       alignItems: "center",
       justifyContent: "center",
@@ -112,7 +113,7 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     group: {
       backgroundColor: C.surface,
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       borderWidth: 1,
       borderColor: C.borderSoft,
       overflow: "hidden",
@@ -120,10 +121,10 @@ export const createSettingsStyles = (C: MonoTheme) =>
     groupHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: SPACE.sm,
       paddingHorizontal: 15,
       paddingTop: 15,
-      paddingBottom: 8,
+      paddingBottom: SPACE.sm,
     },
     groupIcon: {
       width: 28,
@@ -135,12 +136,12 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     groupTitle: {
       color: C.text,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     groupBody: {
       paddingHorizontal: 15,
-      paddingBottom: 8,
+      paddingBottom: SPACE.sm,
     },
     row: {
       minHeight: 62,
@@ -157,7 +158,7 @@ export const createSettingsStyles = (C: MonoTheme) =>
     rowIcon: {
       width: 34,
       height: 34,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -168,23 +169,23 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     rowText: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     rowDesc: {
       color: C.muted,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 3,
     },
     infoValue: {
       color: C.muted,
-      fontSize: 13,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     dangerGroup: {
       backgroundColor: C.surface,
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       borderWidth: 1,
       borderColor: C.borderSoft,
       padding: 15,
@@ -192,26 +193,26 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     dangerTitle: {
       color: C.text,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     accountButton: {
       minHeight: 50,
-      borderRadius: 15,
+      borderRadius: RADIUS.badge,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.surfaceAlt,
     },
     logoutText: {
       color: C.text,
-      fontWeight: "900",
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     deleteAccountBtn: {
       backgroundColor: C.dangerSoft,
     },
     deleteAccountText: {
       color: C.danger,
-      fontWeight: "900",
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     accountBtnDisabled: {
       opacity: 0.45,

@@ -1,3 +1,4 @@
+import { RADIUS, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import {
@@ -91,7 +92,7 @@ const createStyles = (C: MonoTheme) =>
     notice: {
       borderWidth: 1,
       borderColor: C.borderSoft,
-      borderRadius: 18,
+      borderRadius: RADIUS.card,
       padding: 15,
       backgroundColor: C.primarySoft,
       flexDirection: "row",
@@ -104,19 +105,19 @@ const createStyles = (C: MonoTheme) =>
     },
     noticeTitle: {
       color: C.text,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     noticeText: {
       color: C.muted,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
       marginTop: 3,
     },
     sectionBody: {
       color: C.text,
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.bold,
       lineHeight: 21,
     },
   });

@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -103,7 +104,7 @@ const createStyles = (C: MonoTheme) =>
       backgroundColor: C.surface,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -118,14 +119,14 @@ const createStyles = (C: MonoTheme) =>
     item: {
       flex: 1,
       height: 46,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       alignItems: "center",
       justifyContent: "center",
       gap: 2,
     },
     homeItem: {
       height: 52,
-      marginHorizontal: 4,
+      marginHorizontal: SPACE.xs,
       transform: [{ translateY: -5 }],
     },
     itemActive: {
@@ -137,14 +138,14 @@ const createStyles = (C: MonoTheme) =>
     },
     label: {
       color: C.muted,
-      fontSize: 10,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     labelActive: {
       color: C.primary,
     },
     homeLabel: {
-      fontSize: 11,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

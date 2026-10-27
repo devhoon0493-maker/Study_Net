@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo } from "react";
 import {
@@ -120,12 +121,12 @@ const createStyles = (C: MonoTheme) =>
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      gap: 12,
+      gap: SPACE.md,
     },
     loadingText: {
       color: C.muted,
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     content: {
       gap: 14,
@@ -144,7 +145,7 @@ const createStyles = (C: MonoTheme) =>
     statusDot: {
       width: 8,
       height: 8,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
     },
     statusOk: {
       backgroundColor: C.success,
@@ -155,11 +156,11 @@ const createStyles = (C: MonoTheme) =>
     rowLabel: {
       flex: 1,
       color: C.text,
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     rowValue: {
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

@@ -1,3 +1,4 @@
+import { RADIUS, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
@@ -37,7 +38,7 @@ export function SettingsHeader({
           styles.title,
           {
             color: C.text,
-            fontSize: compactTitle ? 21 : 24,
+            fontSize: compactTitle ? TYPE_SIZE.titleCompact : TYPE_SIZE.heading,
           },
         ]}
         numberOfLines={1}
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderWidth: 1,
     borderBottomWidth: 3,
-    borderRadius: 10,
+    borderRadius: RADIUS.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontWeight: "900",
+    fontWeight: TYPE_WEIGHT.heavy,
     textAlign: "center",
   },
 });

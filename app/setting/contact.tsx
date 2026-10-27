@@ -1,6 +1,8 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import {
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -36,6 +38,9 @@ export default function ContactScreen() {
     setMessage,
     replyEmail,
     setReplyEmail,
+    photoUri,
+    pickPhoto,
+    removePhoto,
     sendMail,
   } = useContactForm();
 
@@ -95,6 +100,36 @@ export default function ContactScreen() {
           />
         </SettingsSection>
 
+        <View style={s.attachmentSection}>
+          <Text style={s.inputLabel}>오류 화면 사진 (선택)</Text>
+          {photoUri ? (
+            <View style={s.photoRow}>
+              <Image source={{ uri: photoUri }} style={s.photoPreview} />
+              <Text style={s.photoStatus}>사진 1장이 메일에 첨부돼요.</Text>
+              <TouchableOpacity
+                testID="contact-remove-photo-button"
+                accessibilityRole="button"
+                accessibilityLabel="첨부 사진 삭제"
+                onPress={removePhoto}
+                style={s.removePhotoButton}
+              >
+                <Ionicons name="close-circle" size={24} color={C.muted} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              testID="contact-add-photo-button"
+              accessibilityRole="button"
+              onPress={pickPhoto}
+              style={s.attachButton}
+              activeOpacity={0.82}
+            >
+              <Ionicons name="image-outline" size={20} color={C.primary} />
+              <Text style={s.attachButtonText}>사진 선택</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={s.infoBox}>
           <Ionicons name="information-circle-outline" size={18} color={C.primary} />
           <Text style={s.infoText}>
@@ -137,7 +172,7 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 44,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -148,27 +183,27 @@ const createStyles = (C: MonoTheme) =>
     },
     categoryText: {
       color: C.text,
-      fontSize: 13,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     categoryTextActive: {
       color: C.inverse,
     },
     inputLabel: {
       color: C.muted,
-      fontSize: 12,
-      fontWeight: "900",
-      marginBottom: 8,
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
+      marginBottom: SPACE.sm,
     },
     input: {
       minHeight: 50,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       backgroundColor: C.surfaceAlt,
       color: C.text,
-      fontSize: 14,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.bold,
       paddingHorizontal: 13,
       marginBottom: 14,
     },
@@ -176,41 +211,87 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 150,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       backgroundColor: C.surfaceAlt,
       color: C.text,
-      fontSize: 14,
+      fontSize: TYPE_SIZE.body,
       lineHeight: 20,
-      fontWeight: "700",
+      fontWeight: TYPE_WEIGHT.bold,
       padding: 13,
+    },
+    attachmentSection: {
+      gap: 2,
+    },
+    attachButton: {
+      minHeight: 52,
+      borderWidth: 1,
+      borderColor: C.border,
+      borderStyle: "dashed",
+      borderRadius: RADIUS.chip,
+      backgroundColor: C.surface,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: SPACE.sm,
+    },
+    attachButtonText: {
+      color: C.primary,
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.heavy,
+    },
+    photoRow: {
+      minHeight: 72,
+      borderWidth: 1,
+      borderColor: C.border,
+      borderRadius: RADIUS.chip,
+      backgroundColor: C.surface,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: SPACE.md,
+      padding: SPACE.sm,
+    },
+    photoPreview: {
+      width: 54,
+      height: 54,
+      borderRadius: RADIUS.sm,
+      backgroundColor: C.surfaceAlt,
+    },
+    photoStatus: {
+      flex: 1,
+      color: C.text,
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.strong,
+    },
+    removePhotoButton: {
+      padding: SPACE.xs,
     },
     infoBox: {
       flexDirection: "row",
       alignItems: "center",
       gap: 9,
-      borderRadius: 15,
+      borderRadius: RADIUS.badge,
       backgroundColor: C.primarySoft,
       padding: 13,
     },
     infoText: {
       flex: 1,
       color: C.text,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
       lineHeight: 18,
     },
     saveButton: {
       minHeight: 54,
-      borderRadius: 15,
+      borderRadius: RADIUS.badge,
       backgroundColor: C.primary,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
-      gap: 8,
+      gap: SPACE.sm,
     },
     saveButtonText: {
       color: C.inverse,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

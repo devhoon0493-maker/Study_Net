@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_FAMILY, TYPE_SIZE, TYPE_WEIGHT } from "../../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -9,7 +10,6 @@ import {
   AppStateStatus,
   Easing,
   Modal,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -27,9 +27,6 @@ import {
 } from "../../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../../constants/mono";
 import { syncCurrentMemberToJoinedRooms } from "../../group/groupPresence";
-
-const monoFont = Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" });
-const serifFont = Platform.select({ ios: "Georgia", android: "serif", default: "serif" });
 
 const MAX_WIDTH = 520;
 const KEY_ACTIVE = "active_session";
@@ -408,10 +405,12 @@ export default function StudyTimer() {
         ? { subject, startEpoch, goalSeconds, running: true }
         : { subject, savedSeconds: seconds, goalSeconds, running: false };
       await AsyncStorage.setItem(KEY_ACTIVE, JSON.stringify(activeSession));
-      await syncCurrentMemberToJoinedRooms({
-        session: { status: subject, studyStartEpoch: running ? startEpoch : null },
-      });
       router.replace({ pathname: "/main", params: { added: Date.now() } });
+      syncCurrentMemberToJoinedRooms({
+        session: { status: subject, studyStartEpoch: running ? startEpoch : null },
+      }).catch((error) => {
+        console.warn("Study presence sync failed after minimizing:", error);
+      });
     } catch (error) {
       console.error("세션 최소화 실패", error);
     }
@@ -821,27 +820,27 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 12,
+      gap: SPACE.md,
     },
     iconButton: {
       width: 38,
       height: 38,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       alignItems: "center",
       justifyContent: "center",
     },
     headerEyebrow: {
       flex: 1,
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
       letterSpacing: 2,
       textAlign: "center",
     },
     statusPill: {
       minWidth: 78,
       height: 32,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       borderWidth: 1,
       alignItems: "center",
       justifyContent: "center",
@@ -860,11 +859,11 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     statusDot: {
       width: 6,
       height: 6,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
     },
     statusText: {
-      fontSize: 10,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     hero: {
       height: L.ringSize + (L.compact ? 30 : 40),
@@ -896,9 +895,8 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     subjectEyebrow: {
       color: C.textTertiary,
-      fontSize: 12,
-      fontWeight: "700",
-      fontFamily: serifFont,
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
       fontStyle: "italic",
       marginBottom: 10,
       maxWidth: L.ringSize - 60,
@@ -909,25 +907,25 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     timeDigit: {
       color: C.textPrimary,
-      fontSize: L.compact ? 38 : 46,
+      fontSize: L.compact ? TYPE_SIZE.timerSmall : TYPE_SIZE.timer,
       lineHeight: L.compact ? 44 : 52,
-      fontWeight: "700",
-      fontFamily: monoFont,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
       fontVariant: ["tabular-nums"],
     },
     timeSep: {
       color: C.textTertiary,
-      fontSize: L.compact ? 26 : 30,
+      fontSize: L.compact ? TYPE_SIZE.timerDigitCompact : TYPE_SIZE.timerDigit,
       lineHeight: L.compact ? 36 : 42,
-      fontFamily: monoFont,
+      fontFamily: TYPE_FAMILY.numeric,
       marginHorizontal: 1,
     },
     remainText: {
       color: C.textSecondary,
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 10,
-      fontFamily: monoFont,
+      fontFamily: TYPE_FAMILY.numeric,
     },
     goalBadge: {
       marginTop: 10,
@@ -935,31 +933,31 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       alignItems: "center",
       gap: 5,
       backgroundColor: C.successSoft,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       paddingHorizontal: 11,
       paddingVertical: 6,
     },
     goalBadgeText: {
       color: C.success,
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     tapHint: {
       position: "absolute",
       bottom: 0,
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: SPACE.xs,
     },
     tapHintText: {
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     noteCard: {
       width: "100%",
       height: "100%",
-      borderRadius: 20,
+      borderRadius: RADIUS.xl,
       backgroundColor: C.elevated,
       borderWidth: 1,
       borderColor: C.border,
@@ -981,15 +979,14 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       borderTopWidth: 0,
       borderBottomLeftRadius: 12,
       borderBottomRightRadius: 12,
-      paddingHorizontal: 16,
+      paddingHorizontal: SPACE.lg,
       paddingBottom: 7,
       paddingTop: 2,
     },
     noteTabText: {
       color: C.textSecondary,
-      fontSize: 10,
-      fontWeight: "800",
-      fontFamily: serifFont,
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
       fontStyle: "italic",
     },
     noteSummaryRow: {
@@ -1010,15 +1007,15 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     noteSummaryLabel: {
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     noteSummaryValue: {
       color: C.textPrimary,
-      fontSize: 22,
-      fontWeight: "700",
-      fontFamily: monoFont,
-      marginTop: 4,
+      fontSize: TYPE_SIZE.headingSmall,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
+      marginTop: SPACE.xs,
     },
     ruledList: {
       gap: 0,
@@ -1026,8 +1023,8 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     subjectStatsEmpty: {
       color: C.textTertiary,
       textAlign: "center",
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
       paddingVertical: 18,
     },
     ruledRow: {
@@ -1054,25 +1051,25 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     subjectDot: {
       width: 7,
       height: 7,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
     },
     currentDot: {
       width: 5,
       height: 5,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.live,
     },
     subjectStatName: {
       flex: 1,
       color: C.textPrimary,
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     subjectStatTime: {
       color: C.textSecondary,
-      fontSize: 11,
-      fontWeight: "700",
-      fontFamily: monoFont,
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
     },
     statStrip: {
       flexDirection: "row",
@@ -1086,7 +1083,7 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     statStripLabelRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: SPACE.xs,
     },
     statStripDivider: {
       width: 1,
@@ -1095,24 +1092,24 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     statStripLabel: {
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     statStripValue: {
       color: C.textPrimary,
-      fontSize: 15,
-      fontWeight: "700",
-      fontFamily: monoFont,
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
     },
     progressTrack: {
       height: 3,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.surfaceAlt,
       overflow: "hidden",
     },
     progressFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
     },
     actionRow: {
       flexDirection: "row",
@@ -1122,7 +1119,7 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     actionButton: {
       flex: 1,
       minHeight: 52,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -1136,15 +1133,15 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     secondaryActionText: {
       color: C.primary,
-      fontSize: 14,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     resumeActionText: {
       color: C.inverse,
     },
     finishAction: {
       minHeight: 52,
-      paddingHorizontal: 16,
+      paddingHorizontal: SPACE.lg,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -1152,30 +1149,29 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     finishActionText: {
       color: C.textTertiary,
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(15, 23, 42, 0.34)",
       justifyContent: "center",
       alignItems: "center",
-      padding: 24,
+      padding: SPACE.xl,
     },
     modalContent: {
       width: "100%",
       maxWidth: 420,
       backgroundColor: C.surface,
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       padding: 22,
       borderWidth: 1,
       borderColor: C.border,
     },
     modalTitle: {
       color: C.textPrimary,
-      fontSize: 18,
-      fontWeight: "800",
-      fontFamily: serifFont,
+      fontSize: TYPE_SIZE.title,
+      fontWeight: TYPE_WEIGHT.strong,
       marginBottom: 22,
       textAlign: "center",
     },
@@ -1184,16 +1180,16 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       justifyContent: "center",
       alignItems: "flex-end",
       gap: 14,
-      marginBottom: 24,
+      marginBottom: SPACE.xl,
     },
     pickerGroup: {
       alignItems: "center",
-      gap: 8,
+      gap: SPACE.sm,
     },
     pickerLabel: {
       color: C.textSecondary,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     pickerControls: {
       flexDirection: "row",
@@ -1202,15 +1198,15 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     },
     pickerDivider: {
       color: C.textTertiary,
-      fontSize: 24,
-      fontWeight: "700",
-      fontFamily: monoFont,
+      fontSize: TYPE_SIZE.heading,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
       marginBottom: 7,
     },
     ctrlBtn: {
       width: 36,
       height: 36,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       borderWidth: 1,
       borderColor: C.border,
@@ -1220,32 +1216,32 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
     ctrlVal: {
       width: 34,
       color: C.textPrimary,
-      fontSize: 21,
-      fontWeight: "700",
-      fontFamily: monoFont,
+      fontSize: TYPE_SIZE.titleCompact,
+      fontWeight: TYPE_WEIGHT.bold,
+      fontFamily: TYPE_FAMILY.numeric,
       textAlign: "center",
     },
     saveBtn: {
       minHeight: 48,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.primary,
       alignItems: "center",
       justifyContent: "center",
     },
     saveBtnText: {
       color: C.inverse,
-      fontSize: 14,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     cancelBtn: {
       minHeight: 42,
       alignItems: "center",
       justifyContent: "center",
-      marginTop: 8,
+      marginTop: SPACE.sm,
     },
     cancelBtnText: {
       color: C.textSecondary,
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.strong,
     },
   });

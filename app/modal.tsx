@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
@@ -35,7 +36,7 @@ const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 24,
+      padding: SPACE.xl,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.bg,
@@ -45,7 +46,7 @@ const createStyles = (C: MonoTheme) =>
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
-      borderRadius: 18,
+      borderRadius: RADIUS.card,
       padding: 22,
       alignItems: "center",
       backgroundColor: C.surface,
@@ -53,7 +54,7 @@ const createStyles = (C: MonoTheme) =>
     iconBox: {
       width: 48,
       height: 48,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.primarySoft,
@@ -61,14 +62,14 @@ const createStyles = (C: MonoTheme) =>
     },
     title: {
       color: C.text,
-      fontSize: 20,
-      fontWeight: "900",
-      marginBottom: 8,
+      fontSize: TYPE_SIZE.titleLarge,
+      fontWeight: TYPE_WEIGHT.heavy,
+      marginBottom: SPACE.sm,
     },
     body: {
       color: C.muted,
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.bold,
       textAlign: "center",
       lineHeight: 20,
       marginBottom: 18,
@@ -76,14 +77,14 @@ const createStyles = (C: MonoTheme) =>
     button: {
       minHeight: 48,
       alignSelf: "stretch",
-      borderRadius: 13,
+      borderRadius: RADIUS.chip,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.primary,
     },
     buttonText: {
       color: C.inverse,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

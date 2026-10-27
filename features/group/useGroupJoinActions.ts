@@ -1,4 +1,4 @@
-import { get, ref, update } from "firebase/database";
+import { get, ref, set, update } from "firebase/database";
 import { useCallback, useState } from "react";
 
 import { getGroupJoinErrorMessage } from "../../utils/errorMessages";
@@ -22,6 +22,7 @@ export function useGroupJoinActions({
   const [joining, setJoining] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
+  const [codeNotice, setCodeNotice] = useState("");
 
   const addMeToRoom = useCallback(
     async (
@@ -83,6 +84,7 @@ export function useGroupJoinActions({
       try {
         setJoining(true);
         setCodeError("");
+        setCodeNotice("");
 
         const codeSnapshot = await get(ref(db, `roomCodes/${trimmed}`));
         if (!codeSnapshot.exists()) {
@@ -99,6 +101,34 @@ export function useGroupJoinActions({
         }
 
         const room = snapshotToRoom(roomId, roomSnapshot.val());
+        if (room.members.some((roomMember) => roomMember.id === member.id)) {
+          onJoined(room.id);
+          return;
+        }
+
+        if (room.visibility === "private") {
+          const requestRef = ref(db, `roomJoinRequests/${room.id}/${member.id}`);
+          const existingRequest = await get(requestRef);
+          if (existingRequest.val()?.status === "pending") {
+            setCodeNotice("이미 가입 승인을 기다리고 있어요.");
+            return;
+          }
+
+          await set(requestRef, {
+            applicantId: member.id,
+            name: member.name,
+            color: member.color,
+            image: member.image ?? null,
+            userType: member.userType ?? "",
+            bio: member.bio ?? "",
+            requestedAt: Date.now(),
+            status: "pending",
+          });
+          setCodeInput("");
+          setCodeNotice("가입 신청을 보냈어요. 그룹 운영진의 승인을 기다려 주세요.");
+          return;
+        }
+
         let alreadyJoined = false;
         const ok = await addMeToRoom(room, setCodeError, () => {
           alreadyJoined = true;
@@ -124,6 +154,7 @@ export function useGroupJoinActions({
 
   const updateCodeInput = useCallback((value: string) => {
     setCodeError("");
+    setCodeNotice("");
     setCodeInput(
       value
         .toUpperCase()
@@ -170,6 +201,7 @@ export function useGroupJoinActions({
     joining,
     codeInput,
     codeError,
+    codeNotice,
     setCodeError,
     setCodeInput,
     updateCodeInput,

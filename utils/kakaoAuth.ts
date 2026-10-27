@@ -13,21 +13,25 @@ export const kakaoRedirectUri = AuthSession.makeRedirectUri({
   path: "oauth/kakao",
 });
 
+export const kakaoOauthRedirectUri =
+  process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI?.trim() ?? "";
+
 export const kakaoClientId =
   process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY?.trim() ?? "";
 
 export const kakaoAuthRequestConfig: AuthSession.AuthRequestConfig = {
   clientId: kakaoClientId || "missing-kakao-rest-api-key",
-  redirectUri: kakaoRedirectUri,
+  redirectUri: kakaoOauthRedirectUri || kakaoRedirectUri,
   responseType: AuthSession.ResponseType.Code,
   scopes: ["openid", "profile_nickname", "profile_image", "account_email"],
   usePKCE: true,
 };
 
-export const isKakaoConfigured = () => kakaoClientId.length > 0;
+export const isKakaoConfigured = () =>
+  kakaoClientId.length > 0 && kakaoOauthRedirectUri.length > 0;
 
 export const getKakaoConfigErrorMessage = () =>
-  "Kakao REST API 키가 설정되지 않았어요. EXPO_PUBLIC_KAKAO_REST_API_KEY를 설정한 뒤 다시 실행해주세요.";
+  "Kakao REST API 키 또는 리다이렉트 URI가 설정되지 않았어요. EXPO_PUBLIC_KAKAO_REST_API_KEY와 EXPO_PUBLIC_KAKAO_REDIRECT_URI를 설정한 뒤 다시 실행해주세요.";
 
 export async function signInWithKakaoCode(
   code: string,
@@ -39,7 +43,7 @@ export async function signInWithKakaoCode(
     {
       clientId: kakaoClientId,
       code,
-      redirectUri: kakaoRedirectUri,
+      redirectUri: kakaoOauthRedirectUri,
       extraParams: codeVerifier ? { code_verifier: codeVerifier } : undefined,
     },
     kakaoDiscovery,
@@ -64,6 +68,12 @@ export function getKakaoAuthErrorMessage(error: unknown) {
       : "";
 
   if (message === "kakao/not-configured") return getKakaoConfigErrorMessage();
+  if (message === "kakao/cancelled") {
+    return "Kakao 로그인이 취소되었어요.";
+  }
+  if (message === "kakao/missing-code") {
+    return "Kakao 인증 코드를 받지 못했어요.";
+  }
   if (message === "kakao/missing-id-token") {
     return "Kakao OpenID Connect 응답을 받지 못했어요. Kakao Developers에서 OpenID Connect를 활성화했는지 확인해주세요.";
   }

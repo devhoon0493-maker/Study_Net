@@ -36,6 +36,8 @@ import { useGroupJoinActions } from "../features/group/useGroupJoinActions";
 import { useGroupLobbyStats } from "../features/group/useGroupLobbyStats";
 import { useGroupPresenceSync } from "../features/group/useGroupPresenceSync";
 import { useGroupRoomActions } from "../features/group/useGroupRoomActions";
+import { useGroupAnnouncement } from "../features/group/useGroupAnnouncement";
+import { useRoomJoinRequests } from "../features/group/useRoomJoinRequests";
 import { useGroupRoomMemberStats } from "../features/group/useGroupRoomMemberStats";
 import { useGroupRooms } from "../features/group/useGroupRooms";
 import { useInitialGroupCodeJoin } from "../features/group/useInitialGroupCodeJoin";
@@ -63,6 +65,7 @@ export default function GroupScreen() {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const codeInputRef = useRef<TextInput>(null);
   const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false);
+  const [transferTargetId, setTransferTargetId] = useState<string | null>(null);
   const {
     roomName,
     setRoomName,
@@ -88,6 +91,8 @@ export default function GroupScreen() {
       setLoadError("");
     }, []),
   });
+  const announcement = useGroupAnnouncement(selectedRoom?.id);
+  const { requests, canReview, reviewRequest } = useRoomJoinRequests(selectedRoom, member?.id);
 
   useGroupPresenceSync({
     member,
@@ -100,6 +105,7 @@ export default function GroupScreen() {
     joining,
     codeInput,
     codeError,
+    codeNotice,
     setCodeError,
     setCodeInput,
     updateCodeInput,
@@ -114,7 +120,13 @@ export default function GroupScreen() {
     }, []),
     onLobbyError: setLoadError,
   });
-  const { creating, createRoom, leaveRoomNow } = useGroupRoomActions({
+  const {
+    creating,
+    leaving,
+    createRoom,
+    leaveRoomNow,
+    transferOwnershipAndLeave,
+  } = useGroupRoomActions({
     member,
     selectedRoom,
     onError: setLoadError,
@@ -126,6 +138,7 @@ export default function GroupScreen() {
     }, [resetDraft]),
     onLeft: useCallback(() => {
       setLeaveConfirmVisible(false);
+      setTransferTargetId(null);
       setSelectedRoomId(null);
       setScreen("lobby");
     }, []),
@@ -149,6 +162,7 @@ export default function GroupScreen() {
       return;
     }
 
+    setTransferTargetId(null);
     setLeaveConfirmVisible(true);
   };
 
@@ -190,6 +204,7 @@ export default function GroupScreen() {
           lobbyStudyingCount={lobbyStudyingCount}
           codeInput={codeInput}
           codeError={codeError}
+          codeNotice={codeNotice}
           joining={joining}
           codeInputRef={codeInputRef}
           livePulse={livePulse}
@@ -250,7 +265,6 @@ export default function GroupScreen() {
   }
 
   const isOwner = selectedRoom.ownerId === member?.id;
-
   return (
     <View style={[s.container, { paddingTop: topPadding }]}>
       <StatusBar barStyle={C.statusBar} backgroundColor={C.bg} />
@@ -267,6 +281,10 @@ export default function GroupScreen() {
 
       <GroupRoomContent
         room={selectedRoom}
+        announcement={announcement}
+        joinRequests={requests}
+        canReviewJoinRequests={canReview}
+        onReviewJoinRequest={reviewRequest}
         currentMemberId={member?.id}
         myMember={myMember}
         memberCountText={memberCountText}
@@ -286,8 +304,22 @@ export default function GroupScreen() {
       <LeaveGroupConfirmModal
         visible={leaveConfirmVisible}
         isOwner={isOwner}
-        onCancel={() => setLeaveConfirmVisible(false)}
+        members={selectedRoom.members}
+        currentMemberId={member?.id ?? ""}
+        selectedSuccessorId={transferTargetId}
+        leaving={leaving}
+        onCancel={() => {
+          setLeaveConfirmVisible(false);
+          setTransferTargetId(null);
+        }}
         onConfirm={leaveRoomNow}
+        onSelectSuccessor={setTransferTargetId}
+        onTransferAndLeave={() => {
+          if (transferTargetId) {
+            transferOwnershipAndLeave(transferTargetId);
+          }
+        }}
+        onDeleteGroup={leaveRoomNow}
         s={s}
         C={C}
       />

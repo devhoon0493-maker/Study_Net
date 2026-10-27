@@ -17,9 +17,11 @@ import {
 
 export function useCommunityFeed({
   bookmarkedPostIds,
+  blockedUserIds,
   uid,
 }: {
   bookmarkedPostIds: Set<string>;
+  blockedUserIds?: Set<string>;
   uid?: string;
 }) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -44,7 +46,13 @@ export function useCommunityFeed({
     };
 
     const syncComments = () => {
-      setCommentsByPost(snapshotToCommentsByPost(rawComments));
+      const next = snapshotToCommentsByPost(rawComments);
+      if (blockedUserIds?.size) {
+        Object.keys(next).forEach((postId) => {
+          next[postId] = next[postId].filter((comment) => !blockedUserIds.has(comment.authorId));
+        });
+      }
+      setCommentsByPost(next);
     };
 
     const syncProfiles = () => {
@@ -75,16 +83,21 @@ export function useCommunityFeed({
     };
 
     const syncPosts = () => {
-      setPosts(
-        snapshotToPosts(
+      const nextPosts = snapshotToPosts(
           rawPosts,
           rawCheers,
           rawComments,
           rawProfiles,
           bookmarkedPostIds,
           uid,
-        ),
-      );
+        ).filter((post) => !blockedUserIds?.has(post.authorId));
+      nextPosts.forEach((post) => {
+        const visibleComments = Object.values(rawComments[post.id] ?? {}).filter(
+          (comment) => !blockedUserIds?.has(comment.authorId),
+        );
+        post.comments = visibleComments.length;
+      });
+      setPosts(nextPosts);
       setLoadingPosts(false);
     };
 
@@ -126,7 +139,7 @@ export function useCommunityFeed({
       });
       profileUnsubscribers.clear();
     };
-  }, [bookmarkedPostIds, uid]);
+  }, [bookmarkedPostIds, blockedUserIds, uid]);
 
   return {
     posts,

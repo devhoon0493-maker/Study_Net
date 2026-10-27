@@ -1,5 +1,6 @@
 import { get, push, ref, update } from "firebase/database";
 import { useCallback, useState } from "react";
+import { Alert } from "react-native";
 
 import { getFirebaseWriteErrorMessage } from "../../utils/errorMessages";
 import { db } from "../../utils/firebaseConfig";
@@ -31,6 +32,7 @@ export function useGroupRoomActions({
   onLeft,
 }: UseGroupRoomActionsParams) {
   const [creating, setCreating] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const makeUniqueCode = useCallback(async () => {
     for (let i = 0; i < 8; i += 1) {
@@ -139,31 +141,79 @@ export function useGroupRoomActions({
   }, []);
 
   const leaveRoomNow = useCallback(async () => {
-    if (!member || !selectedRoom) {
-      onLeft();
-      return;
-    }
+    if (!member || !selectedRoom || leaving) return;
 
     try {
+      setLeaving(true);
       const isOwner = selectedRoom.ownerId === member.id;
       if (isOwner) {
         await deleteRoom(selectedRoom);
       } else {
         await update(ref(db), {
           [`rooms/${selectedRoom.id}/members/${member.id}`]: null,
+          ...(selectedRoom.deputy1Id === member.id
+            ? { [`rooms/${selectedRoom.id}/deputy1Id`]: null }
+            : {}),
+          ...(selectedRoom.deputy2Id === member.id
+            ? { [`rooms/${selectedRoom.id}/deputy2Id`]: null }
+            : {}),
           [`userRooms/${member.id}/${selectedRoom.id}`]: null,
         });
       }
-    } catch (error) {
-      onError(getFirebaseWriteErrorMessage(error, "퇴장 처리에 실패했어요."));
-    } finally {
       onLeft();
+    } catch (error) {
+      Alert.alert(
+        "그룹 처리 실패",
+        getFirebaseWriteErrorMessage(error, "그룹 처리에 실패했어요."),
+      );
+    } finally {
+      setLeaving(false);
     }
-  }, [deleteRoom, member, onError, onLeft, selectedRoom]);
+  }, [deleteRoom, leaving, member, onLeft, selectedRoom]);
+
+  const transferOwnershipAndLeave = useCallback(
+    async (newOwnerId: string) => {
+      if (!member || !selectedRoom || leaving) return;
+      if (selectedRoom.ownerId !== member.id) return;
+      if (
+        newOwnerId === member.id ||
+        !selectedRoom.members.some((roomMember) => roomMember.id === newOwnerId)
+      ) {
+        Alert.alert("그룹장 확인", "그룹 멤버를 선택해 주세요.");
+        return;
+      }
+
+      try {
+        setLeaving(true);
+        await update(ref(db), {
+          [`rooms/${selectedRoom.id}/ownerId`]: newOwnerId,
+          ...(selectedRoom.deputy1Id === newOwnerId
+            ? { [`rooms/${selectedRoom.id}/deputy1Id`]: null }
+            : {}),
+          ...(selectedRoom.deputy2Id === newOwnerId
+            ? { [`rooms/${selectedRoom.id}/deputy2Id`]: null }
+            : {}),
+          [`rooms/${selectedRoom.id}/members/${member.id}`]: null,
+          [`userRooms/${member.id}/${selectedRoom.id}`]: null,
+        });
+        onLeft();
+      } catch (error) {
+        Alert.alert(
+          "그룹장을 넘기지 못했어요",
+          getFirebaseWriteErrorMessage(error, "그룹장을 넘기지 못했어요."),
+        );
+      } finally {
+        setLeaving(false);
+      }
+    },
+    [leaving, member, onLeft, selectedRoom],
+  );
 
   return {
     creating,
+    leaving,
     createRoom,
     leaveRoomNow,
+    transferOwnershipAndLeave,
   };
 }

@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -210,8 +211,8 @@ const createStyles = (C: MonoTheme) =>
       marginBottom: 20,
     },
     title: {
-      fontSize: 26,
-      fontWeight: "bold",
+      fontSize: TYPE_SIZE.headingLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       color: C.text,
     },
     subtitle: {
@@ -224,21 +225,21 @@ const createStyles = (C: MonoTheme) =>
       borderWidth: 1,
       borderBottomWidth: 3,
       borderColor: C.border,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.surface,
     },
     plus: {
       color: C.text,
-      fontSize: 28,
-      fontWeight: "bold",
+      fontSize: TYPE_SIZE.displaySmall,
+      fontWeight: TYPE_WEIGHT.bold,
       lineHeight: 30,
     },
     inputCard: {
       backgroundColor: C.surface,
-      padding: 16,
-      borderRadius: 16,
+      padding: SPACE.lg,
+      borderRadius: RADIUS.lg,
       marginBottom: 20,
       borderWidth: 1,
       borderBottomWidth: 3,
@@ -248,8 +249,8 @@ const createStyles = (C: MonoTheme) =>
       backgroundColor: C.surface,
       color: C.text,
       paddingHorizontal: 14,
-      paddingVertical: 12,
-      borderRadius: 12,
+      paddingVertical: SPACE.md,
+      borderRadius: RADIUS.md,
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
@@ -257,31 +258,31 @@ const createStyles = (C: MonoTheme) =>
     inputButtons: {
       flexDirection: "row",
       justifyContent: "flex-end",
-      marginTop: 12,
-      gap: 12,
+      marginTop: SPACE.md,
+      gap: SPACE.md,
     },
     cancelBtn: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+      paddingHorizontal: SPACE.lg,
+      paddingVertical: SPACE.sm,
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
-      borderRadius: 10,
+      borderRadius: RADIUS.compact,
     },
     cancelText: {
       color: C.text,
     },
     addButton: {
       backgroundColor: C.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 10,
+      paddingHorizontal: SPACE.lg,
+      paddingVertical: SPACE.sm,
+      borderRadius: RADIUS.compact,
       borderWidth: 1,
       borderColor: C.border,
     },
     addButtonText: {
       color: C.text,
-      fontWeight: "bold",
+      fontWeight: TYPE_WEIGHT.bold,
     },
     listContent: {
       paddingBottom: 40,
@@ -290,19 +291,19 @@ const createStyles = (C: MonoTheme) =>
       backgroundColor: C.surface,
       paddingVertical: 18,
       paddingHorizontal: 20,
-      borderRadius: 16,
+      borderRadius: RADIUS.lg,
       marginBottom: 14,
       borderWidth: 1,
       borderColor: C.border,
     },
     subjectText: {
       color: C.text,
-      fontSize: 18,
-      fontWeight: "500",
+      fontSize: TYPE_SIZE.title,
+      fontWeight: TYPE_WEIGHT.medium,
     },
     deleteHint: {
       color: C.text,
-      fontSize: 12,
+      fontSize: TYPE_SIZE.label,
       marginTop: 6,
     },
   });

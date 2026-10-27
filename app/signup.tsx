@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import * as AuthSession from "expo-auth-session";
@@ -648,13 +649,13 @@ const createStyles = (C: MonoTheme) =>
   content: {
     flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: 12,
+    paddingTop: SPACE.md,
     paddingBottom: 18,
     justifyContent: "center",
   },
   contentCompact: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingHorizontal: SPACE.xl,
+    paddingTop: SPACE.sm,
     paddingBottom: 10,
   },
   contentVeryCompact: {
@@ -663,7 +664,7 @@ const createStyles = (C: MonoTheme) =>
   contentShort: {
     paddingHorizontal: 18,
     paddingTop: 6,
-    paddingBottom: 8,
+    paddingBottom: SPACE.sm,
   },
   topBar: {
     minHeight: 44,
@@ -683,7 +684,7 @@ const createStyles = (C: MonoTheme) =>
   backButton: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderBottomWidth: 3,
     borderColor: C.border,
@@ -705,11 +706,11 @@ const createStyles = (C: MonoTheme) =>
   },
   topTitle: {
     color: C.text,
-    fontSize: 17,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.titleSmall,
+    fontWeight: TYPE_WEIGHT.heavy,
   },
   topTitleShort: {
-    fontSize: 15,
+    fontSize: TYPE_SIZE.bodyStrong,
   },
   topSpacer: {
     width: 42,
@@ -728,15 +729,15 @@ const createStyles = (C: MonoTheme) =>
     borderWidth: 1,
     borderBottomWidth: 4,
     borderColor: C.border,
-    borderRadius: 18,
+    borderRadius: RADIUS.card,
     padding: 18,
   },
   cardCompact: {
-    borderRadius: 16,
+    borderRadius: RADIUS.lg,
     padding: 14,
   },
   cardShort: {
-    borderRadius: 14,
+    borderRadius: RADIUS.control,
     padding: 10,
   },
   field: {
@@ -746,30 +747,30 @@ const createStyles = (C: MonoTheme) =>
     gap: 10,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    marginBottom: 12,
+    marginBottom: SPACE.md,
     backgroundColor: C.surface,
   },
   fieldCompact: {
     minHeight: 46,
     marginBottom: 9,
     borderRadius: 11,
-    paddingHorizontal: 12,
+    paddingHorizontal: SPACE.md,
   },
   fieldShort: {
     minHeight: 38,
     marginBottom: 6,
     borderRadius: 9,
     paddingHorizontal: 10,
-    gap: 8,
+    gap: SPACE.sm,
   },
   input: {
     flex: 1,
     minWidth: 0,
     color: C.text,
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: TYPE_SIZE.body,
+    fontWeight: TYPE_WEIGHT.semibold,
   },
   eyeBtn: {
     width: 32,
@@ -782,25 +783,25 @@ const createStyles = (C: MonoTheme) =>
     height: 28,
   },
   typeSection: {
-    marginBottom: 12,
+    marginBottom: SPACE.md,
   },
   typeSectionShort: {
     marginBottom: 6,
   },
   typeLabel: {
     color: C.text,
-    fontSize: 12,
-    fontWeight: "900",
-    marginBottom: 8,
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.heavy,
+    marginBottom: SPACE.sm,
   },
   typeLabelShort: {
-    fontSize: 11,
-    marginBottom: 4,
+    fontSize: TYPE_SIZE.captionLarge,
+    marginBottom: SPACE.xs,
   },
   typeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: SPACE.sm,
   },
   typeGridShort: {
     gap: 6,
@@ -814,27 +815,27 @@ const createStyles = (C: MonoTheme) =>
     borderWidth: 1,
     borderBottomWidth: 3,
     borderColor: C.border,
-    borderRadius: 10,
+    borderRadius: RADIUS.compact,
     backgroundColor: C.surface,
-    paddingHorizontal: 8,
+    paddingHorizontal: SPACE.sm,
   },
   typeChipShort: {
     minHeight: 28,
     borderBottomWidth: 2,
-    borderRadius: 8,
-    paddingHorizontal: 4,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACE.xs,
   },
   typeChipActive: {
     backgroundColor: C.primary,
   },
   typeChipText: {
     color: C.text,
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.strong,
     textAlign: "center",
   },
   typeChipTextShort: {
-    fontSize: 11,
+    fontSize: TYPE_SIZE.captionLarge,
   },
   typeChipTextActive: {
     color: C.inverse,
@@ -847,9 +848,9 @@ const createStyles = (C: MonoTheme) =>
     borderWidth: 1,
     borderBottomWidth: 3,
     borderColor: C.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACE.md,
+    marginBottom: SPACE.md,
     backgroundColor: C.surfaceAlt,
   },
   agreementRowShort: {
@@ -881,15 +882,15 @@ const createStyles = (C: MonoTheme) =>
   agreementText: {
     flex: 1,
     color: C.text,
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.strong,
   },
   policyLinkButton: {
     alignSelf: "flex-start",
     minHeight: 28,
     justifyContent: "center",
     marginTop: -6,
-    marginBottom: 12,
+    marginBottom: SPACE.md,
     paddingHorizontal: 2,
   },
   policyLinkButtonShort: {
@@ -899,8 +900,8 @@ const createStyles = (C: MonoTheme) =>
   },
   policyLinkText: {
     color: C.primary,
-    fontSize: 12,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.heavy,
     textDecorationLine: "underline",
   },
   errorRow: {
@@ -909,15 +910,15 @@ const createStyles = (C: MonoTheme) =>
     gap: 6,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 10,
+    borderRadius: RADIUS.compact,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    marginBottom: 12,
+    marginBottom: SPACE.md,
   },
   errorText: {
     flex: 1,
     color: C.danger,
-    fontSize: 12,
+    fontSize: TYPE_SIZE.label,
     lineHeight: 17,
   },
   submitBtn: {
@@ -925,34 +926,34 @@ const createStyles = (C: MonoTheme) =>
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: SPACE.sm,
     borderWidth: 1,
     borderBottomWidth: 4,
     borderColor: C.primary,
-    borderRadius: 14,
+    borderRadius: RADIUS.control,
     backgroundColor: C.primary,
   },
   submitBtnCompact: {
     height: 48,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
   },
   submitBtnShort: {
     height: 38,
     borderBottomWidth: 2,
-    borderRadius: 10,
+    borderRadius: RADIUS.compact,
   },
   submitBtnDisabled: {
     opacity: 0.42,
   },
   submitText: {
     color: C.inverse,
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.bodyStrong,
+    fontWeight: TYPE_WEIGHT.heavy,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: SPACE.xl,
     marginBottom: 14,
   },
   dividerCompact: {
@@ -960,7 +961,7 @@ const createStyles = (C: MonoTheme) =>
     marginBottom: 10,
   },
   dividerShort: {
-    marginTop: 8,
+    marginTop: SPACE.sm,
     marginBottom: 6,
   },
   line: {
@@ -970,9 +971,9 @@ const createStyles = (C: MonoTheme) =>
   },
   dividerText: {
     marginHorizontal: 10,
-    fontSize: 12,
+    fontSize: TYPE_SIZE.label,
     color: C.text,
-    fontWeight: "800",
+    fontWeight: TYPE_WEIGHT.strong,
   },
   providerRow: {
     flexDirection: "row",
@@ -984,7 +985,7 @@ const createStyles = (C: MonoTheme) =>
     borderWidth: 1,
     borderBottomWidth: 3,
     borderColor: C.border,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: C.surface,
@@ -1011,20 +1012,20 @@ const createStyles = (C: MonoTheme) =>
     marginTop: 14,
   },
   loginRowShort: {
-    marginTop: 8,
+    marginTop: SPACE.sm,
   },
   loginText: {
     color: C.text,
-    fontSize: 13,
+    fontSize: TYPE_SIZE.bodySmall,
   },
   loginLink: {
     color: C.text,
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.bodySmall,
+    fontWeight: TYPE_WEIGHT.heavy,
   },
   notice: {
     marginTop: 20,
-    fontSize: 11,
+    fontSize: TYPE_SIZE.captionLarge,
     color: C.text,
     textAlign: "center",
     lineHeight: 18,

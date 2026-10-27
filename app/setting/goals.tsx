@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import {
@@ -164,7 +165,7 @@ const createStyles = (C: MonoTheme) => {
     },
     sectionDesc: {
       color: C.text,
-      fontSize: 12,
+      fontSize: TYPE_SIZE.label,
       lineHeight: 18,
       marginBottom: 14,
     },
@@ -180,9 +181,9 @@ const createStyles = (C: MonoTheme) => {
       borderWidth: 1,
       borderBottomWidth: 4,
       borderColor: C.border,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surface,
-      paddingHorizontal: 12,
+      paddingHorizontal: SPACE.md,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -198,31 +199,31 @@ const createStyles = (C: MonoTheme) => {
     },
     optionText: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     inputLabel: {
       color: C.muted,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       marginBottom: 7,
-      marginTop: 4,
+      marginTop: SPACE.xs,
     },
     input: {
       minHeight: 48,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       borderWidth: 1,
       borderColor: C.border,
       backgroundColor: C.surfaceAlt,
       color: C.text,
-      fontSize: 14,
-      fontWeight: "600",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.semibold,
       paddingHorizontal: 13,
-      marginBottom: 12,
+      marginBottom: SPACE.md,
     },
     saveButton: {
       minHeight: 50,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -230,8 +231,8 @@ const createStyles = (C: MonoTheme) => {
     },
     saveButtonText: {
       color: C.inverse,
-      fontSize: 14,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.strong,
     },
   });
 

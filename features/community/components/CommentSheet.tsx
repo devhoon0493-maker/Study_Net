@@ -29,6 +29,7 @@ export function CommentSheet({
   onChangeComment,
   onSubmit,
   onDeleteComment,
+  onMoreComment,
 }: {
   selectedPost: CommunityPost | null;
   comments: CommunityComment[];
@@ -42,6 +43,7 @@ export function CommentSheet({
   onChangeComment: (value: string) => void;
   onSubmit: () => void;
   onDeleteComment: (comment: CommunityComment) => void;
+  onMoreComment: (comment: CommunityComment) => void;
 }) {
   const submitDisabled = !draftComment.trim();
 
@@ -102,7 +104,11 @@ export function CommentSheet({
                         >
                           <Ionicons name="trash-outline" size={14} color={C.text} />
                         </TouchableOpacity>
-                      ) : null}
+                      ) : (
+                        <TouchableOpacity onPress={() => onMoreComment(comment)} style={s.commentDeleteButton} accessibilityLabel="댓글 메뉴">
+                          <Ionicons name="ellipsis-horizontal" size={14} color={C.text} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                     <Text style={s.commentBody}>{comment.body}</Text>
                   </View>

@@ -32,6 +32,7 @@ import { useCommunityCategoryFilter } from "../features/community/useCommunityCa
 import { useCommunityCommentsSheet } from "../features/community/useCommunityCommentsSheet";
 import { useCommunityComposeDraft } from "../features/community/useCommunityComposeDraft";
 import { useCommunityFeed } from "../features/community/useCommunityFeed";
+import { useCommunityModeration } from "../features/community/useCommunityModeration";
 import { useCommunityPostTarget } from "../features/community/useCommunityPostTarget";
 import { useCommunityProfilePreview } from "../features/community/useCommunityProfilePreview";
 import { useLiveStudyRooms } from "../features/community/useLiveStudyRooms";
@@ -52,13 +53,43 @@ export default function CommunityScreen() {
   const [composeVisible, setComposeVisible] = useState(false);
   const uid = auth.currentUser?.uid;
   const { authorProfile, loadAuthorProfile } = useCommunityAuthorProfile();
+  const moderation = useCommunityModeration();
   const composeDraft = useCommunityComposeDraft();
   const { bookmarkedPostIds, loadBookmarks, toggleBookmark } =
     useCommunityBookmarks(uid);
   const { posts, loadingPosts, commentsByPost, loadError } = useCommunityFeed({
     bookmarkedPostIds,
+    blockedUserIds: moderation.blockedUserIds,
     uid,
   });
+
+  const openModerationMenu = (
+    target: { uid: string; name: string; image?: string | null },
+    type: "user" | "post" | "comment",
+    targetId?: string,
+  ) => {
+    if (target.uid === uid) return;
+    Alert.alert(target.name, undefined, [
+      {
+        text: "신고",
+        onPress: () => Alert.alert("신고", "이 내용을 신고할까요?", [
+          { text: "취소", style: "cancel" },
+          { text: "신고", style: "destructive", onPress: () => void moderation.reportUser({ uid: target.uid, type, targetId }).then(() => Alert.alert("접수 완료", "신고가 접수되었습니다.")).catch(() => Alert.alert("오류", "신고를 접수하지 못했어요.")) },
+        ]),
+      },
+      {
+        text: moderation.blockedUserIds.has(target.uid) ? "차단 해제" : "차단",
+        style: "destructive",
+        onPress: () => moderation.blockedUserIds.has(target.uid)
+          ? void moderation.unblockUser(target.uid).catch(() => Alert.alert("오류", "차단 해제에 실패했어요."))
+          : Alert.alert("사용자 차단", `${target.name}님을 차단할까요?`, [
+              { text: "취소", style: "cancel" },
+              { text: "차단", style: "destructive", onPress: () => void moderation.blockUser(target).catch(() => Alert.alert("오류", "차단에 실패했어요.")) },
+            ]),
+      },
+      { text: "취소", style: "cancel" },
+    ]);
+  };
   const {
     selectedCategory,
     setSelectedCategory,
@@ -218,6 +249,7 @@ export default function CommunityScreen() {
                 onOpenComments={commentsSheet.openComments}
                 onBookmark={toggleBookmark}
                 onOpenGroup={openGroupFromPost}
+                onMore={(post) => openModerationMenu({ uid: post.authorId, name: post.author, image: post.authorImage }, "post", post.id)}
               />
             </View>
           ))
@@ -258,6 +290,7 @@ export default function CommunityScreen() {
         onChangeComment={commentsSheet.setDraftComment}
         onSubmit={submitComment}
         onDeleteComment={deleteComment}
+        onMoreComment={(comment) => openModerationMenu({ uid: comment.authorId, name: comment.author, image: comment.authorImage }, "comment", comment.id)}
       />
 
       <ProfilePreviewModal
@@ -265,6 +298,13 @@ export default function CommunityScreen() {
         s={s}
         C={C}
         onClose={closeProfilePreview}
+        isBlocked={selectedProfile ? moderation.blockedUserIds.has(selectedProfile.uid) : false}
+        onBlock={(profile) => Alert.alert("사용자 차단", `${profile.name}님을 차단할까요?`, [
+          { text: "취소", style: "cancel" },
+          { text: "차단", style: "destructive", onPress: () => void moderation.blockUser({ uid: profile.uid, name: profile.name, image: profile.image }).catch(() => Alert.alert("오류", "차단에 실패했어요.")) },
+        ])}
+        onUnblock={(profile) => void moderation.unblockUser(profile.uid).catch(() => Alert.alert("오류", "차단 해제에 실패했어요."))}
+        onReport={(profile) => openModerationMenu({ uid: profile.uid, name: profile.name, image: profile.image }, "user")}
       />
       <BottomNav />
     </View>

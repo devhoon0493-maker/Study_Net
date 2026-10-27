@@ -18,6 +18,7 @@ export function PostCard({
   onOpenComments,
   onBookmark,
   onOpenGroup,
+  onMore,
 }: {
   post: CommunityPost;
   uid?: string;
@@ -29,6 +30,7 @@ export function PostCard({
   onOpenComments: (post: CommunityPost) => void;
   onBookmark: (postId: string) => void;
   onOpenGroup: (post: CommunityPost) => void;
+  onMore: (post: CommunityPost) => void;
 }) {
   const isRecruiting = post.category === "그룹 모집";
 
@@ -86,7 +88,11 @@ export function PostCard({
           >
             <Ionicons name="trash-outline" size={16} color={C.text} />
           </TouchableOpacity>
-        ) : null}
+        ) : (
+          <TouchableOpacity style={s.cardIconButton} onPress={() => onMore(post)} activeOpacity={0.8} accessibilityLabel="게시글 메뉴">
+            <Ionicons name="ellipsis-horizontal" size={18} color={C.text} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text style={s.cardTitle}>{post.title}</Text>

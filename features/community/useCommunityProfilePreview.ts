@@ -1,14 +1,24 @@
-import { useCallback, useState } from "react";
-import { get, ref } from "firebase/database";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { onValue, ref } from "firebase/database";
 
 import { db } from "../../utils/firebaseConfig";
 import type { CommunityPost, ProfilePreview } from "./communityTypes";
 
 export function useCommunityProfilePreview(posts: CommunityPost[]) {
   const [selectedProfile, setSelectedProfile] = useState<ProfilePreview | null>(null);
+  const profileUnsubscribeRef = useRef<(() => void) | null>(null);
+
+  useEffect(
+    () => () => {
+      profileUnsubscribeRef.current?.();
+      profileUnsubscribeRef.current = null;
+    },
+    [],
+  );
 
   const openProfilePreview = useCallback(
-    async (post: CommunityPost) => {
+    (post: CommunityPost) => {
+      profileUnsubscribeRef.current?.();
       const fallbackProfile: ProfilePreview = {
         uid: post.authorId,
         name: post.author,
@@ -23,28 +33,28 @@ export function useCommunityProfilePreview(posts: CommunityPost[]) {
       };
 
       setSelectedProfile(fallbackProfile);
-
-      try {
-        const snapshot = await get(ref(db, `publicProfiles/${post.authorId}`));
-        if (!snapshot.exists()) return;
-
-        const profile = snapshot.val();
-        setSelectedProfile({
-          ...fallbackProfile,
-          name: profile.name || fallbackProfile.name,
-          userType: profile.userType || fallbackProfile.userType,
-          image: profile.image ?? fallbackProfile.image,
-          bio: profile.bio || fallbackProfile.bio,
-          communityActivityPublic: profile.communityActivityPublic === true,
-        });
-      } catch {
-        // The post already carries enough profile data for a compact preview.
-      }
+      profileUnsubscribeRef.current = onValue(
+        ref(db, `publicProfiles/${post.authorId}`),
+        (snapshot) => {
+          if (!snapshot.exists()) return;
+          const profile = snapshot.val();
+          setSelectedProfile({
+            ...fallbackProfile,
+            name: profile.name || fallbackProfile.name,
+            userType: profile.userType || fallbackProfile.userType,
+            image: profile.image ?? fallbackProfile.image,
+            bio: profile.bio || fallbackProfile.bio,
+            communityActivityPublic: profile.communityActivityPublic === true,
+          });
+        },
+      );
     },
     [posts],
   );
 
   const closeProfilePreview = useCallback(() => {
+    profileUnsubscribeRef.current?.();
+    profileUnsubscribeRef.current = null;
     setSelectedProfile(null);
   }, []);
 

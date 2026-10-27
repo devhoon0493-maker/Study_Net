@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -156,15 +157,15 @@ const createStyles = (C: MonoTheme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
-      borderRadius: 16,
+      borderRadius: RADIUS.lg,
       backgroundColor: C.dangerSoft,
       padding: 14,
     },
     noticeText: {
       flex: 1,
       color: C.text,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
       lineHeight: 18,
     },
     optionRow: {
@@ -172,14 +173,14 @@ const createStyles = (C: MonoTheme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 11,
-      paddingVertical: 12,
+      paddingVertical: SPACE.md,
       borderBottomWidth: 1,
       borderBottomColor: C.borderSoft,
     },
     optionIcon: {
       width: 36,
       height: 36,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -190,19 +191,19 @@ const createStyles = (C: MonoTheme) =>
     },
     optionTitle: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     optionDesc: {
       color: C.muted,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       lineHeight: 16,
       marginTop: 3,
     },
     resetButton: {
       minHeight: 54,
-      borderRadius: 15,
+      borderRadius: RADIUS.badge,
       backgroundColor: C.danger,
       alignItems: "center",
       justifyContent: "center",
@@ -212,7 +213,7 @@ const createStyles = (C: MonoTheme) =>
     },
     resetButtonText: {
       color: C.inverse,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

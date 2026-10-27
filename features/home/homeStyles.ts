@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { StyleSheet } from "react-native";
 
 import type { HomeTheme } from "./homeTheme";
@@ -9,7 +10,7 @@ export const createBannerStyles = (C: HomeTheme) =>
       left: 16,
       right: 16,
       backgroundColor: C.surfaceElevated,
-      borderRadius: 18,
+      borderRadius: RADIUS.card,
       overflow: "hidden",
       borderWidth: 1,
       borderColor: C.border,
@@ -31,7 +32,7 @@ export const createBannerStyles = (C: HomeTheme) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 16,
+      paddingHorizontal: SPACE.lg,
       paddingVertical: 14,
     },
     left: {
@@ -42,7 +43,7 @@ export const createBannerStyles = (C: HomeTheme) =>
     liveDot: {
       width: 8,
       height: 8,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.live,
     },
     pausedDot: {
@@ -50,12 +51,12 @@ export const createBannerStyles = (C: HomeTheme) =>
     },
     subject: {
       color: C.textPrimary,
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     time: {
       color: C.textTertiary,
-      fontSize: 11,
+      fontSize: TYPE_SIZE.captionLarge,
       marginTop: 2,
     },
     right: {
@@ -65,20 +66,20 @@ export const createBannerStyles = (C: HomeTheme) =>
     },
     percent: {
       color: C.primary,
-      fontWeight: "800",
+      fontWeight: TYPE_WEIGHT.strong,
     },
     resumeBtn: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: C.primarySoft,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 10,
+      paddingHorizontal: SPACE.md,
+      paddingVertical: SPACE.sm,
+      borderRadius: RADIUS.compact,
     },
     resumeText: {
       color: C.primary,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
     },
   });
 
@@ -98,7 +99,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     brandRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: SPACE.sm,
       flex: 1,
       minWidth: 0,
     },
@@ -110,25 +111,25 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     appName: {
       color: C.primary,
-      fontSize: 25,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.headingMedium,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     headerSub: {
       color: C.textSecondary,
-      fontSize: 11,
+      fontSize: TYPE_SIZE.captionLarge,
       marginTop: 2,
-      fontWeight: "700",
+      fontWeight: TYPE_WEIGHT.bold,
     },
     headerActions: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: SPACE.sm,
       marginLeft: 10,
     },
     headerIconButton: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       backgroundColor: C.surface,
       justifyContent: "center",
       alignItems: "center",
@@ -152,8 +153,8 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     notificationBadgeText: {
       color: C.inverse,
-      fontSize: 10,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     scrollContent: {
       paddingHorizontal: 18,
@@ -162,22 +163,22 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     errorBanner: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: SPACE.sm,
       backgroundColor: C.dangerSoft,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       paddingHorizontal: 14,
       paddingVertical: 11,
     },
     errorText: {
       color: C.danger,
-      fontSize: 12,
+      fontSize: TYPE_SIZE.label,
       flex: 1,
-      fontWeight: "700",
+      fontWeight: TYPE_WEIGHT.bold,
     },
     heroCard: {
       borderRadius: 28,
       paddingHorizontal: 15,
-      paddingVertical: 16,
+      paddingVertical: SPACE.lg,
       backgroundColor: C.primarySoft,
       borderWidth: 1,
       borderColor: C.primarySoft,
@@ -200,12 +201,12 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     heroEyebrow: {
       color: C.primary,
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
       alignSelf: "flex-start",
       backgroundColor: C.primarySoft,
-      borderRadius: 999,
-      paddingHorizontal: 12,
+      borderRadius: RADIUS.pill,
+      paddingHorizontal: SPACE.md,
       paddingVertical: 6,
     },
     ddayEditorial: {
@@ -216,29 +217,29 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     ddayKicker: {
       color: C.textSecondary,
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     ddayLine: {
       marginTop: 2,
     },
     ddayBig: {
       color: C.primary,
-      fontSize: 34,
+      fontSize: TYPE_SIZE.stat,
       lineHeight: 40,
-      fontWeight: "900",
+      fontWeight: TYPE_WEIGHT.heavy,
       fontVariant: ["tabular-nums"],
     },
     ddayDate: {
       color: C.textTertiary,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     ddayDateRow: {
       alignSelf: "flex-start",
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      gap: SPACE.xs,
       marginTop: 1,
     },
     goalInline: {
@@ -247,15 +248,15 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       alignItems: "center",
       gap: 5,
       backgroundColor: C.surface,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       paddingHorizontal: 10,
       paddingVertical: 7,
-      marginTop: 12,
+      marginTop: SPACE.md,
     },
     goalInlineText: {
       color: C.textPrimary,
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     heroProgressRow: {
       flexDirection: "row",
@@ -266,25 +267,25 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     heroProgressTrack: {
       flex: 1,
       height: 8,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.surfaceAlt,
       overflow: "hidden",
     },
     heroProgressFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.primary,
     },
     heroProgressText: {
       color: C.textSecondary,
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
       fontVariant: ["tabular-nums"],
     },
     heroButton: {
       alignSelf: "flex-start",
       minHeight: 44,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.primary,
       flexDirection: "row",
       alignItems: "center",
@@ -292,7 +293,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       gap: 10,
       paddingLeft: 15,
       paddingRight: 7,
-      marginTop: 16,
+      marginTop: SPACE.lg,
       shadowColor: C.primary,
       shadowOpacity: 0.14,
       shadowRadius: 9,
@@ -305,13 +306,13 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     heroButtonText: {
       color: C.inverse,
-      fontSize: 13,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     heroButtonIcon: {
       width: 28,
       height: 28,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.inverse,
       alignItems: "center",
       justifyContent: "center",
@@ -328,7 +329,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       alignItems: "center",
       gap: 5,
       backgroundColor: C.surface,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       paddingHorizontal: 11,
       paddingVertical: 7,
       shadowColor: C.shadow,
@@ -339,13 +340,13 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     streakBadgeText: {
       color: C.primary,
-      fontSize: 11,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     statGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: SPACE.sm,
     },
     statCard: {
       flexGrow: 1,
@@ -353,7 +354,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       minHeight: 116,
       borderRadius: 17,
       backgroundColor: C.surface,
-      padding: 12,
+      padding: SPACE.md,
       gap: 5,
       shadowColor: C.shadow,
       shadowOpacity: 0.05,
@@ -364,38 +365,38 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     statIcon: {
       width: 30,
       height: 30,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       alignItems: "center",
       justifyContent: "center",
     },
     statValue: {
       color: C.textPrimary,
-      fontSize: 18,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.title,
+      fontWeight: TYPE_WEIGHT.heavy,
       lineHeight: 22,
     },
     statLabel: {
       color: C.textSecondary,
-      fontSize: 10,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.strong,
     },
     statHint: {
-      fontSize: 10,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     statProgressTrack: {
       height: 7,
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.surfaceAlt,
       overflow: "hidden",
     },
     statProgressFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.success,
     },
     card: {
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       backgroundColor: C.surface,
       padding: 15,
       shadowColor: C.shadow,
@@ -405,7 +406,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       elevation: 2,
     },
     weeklyCard: {
-      borderRadius: 22,
+      borderRadius: RADIUS.sheet,
       backgroundColor: C.surface,
       padding: 15,
       shadowColor: C.shadow,
@@ -418,38 +419,38 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 12,
+      marginBottom: SPACE.md,
       gap: 10,
     },
     sectionTitle: {
       color: C.textPrimary,
-      fontSize: 17,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.titleSmall,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     sectionLink: {
       color: C.textSecondary,
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.strong,
       marginTop: 2,
     },
     emptyBlock: {
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 24,
-      paddingHorizontal: 16,
+      paddingVertical: SPACE.xl,
+      paddingHorizontal: SPACE.lg,
       backgroundColor: C.surfaceAlt,
-      borderRadius: 16,
+      borderRadius: RADIUS.lg,
     },
     emptyTitle: {
       color: C.textPrimary,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
       marginTop: 9,
     },
     emptyText: {
       color: C.textTertiary,
-      fontSize: 12,
-      marginTop: 4,
+      fontSize: TYPE_SIZE.label,
+      marginTop: SPACE.xs,
       textAlign: "center",
     },
     recentRow: {
@@ -465,7 +466,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     recentIcon: {
       width: 42,
       height: 42,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -475,19 +476,19 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     recentSubject: {
       color: C.textPrimary,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     recentDate: {
       color: C.textTertiary,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 3,
     },
     recentDuration: {
       color: C.primary,
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     recentRight: {
       alignItems: "flex-end",
@@ -496,8 +497,8 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     recentTime: {
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.bold,
     },
     recentCheck: {
       marginLeft: 2,
@@ -509,13 +510,13 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     weeklyPanel: {
       flex: 1,
       backgroundColor: C.surfaceAlt,
-      borderRadius: 16,
+      borderRadius: RADIUS.lg,
       padding: 9,
     },
     chartTitle: {
       color: C.textSecondary,
-      fontSize: 10,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.heavy,
       marginBottom: 10,
     },
     barChart: {
@@ -532,8 +533,8 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     barValue: {
       minHeight: 10,
       color: C.textSecondary,
-      fontSize: 8,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.smallIcon,
+      fontWeight: TYPE_WEIGHT.heavy,
       fontVariant: ["tabular-nums"],
     },
     barTrack: {
@@ -546,7 +547,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     barFill: {
       width: "100%",
-      borderRadius: 999,
+      borderRadius: RADIUS.pill,
       backgroundColor: C.primary,
     },
     barFillMuted: {
@@ -554,23 +555,23 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     barLabel: {
       color: C.textTertiary,
-      fontSize: 10,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.caption,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     subjectPanel: {
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
-      gap: 8,
+      gap: SPACE.sm,
     },
     subjectLegend: {
       flex: 1,
-      gap: 4,
+      gap: SPACE.xs,
     },
     subjectEmpty: {
       color: C.textTertiary,
-      fontSize: 11,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.strong,
       textAlign: "center",
     },
     legendRow: {
@@ -585,14 +586,14 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
     },
     legendText: {
       color: C.textSecondary,
-      fontSize: 9,
-      fontWeight: "800",
+      fontSize: TYPE_SIZE.micro,
+      fontWeight: TYPE_WEIGHT.strong,
       flex: 1,
     },
     legendPercent: {
       color: C.textPrimary,
-      fontSize: 9,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.micro,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });
 
@@ -608,18 +609,18 @@ export const stylesStatic = StyleSheet.create({
     alignItems: "center",
   },
   ringValue: {
-    fontSize: 27,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.displayCompact,
+    fontWeight: TYPE_WEIGHT.heavy,
     fontVariant: ["tabular-nums"],
   },
   ringLabel: {
-    fontSize: 8,
-    fontWeight: "800",
+    fontSize: TYPE_SIZE.smallIcon,
+    fontWeight: TYPE_WEIGHT.strong,
     marginBottom: 3,
   },
   ringGoal: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: TYPE_SIZE.caption,
+    fontWeight: TYPE_WEIGHT.strong,
     marginTop: 2,
   },
   donutBox: {
@@ -634,13 +635,13 @@ export const stylesStatic = StyleSheet.create({
     justifyContent: "center",
   },
   donutValue: {
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.bodyStrong,
+    fontWeight: TYPE_WEIGHT.heavy,
     fontVariant: ["tabular-nums"],
   },
   donutLabel: {
-    fontSize: 9,
-    fontWeight: "800",
+    fontSize: TYPE_SIZE.micro,
+    fontWeight: TYPE_WEIGHT.strong,
   },
 });
 

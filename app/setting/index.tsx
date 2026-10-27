@@ -115,7 +115,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {SETTINGS_LINK_GROUPS.slice(0, 2).map((group) => (
+        {SETTINGS_LINK_GROUPS.slice(0, 3).map((group) => (
           <SettingGroup
             key={group.title}
             title={group.title}
@@ -191,12 +191,12 @@ export default function SettingsScreen() {
         </SettingGroup>
 
         <SettingGroup
-          title={SETTINGS_LINK_GROUPS[2].title}
-          icon={SETTINGS_LINK_GROUPS[2].icon}
+          title={SETTINGS_LINK_GROUPS[3].title}
+          icon={SETTINGS_LINK_GROUPS[3].icon}
           styles={styles}
           C={C}
         >
-          {SETTINGS_LINK_GROUPS[2].items.map((item) => (
+          {SETTINGS_LINK_GROUPS[3].items.map((item) => (
             <SettingRow
               key={item.route.toString()}
               icon={item.icon}

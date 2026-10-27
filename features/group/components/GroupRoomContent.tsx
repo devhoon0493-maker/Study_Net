@@ -6,12 +6,21 @@ import type { GroupTheme } from "../groupTheme";
 import type { Member, Room } from "../groupTypes";
 import { formatTimer } from "../groupUtils";
 import { FocusSummaryCard } from "./FocusSummaryCard";
+import { GroupAnnouncementCard } from "./GroupAnnouncementCard";
+import { GroupDeputyCard } from "./GroupDeputyCard";
+import { GroupJoinRequestsCard } from "./GroupJoinRequestsCard";
 import { InviteCodeCard } from "./InviteCodeCard";
 import { MemberSection } from "./MemberSection";
 import { RoomHero } from "./RoomHero";
+import type { GroupAnnouncement } from "../useGroupAnnouncement";
+import type { RoomJoinRequest } from "../useRoomJoinRequests";
 
 type GroupRoomContentProps = {
   room: Room;
+  announcement: GroupAnnouncement | null;
+  joinRequests: RoomJoinRequest[];
+  canReviewJoinRequests: boolean;
+  onReviewJoinRequest: (request: RoomJoinRequest, approve: boolean) => void;
   currentMemberId?: string;
   myMember?: Member;
   memberCountText: string;
@@ -30,6 +39,10 @@ type GroupRoomContentProps = {
 
 export function GroupRoomContent({
   room,
+  announcement,
+  joinRequests,
+  canReviewJoinRequests,
+  onReviewJoinRequest,
   currentMemberId,
   myMember,
   memberCountText,
@@ -59,6 +72,25 @@ export function GroupRoomContent({
         memberCountText={memberCountText}
         livePulse={livePulse}
         s={s}
+      />
+      <GroupAnnouncementCard
+        roomId={room.id}
+        ownerId={room.ownerId}
+        deputy1Id={room.deputy1Id}
+        deputy2Id={room.deputy2Id}
+        currentMemberId={currentMemberId}
+        memberName={myMember?.name ?? "그룹장"}
+        announcement={announcement}
+        s={s}
+        C={C}
+      />
+      <GroupDeputyCard room={room} currentMemberId={currentMemberId} s={s} C={C} />
+      <GroupJoinRequestsCard
+        requests={joinRequests}
+        canReview={canReviewJoinRequests}
+        onReview={onReviewJoinRequest}
+        s={s}
+        C={C}
       />
       <InviteCodeCard code={room.code} s={s} C={C} />
       <FocusSummaryCard

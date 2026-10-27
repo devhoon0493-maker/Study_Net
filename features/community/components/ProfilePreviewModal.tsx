@@ -17,11 +17,19 @@ export function ProfilePreviewModal({
   s,
   C,
   onClose,
+  isBlocked,
+  onBlock,
+  onUnblock,
+  onReport,
 }: {
   profile: ProfilePreview | null;
   s: CommunityStyles;
   C: MonoTheme;
   onClose: () => void;
+  isBlocked: boolean;
+  onBlock: (profile: ProfilePreview) => void;
+  onUnblock: (profile: ProfilePreview) => void;
+  onReport: (profile: ProfilePreview) => void;
 }) {
   const showActivity = profile?.communityActivityPublic === true;
 
@@ -114,6 +122,14 @@ export function ProfilePreviewModal({
                 <Text style={s.profileModalBio}>
                   {profile.bio?.trim() || "아직 한줄소개가 없어요."}
                 </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+                <TouchableOpacity onPress={() => isBlocked ? onUnblock(profile) : onBlock(profile)} style={{ flex: 1, padding: 12, borderRadius: 12, backgroundColor: C.surface, alignItems: "center" }}>
+                  <Text style={{ color: C.text, fontWeight: "600" }}>{isBlocked ? "차단 해제" : "차단"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => onReport(profile)} style={{ flex: 1, padding: 12, borderRadius: 12, backgroundColor: C.surface, alignItems: "center" }}>
+                  <Text style={{ color: C.danger, fontWeight: "600" }}>신고</Text>
+                </TouchableOpacity>
               </View>
             </>
           ) : null}

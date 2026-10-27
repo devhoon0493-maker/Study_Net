@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -37,12 +38,12 @@ export function SettingsSection({
 const styles = StyleSheet.create({
   section: {
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 15,
+    borderRadius: RADIUS.card,
+    padding: SPACE.lg,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    marginBottom: 8,
+    fontSize: TYPE_SIZE.bodyStrong,
+    fontWeight: TYPE_WEIGHT.heavy,
+    marginBottom: SPACE.sm,
   },
 });

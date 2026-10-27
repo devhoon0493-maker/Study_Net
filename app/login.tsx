@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -515,7 +516,7 @@ const createSocialStyles = (C: MonoTheme) =>
   btn: {
     width: 56,
     height: 56,
-    borderRadius: 18,
+    borderRadius: RADIUS.card,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: C.shadow,
@@ -542,45 +543,45 @@ const createStyles = (C: MonoTheme) =>
   kav: { flex: 1 },
   inner: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: SPACE.xl,
     justifyContent: "center",
   },
 
   /* 헤더 */
-  header: { marginBottom: 32 },
+  header: { marginBottom: SPACE.xxl },
   badgeRow: { flexDirection: "row", marginBottom: 14 },
   badge: {
     backgroundColor: C.surface,
-    borderRadius: 20,
+    borderRadius: RADIUS.xl,
     paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: SPACE.md,
     borderWidth: 1,
     borderColor: C.border,
   },
   badgeText: {
     color: C.text,
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: TYPE_SIZE.caption,
+    fontWeight: TYPE_WEIGHT.bold,
     letterSpacing: 1.5,
   },
   logo: {
-    fontSize: 40,
-    fontWeight: "900",
+    fontSize: TYPE_SIZE.timerMedium,
+    fontWeight: TYPE_WEIGHT.heavy,
     color: C.text,
     letterSpacing: 0,
   },
   sub: {
     color: C.muted,
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: "500",
+    fontSize: TYPE_SIZE.body,
+    marginTop: SPACE.xs,
+    fontWeight: TYPE_WEIGHT.medium,
   },
 
   /* 카드 */
   card: {
     backgroundColor: C.surface,
     borderRadius: 28,
-    padding: 24,
+    padding: SPACE.xl,
     borderWidth: 1,
     borderColor: C.border,
     shadowColor: C.shadow,
@@ -595,7 +596,7 @@ const createStyles = (C: MonoTheme) =>
     alignItems: "center",
     marginBottom: 14,
     backgroundColor: C.surface,
-    borderRadius: 16,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: C.border,
     overflow: "hidden",
@@ -621,7 +622,7 @@ const createStyles = (C: MonoTheme) =>
     height: 52,
     paddingHorizontal: 14,
     color: C.text,
-    fontSize: 15,
+    fontSize: TYPE_SIZE.bodyStrong,
   },
   eyeBtn: {
     paddingHorizontal: 14,
@@ -640,23 +641,23 @@ const createStyles = (C: MonoTheme) =>
   },
   errorText: {
     color: C.danger,
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.medium,
   },
 
   /* 비밀번호 찾기 */
   forgotRow: { alignItems: "flex-end", marginBottom: 20, marginTop: 2 },
-  forgotText: { color: C.primary, fontSize: 13, fontWeight: "600" },
+  forgotText: { color: C.primary, fontSize: TYPE_SIZE.bodySmall, fontWeight: TYPE_WEIGHT.semibold },
 
   /* 로그인 버튼 */
   loginBtn: {
     backgroundColor: C.primary,
-    borderRadius: 16,
+    borderRadius: RADIUS.lg,
     height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: SPACE.sm,
     shadowColor: C.shadow,
     shadowOpacity: 0.45,
     shadowRadius: 16,
@@ -673,8 +674,8 @@ const createStyles = (C: MonoTheme) =>
   },
   loginBtnText: {
     color: C.inverse,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: TYPE_SIZE.subheading,
+    fontWeight: TYPE_WEIGHT.bold,
     letterSpacing: 0.3,
   },
   loginBtnTextDisabled: {
@@ -690,9 +691,9 @@ const createStyles = (C: MonoTheme) =>
   divLine: { flex: 1, height: 1, backgroundColor: C.border },
   divText: {
     color: C.subtle,
-    fontSize: 12,
-    fontWeight: "600",
-    marginHorizontal: 12,
+    fontSize: TYPE_SIZE.label,
+    fontWeight: TYPE_WEIGHT.semibold,
+    marginHorizontal: SPACE.md,
     letterSpacing: 0.5,
   },
 
@@ -700,7 +701,7 @@ const createStyles = (C: MonoTheme) =>
   socialRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
+    gap: SPACE.lg,
   },
 
   /* 회원가입 */
@@ -710,10 +711,10 @@ const createStyles = (C: MonoTheme) =>
     alignItems: "center",
     marginTop: 28,
   },
-  signupText: { color: C.muted, fontSize: 14 },
+  signupText: { color: C.muted, fontSize: TYPE_SIZE.body },
   signupLink: {
     color: C.primary,
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: TYPE_SIZE.body,
+    fontWeight: TYPE_WEIGHT.bold,
   },
   });

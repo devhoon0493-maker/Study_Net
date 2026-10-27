@@ -32,7 +32,7 @@ export type LiveStudyRoom = {
 export type LiveStudyRoomRecord = {
   name?: string;
   subjects?: string;
-  members?: Record<string, { studyStatusPublic?: boolean } | unknown>;
+  members?: Record<string, unknown>;
   code?: string;
   createdAt?: number;
   visibility?: "public" | "private";

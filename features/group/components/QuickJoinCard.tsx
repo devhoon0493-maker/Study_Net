@@ -15,6 +15,7 @@ import type { GroupTheme } from "../groupTheme";
 export function QuickJoinCard({
   codeInput,
   codeError,
+  codeNotice,
   joining,
   codeInputRef,
   onChangeCode,
@@ -24,6 +25,7 @@ export function QuickJoinCard({
 }: {
   codeInput: string;
   codeError: string;
+  codeNotice: string;
   joining: boolean;
   codeInputRef: RefObject<TextInput | null>;
   onChangeCode: (value: string) => void;
@@ -87,6 +89,12 @@ export function QuickJoinCard({
             style={{ marginRight: 5 }}
           />
           <Text style={s.errorText}>{codeError}</Text>
+        </View>
+      )}
+      {codeNotice !== "" && (
+        <View style={s.inlineNoticeRow}>
+          <Ionicons name="time-outline" size={13} color={C.primary} style={{ marginRight: 5 }} />
+          <Text style={s.noticeText}>{codeNotice}</Text>
         </View>
       )}
     </View>

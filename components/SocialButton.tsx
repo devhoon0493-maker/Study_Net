@@ -1,3 +1,4 @@
+import { RADIUS } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { TouchableOpacity, StyleSheet } from "react-native";
 
@@ -23,7 +24,7 @@ const s = StyleSheet.create({
   btn: {
     width: 56,
     height: 56,
-    borderRadius: 18,
+    borderRadius: RADIUS.card,
     alignItems: "center",
     justifyContent: "center",
   },

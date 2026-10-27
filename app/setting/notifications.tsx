@@ -1,3 +1,4 @@
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
@@ -255,8 +256,8 @@ const createStyles = (C: MonoTheme) =>
     },
     sectionDesc: {
       color: C.muted,
-      fontSize: 12,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
       marginBottom: 10,
     },
     switchLine: {
@@ -274,7 +275,7 @@ const createStyles = (C: MonoTheme) =>
     switchIcon: {
       width: 34,
       height: 34,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -285,13 +286,13 @@ const createStyles = (C: MonoTheme) =>
     },
     switchLabel: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     switchDesc: {
       color: C.muted,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 3,
     },
     timeInputRow: {
@@ -301,15 +302,15 @@ const createStyles = (C: MonoTheme) =>
       gap: 10,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.surfaceAlt,
       paddingHorizontal: 13,
     },
     timeInput: {
       flex: 1,
       color: C.text,
-      fontSize: 18,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.title,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     frequencyList: {
       gap: 9,
@@ -318,7 +319,7 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 58,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       paddingHorizontal: 13,
       paddingVertical: 10,
       flexDirection: "row",
@@ -335,13 +336,13 @@ const createStyles = (C: MonoTheme) =>
     },
     frequencyLabel: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     frequencyDesc: {
       color: C.muted,
-      fontSize: 11,
-      fontWeight: "700",
+      fontSize: TYPE_SIZE.captionLarge,
+      fontWeight: TYPE_WEIGHT.bold,
       marginTop: 3,
     },
     dayRow: {
@@ -354,7 +355,7 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 40,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -365,15 +366,15 @@ const createStyles = (C: MonoTheme) =>
     },
     dayText: {
       color: C.text,
-      fontSize: 12,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     dayTextActive: {
       color: C.inverse,
     },
     saveButton: {
       minHeight: 54,
-      borderRadius: 15,
+      borderRadius: RADIUS.badge,
       backgroundColor: C.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -382,27 +383,27 @@ const createStyles = (C: MonoTheme) =>
       minHeight: 48,
       borderWidth: 1,
       borderColor: C.border,
-      borderRadius: 14,
+      borderRadius: RADIUS.control,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
-      gap: 8,
+      gap: SPACE.sm,
     },
     testButtonDisabled: {
       opacity: 0.5,
     },
     testButtonText: {
       color: C.text,
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.body,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
     saveButtonDisabled: {
       opacity: 0.5,
     },
     saveButtonText: {
       color: C.inverse,
-      fontSize: 15,
-      fontWeight: "900",
+      fontSize: TYPE_SIZE.bodyStrong,
+      fontWeight: TYPE_WEIGHT.heavy,
     },
   });

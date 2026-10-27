@@ -1,5 +1,6 @@
-import { useRouter } from "expo-router";
+import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { useMemo } from "react";
+import { useRouter } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -42,9 +43,8 @@ export default function ProfileScreen() {
     setUserType,
     pickImage,
     handleSave,
-  } = useProfileForm({
-    onSaved: () => router.back(),
-  });
+    saveState,
+  } = useProfileForm({ onSaved: () => router.replace("/main") });
 
   return (
     <ScrollView
@@ -104,8 +104,21 @@ export default function ProfileScreen() {
         })}
       </View>
 
+      <Text style={styles.saveStatus}>
+        {saveState === "saving"
+          ? "저장 중..."
+          : saveState === "editing"
+            ? !name.trim() || !email.trim() || name.trim().length > 40 || email.trim().length > 120
+              ? "이름과 이메일을 확인해 주세요."
+              : "수정 후 저장 버튼을 눌러 주세요."
+            : saveState === "error"
+              ? "저장 실패 · 연결을 확인하고 다시 저장해 주세요"
+              : "저장 완료 · 다른 사용자에게 프로필이 표시됩니다."}
+      </Text>
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>저장하기</Text>
+        <Text style={styles.saveButtonText}>
+          {saveState === "error" ? "다시 저장" : "지금 저장"}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -153,14 +166,14 @@ const createStyles = (C: MonoTheme) =>
     },
     label: {
       color: C.text,
-      marginBottom: 8,
+      marginBottom: SPACE.sm,
       marginTop: 15,
-      fontSize: 14,
+      fontSize: TYPE_SIZE.body,
     },
     input: {
       backgroundColor: C.surface,
-      borderRadius: 10,
-      padding: 12,
+      borderRadius: RADIUS.compact,
+      padding: SPACE.md,
       color: C.text,
       borderWidth: 1,
       borderBottomWidth: 4,
@@ -169,7 +182,7 @@ const createStyles = (C: MonoTheme) =>
     typeContainer: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: SPACE.sm,
       marginTop: 5,
       marginBottom: 20,
     },
@@ -178,7 +191,7 @@ const createStyles = (C: MonoTheme) =>
       flexBasis: "31%",
       flexGrow: 1,
       paddingHorizontal: 14,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surface,
       borderWidth: 1,
       borderBottomWidth: 3,
@@ -197,16 +210,16 @@ const createStyles = (C: MonoTheme) =>
     },
     typeText: {
       color: C.text,
-      fontSize: 14,
+      fontSize: TYPE_SIZE.body,
     },
     typeTextActive: {
       color: C.text,
-      fontWeight: "600",
+      fontWeight: TYPE_WEIGHT.semibold,
     },
     saveButton: {
       backgroundColor: C.surface,
       minHeight: 56,
-      borderRadius: 12,
+      borderRadius: RADIUS.md,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 10,
@@ -221,7 +234,13 @@ const createStyles = (C: MonoTheme) =>
     },
     saveButtonText: {
       color: C.text,
-      fontSize: 16,
-      fontWeight: "bold",
+      fontSize: TYPE_SIZE.subheading,
+      fontWeight: TYPE_WEIGHT.bold,
+    },
+    saveStatus: {
+      color: C.muted,
+      textAlign: "center",
+      marginTop: 8,
+      fontSize: TYPE_SIZE.label,
     },
   });

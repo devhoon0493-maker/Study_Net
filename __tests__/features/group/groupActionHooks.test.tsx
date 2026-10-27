@@ -800,6 +800,61 @@ describe("group action hooks", () => {
     expect(onLeft).toHaveBeenCalledTimes(3);
   });
 
+  it("transfers ownership and removes the former owner's membership atomically", async () => {
+    const onLeft = jest.fn();
+    const successor = { ...minimalMember, id: "successor-1", name: "Successor" };
+    const { result } = await renderHook(() =>
+      useGroupRoomActions({
+        member,
+        selectedRoom: makeRoom({
+          ownerId: member.id,
+          members: [member, successor],
+        }),
+        onError: jest.fn(),
+        onCreated: jest.fn(),
+        onLeft,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.transferOwnershipAndLeave(successor.id);
+    });
+
+    expect(update).toHaveBeenCalledWith(expect.anything(), {
+      "rooms/room-1/ownerId": successor.id,
+      "rooms/room-1/members/member-1": null,
+      "userRooms/member-1/room-1": null,
+    });
+    expect(onLeft).toHaveBeenCalledTimes(1);
+  });
+
+  it("dissolves the room and clears every member index when its owner leaves", async () => {
+    const successor = { ...minimalMember, id: "successor-1", name: "Successor" };
+    const { result } = await renderHook(() =>
+      useGroupRoomActions({
+        member,
+        selectedRoom: makeRoom({
+          ownerId: member.id,
+          members: [member, successor],
+        }),
+        onError: jest.fn(),
+        onCreated: jest.fn(),
+        onLeft: jest.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.leaveRoomNow();
+    });
+
+    expect(update).toHaveBeenCalledWith(expect.anything(), {
+      "rooms/room-1": null,
+      "roomCodes/ABC123": null,
+      "userRooms/member-1/room-1": null,
+      "userRooms/successor-1/room-1": null,
+    });
+  });
+
   it("reports leave failures and still calls onLeft", async () => {
     jest.mocked(update).mockRejectedValueOnce(new Error("bad"));
     const onLeft = jest.fn();
