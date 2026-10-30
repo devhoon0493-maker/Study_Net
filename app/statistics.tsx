@@ -1,5 +1,6 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -13,7 +14,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
-import { getScreenTopPadding } from "../constants/layout";
+import {
+  getScreenTopPadding,
+  RESPONSIVE_CONTENT_STYLE,
+} from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import {
   formatStudyDuration,
@@ -30,17 +34,22 @@ export default function StatisticsScreen() {
   const bottomSpace = getBottomNavSpace(insets.bottom);
   const topPadding = getScreenTopPadding(insets.top);
   const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [weeklyGoal, setWeeklyGoal] = useState(60 * 60 * 10);
 
   useFocusEffect(
     useCallback(() => {
       loadStudySessions().then(setSessions);
+      AsyncStorage.getItem("weekly_goal_seconds").then((raw) => {
+        const value = Number(raw);
+        if (Number.isFinite(value) && value > 0) setWeeklyGoal(value);
+      }).catch(() => {});
     }, []),
   );
 
   const stats = useMemo(() => {
     const todayKey = toDateKey(new Date());
     const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 6);
+    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
     weekStart.setHours(0, 0, 0, 0);
 
     const todaySeconds = sessions
@@ -84,9 +93,27 @@ export default function StatisticsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottomSpace + 24 }]}>
+        <View style={s.weeklyGoalCard}>
+          <View style={s.weeklyGoalHeader}>
+            <Text style={s.weeklyGoalTitle}>이번 주 학습 목표</Text>
+            <Text style={s.weeklyGoalValue}>
+              {formatStudyDuration(stats.weekSeconds)} / {formatStudyDuration(weeklyGoal)}
+            </Text>
+          </View>
+          <View style={s.weeklyGoalTrack}>
+            <View
+              style={[
+                s.weeklyGoalFill,
+                {
+                  width: `${Math.min((stats.weekSeconds / Math.max(weeklyGoal, 1)) * 100, 100)}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
         <View style={s.grid}>
           <StatCard label="오늘" value={formatStudyDuration(stats.todaySeconds)} styles={s} />
-          <StatCard label="최근 7일" value={formatStudyDuration(stats.weekSeconds)} styles={s} />
+          <StatCard label="이번 주" value={formatStudyDuration(stats.weekSeconds)} styles={s} />
           <StatCard label="전체" value={formatStudyDuration(stats.totalSeconds)} styles={s} />
           <StatCard label="세션" value={`${sessions.length}개`} styles={s} />
         </View>
@@ -159,12 +186,55 @@ function StatCard({
 
 const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
+    container: {
+      ...RESPONSIVE_CONTENT_STYLE,
+      flex: 1,
+      backgroundColor: C.bg,
+      paddingHorizontal: 20,
+    },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
-    iconButton: { width: 38, height: 38, borderWidth: 1, borderBottomWidth: 3, borderColor: C.border, borderRadius: RADIUS.compact, alignItems: "center", justifyContent: "center", backgroundColor: C.surface },
+    iconButton: { width: CONTROL.icon, height: CONTROL.icon, borderWidth: 1, borderColor: C.border, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center", backgroundColor: C.surface },
     headerSpacer: { width: 38 },
     title: { color: C.text, fontSize: TYPE_SIZE.heading, fontWeight: TYPE_WEIGHT.heavy },
     content: { gap: 2 },
+    weeklyGoalCard: {
+      marginBottom: 16,
+      padding: 16,
+      gap: 12,
+      borderWidth: 1,
+      borderBottomWidth: 4,
+      borderColor: C.border,
+      borderRadius: RADIUS.lg,
+      backgroundColor: C.surface,
+    },
+    weeklyGoalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: SPACE.sm,
+    },
+    weeklyGoalTitle: {
+      color: C.text,
+      fontSize: TYPE_SIZE.bodySmall,
+      fontWeight: TYPE_WEIGHT.heavy,
+    },
+    weeklyGoalValue: {
+      color: C.primary,
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.heavy,
+      fontVariant: ["tabular-nums"],
+    },
+    weeklyGoalTrack: {
+      height: 8,
+      borderRadius: RADIUS.pill,
+      overflow: "hidden",
+      backgroundColor: C.surfaceAlt,
+    },
+    weeklyGoalFill: {
+      height: "100%",
+      borderRadius: RADIUS.pill,
+      backgroundColor: C.primary,
+    },
     grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 18 },
     statCard: { width: "48%", minHeight: 94, borderWidth: 1, borderBottomWidth: 4, borderColor: C.border, borderRadius: RADIUS.lg, padding: SPACE.lg, marginBottom: SPACE.md, backgroundColor: C.surface, justifyContent: "center" },
     statLabel: { color: C.text, fontSize: TYPE_SIZE.label, fontWeight: TYPE_WEIGHT.bold, marginBottom: SPACE.sm },

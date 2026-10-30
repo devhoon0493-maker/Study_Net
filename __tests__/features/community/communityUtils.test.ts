@@ -153,42 +153,42 @@ describe("community utils", () => {
         visibility: "public",
         name: "Newest",
         createdAt: 10,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       second: {
         visibility: "public",
         name: "Second",
         createdAt: 9,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       third: {
         visibility: "public",
         name: "Third",
         createdAt: 8,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       fourth: {
         visibility: "public",
         name: "Fourth",
         createdAt: 7,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       fifth: {
         visibility: "public",
         name: "Fifth",
         createdAt: 6,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       sixth: {
         visibility: "public",
         name: "Sixth",
         createdAt: 5,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       privateRoom: {
         visibility: "private",
         createdAt: 3,
-        members: { a: {} },
+        members: { a: { online: true, studyStartEpoch: 1 } },
       },
       emptyPublic: {
         visibility: "public",
@@ -201,7 +201,7 @@ describe("community utils", () => {
         code: "ABC123",
         createdAt: 1,
         members: {
-          visible: {},
+          visible: { online: true, studyStartEpoch: 1 },
           hidden: { studyStatusPublic: false },
         },
       },
@@ -226,7 +226,7 @@ describe("community utils", () => {
           members: {
             nullMember: null,
             primitive: true,
-            visible: { studyStatusPublic: true },
+            visible: { studyStatusPublic: true, online: true, studyStartEpoch: 1 },
           },
         },
       } as never)[0],
@@ -234,7 +234,7 @@ describe("community utils", () => {
       id: "fallbackRoom",
       code: "",
       createdAt: 0,
-      memberCount: 3,
+      memberCount: 1,
     });
   });
 });

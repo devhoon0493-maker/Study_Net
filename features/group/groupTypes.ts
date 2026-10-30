@@ -16,6 +16,7 @@ export type Member = {
   status?: string;
   joinedAt?: number;
   studyStartEpoch?: number | null;
+  isStudying?: boolean;
   online?: boolean;
   lastSeenAt?: number;
 };

@@ -97,16 +97,19 @@ describe("community feed hooks", () => {
       makePost({ id: "post-2", likes: 3 }),
       makePost({ id: "other", authorId: "author-2", likes: 10 }),
     ];
-    jest.mocked(get).mockResolvedValueOnce({
-      exists: () => true,
-      val: () => ({
-        name: "Remote Author",
-        userType: "Teacher",
-        image: "https://cdn.example.com/author.jpg",
-        bio: "remote bio",
-        communityActivityPublic: true,
-      }),
-    } as never);
+    jest.mocked(onValue).mockImplementationOnce((_profileRef, callback) => {
+      callback({
+        exists: () => true,
+        val: () => ({
+          name: "Remote Author",
+          userType: "Teacher",
+          image: "https://cdn.example.com/author.jpg",
+          bio: "remote bio",
+          communityActivityPublic: true,
+        }),
+      } as never);
+      return jest.fn();
+    });
 
     const { result } = await renderHook(() =>
       useCommunityProfilePreview(posts),
@@ -143,10 +146,10 @@ describe("community feed hooks", () => {
       likes: 4,
       communityActivityPublic: true,
     });
-    jest.mocked(get).mockResolvedValueOnce({
-      exists: () => false,
-      val: () => null,
-    } as never);
+    jest.mocked(onValue).mockImplementationOnce((_profileRef, callback) => {
+      callback({ exists: () => false, val: () => null } as never);
+      return jest.fn();
+    });
 
     const { result } = await renderHook(() => useCommunityProfilePreview([post]));
 
@@ -165,7 +168,10 @@ describe("community feed hooks", () => {
       communityActivityPublic: true,
     });
 
-    jest.mocked(get).mockRejectedValueOnce(new Error("network"));
+    jest.mocked(onValue).mockImplementationOnce((_profileRef, callback) => {
+      callback({ exists: () => false, val: () => null } as never);
+      return jest.fn();
+    });
     await act(async () => {
       await result.current.openProfilePreview(post);
     });

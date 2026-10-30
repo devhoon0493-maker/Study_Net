@@ -64,11 +64,13 @@ Show:
 - Group lobby.
 - Join a public room or enter a private invite code.
 - Group room member cards and study status.
+- Toggle study-status sharing off and show that the group sees only the coarse studying state.
+- Open a member's public profile from the group member list.
 
 Talk track:
 
 ```text
-Groups use Firebase Realtime Database to sync membership, presence, public profile details, and study status. Public rooms and invite-code rooms are handled as separate flows.
+Groups use Firebase Realtime Database to sync membership and presence. The study privacy switch hides the subject and start time while keeping a coarse studying indicator, and member profiles open from the room. Public rooms and invite-code rooms are handled as separate flows.
 ```
 
 ### 55-72s: Community
@@ -98,7 +100,7 @@ Show:
 Talk track:
 
 ```text
-The settings flow covers goals, notifications, privacy, storage status, password and account management. The project currently passes lint, TypeScript, config validation, and 293 Jest tests across 50 suites.
+The settings flow covers goals, notifications, privacy, storage status, password and account management. On 2026-10-28 the project passed 54 Jest suites with 313 tests, plus lint, TypeScript, and config validation.
 ```
 
 ## Screenshot Checklist
@@ -114,6 +116,7 @@ The settings flow covers goals, notifications, privacy, storage status, password
 - Statistics
 - Group lobby
 - Group room
+- Public profile opened from a group member or community comment
 - Community feed
 - Compose/comment UI
 - Notifications
@@ -130,5 +133,5 @@ StudyNet is a React Native + Expo study management app with a personal study tim
 ## Technical Emphasis Description
 
 ```text
-StudyNet uses Expo Router and TypeScript across a multi-screen mobile app. Local study records are stored with AsyncStorage, while shared account, group, community, and profile-image data are separated into Firebase Auth, Realtime Database, and Storage. The project currently passes lint, TypeScript, config validation, and 293 Jest tests across 50 suites.
+StudyNet uses Expo Router and TypeScript across a multi-screen mobile app. Local study records are stored with AsyncStorage, while shared account, group, community, and profile-image data are separated into Firebase Auth, Realtime Database, and Storage. On 2026-10-28 the project passed 54 Jest suites with 313 tests, plus lint, TypeScript, and config validation.
 ```

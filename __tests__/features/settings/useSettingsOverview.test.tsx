@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { update } from "firebase/database";
 
+import { syncCurrentMemberToJoinedRooms } from "../../../features/group/groupPresence";
 import { useSettingsOverview } from "../../../features/settings/useSettingsOverview";
 import { auth } from "../../../utils/firebaseConfig";
 import {
@@ -21,6 +22,10 @@ jest.mock("../../../utils/notificationScheduler", () => ({
   syncStudyNetNotifications: jest.fn(() =>
     Promise.resolve({ status: "scheduled", count: 1 }),
   ),
+}));
+
+jest.mock("../../../features/group/groupPresence", () => ({
+  syncCurrentMemberToJoinedRooms: jest.fn(() => Promise.resolve()),
 }));
 
 const setCurrentUser = (user: unknown) => {
@@ -207,6 +212,7 @@ describe("useSettingsOverview", () => {
         }),
       }),
     );
+    expect(syncCurrentMemberToJoinedRooms).toHaveBeenCalledTimes(1);
     expect(update).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -231,5 +237,23 @@ describe("useSettingsOverview", () => {
     expect(result.current.studyStatusPublic).toBe(true);
     expect(result.current.communityActivityPublic).toBe(false);
     expect(update).not.toHaveBeenCalled();
+    expect(syncCurrentMemberToJoinedRooms).not.toHaveBeenCalled();
+  });
+
+  it("restores the previous study privacy value when the remote write fails", async () => {
+    setCurrentUser({ uid: "user-1" });
+    jest.mocked(update).mockRejectedValueOnce(new Error("permission denied"));
+    const { result } = await renderHook(() => useSettingsOverview());
+
+    await act(async () => {
+      await result.current.updateStudyStatusPublic(false);
+    });
+
+    expect(result.current.studyStatusPublic).toBe(true);
+    await expect(AsyncStorage.getItem(STUDY_STATUS_PUBLIC_KEY)).resolves.toBe(
+      "true",
+    );
+    expect(syncCurrentMemberToJoinedRooms).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalled();
   });
 });

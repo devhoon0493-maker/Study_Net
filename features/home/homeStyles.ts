@@ -1,4 +1,5 @@
 import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { RESPONSIVE_CONTENT_STYLE } from "../../constants/layout";
 import { StyleSheet } from "react-native";
 
 import type { HomeTheme } from "./homeTheme";
@@ -90,6 +91,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       backgroundColor: C.bg,
     },
     header: {
+      ...RESPONSIVE_CONTENT_STYLE,
       paddingHorizontal: 22,
       paddingBottom: 10,
       flexDirection: "row",
@@ -157,6 +159,7 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       fontWeight: TYPE_WEIGHT.heavy,
     },
     scrollContent: {
+      ...RESPONSIVE_CONTENT_STYLE,
       paddingHorizontal: 18,
       gap: 11,
     },
@@ -518,6 +521,27 @@ export const createStyles = (C: HomeTheme, options: { compact?: boolean } = {}) 
       fontSize: TYPE_SIZE.caption,
       fontWeight: TYPE_WEIGHT.heavy,
       marginBottom: 10,
+    },
+    weeklyGoalSummary: {
+      marginTop: -3,
+      marginBottom: 5,
+    },
+    weeklyGoalText: {
+      color: C.textSecondary,
+      fontSize: TYPE_SIZE.micro,
+      fontWeight: TYPE_WEIGHT.heavy,
+    },
+    weeklyGoalTrack: {
+      height: 5,
+      borderRadius: RADIUS.pill,
+      backgroundColor: C.surface,
+      overflow: "hidden",
+      marginBottom: SPACE.sm,
+    },
+    weeklyGoalFill: {
+      height: "100%",
+      borderRadius: RADIUS.pill,
+      backgroundColor: C.primary,
     },
     barChart: {
       minHeight: 136,

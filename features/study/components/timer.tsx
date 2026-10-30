@@ -1,4 +1,4 @@
-import { RADIUS, SPACE, TYPE_FAMILY, TYPE_SIZE, TYPE_WEIGHT } from "../../../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_FAMILY, TYPE_SIZE, TYPE_WEIGHT } from "../../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -823,8 +823,8 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       gap: SPACE.md,
     },
     iconButton: {
-      width: 38,
-      height: 38,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.md,
       alignItems: "center",
       justifyContent: "center",
@@ -1204,8 +1204,8 @@ const createStyles = (C: StudyTheme, L: StudyLayout) =>
       marginBottom: 7,
     },
     ctrlBtn: {
-      width: 36,
-      height: 36,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       borderWidth: 1,

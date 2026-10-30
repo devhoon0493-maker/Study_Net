@@ -76,6 +76,9 @@ export default function BottomNav() {
               pressed && s.itemPressed,
             ]}
             onPress={() => router.replace(item.route)}
+            accessibilityRole="tab"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: active }}
           >
             <Ionicons
               name={item.icon}
@@ -138,14 +141,14 @@ const createStyles = (C: MonoTheme) =>
     },
     label: {
       color: C.muted,
-      fontSize: TYPE_SIZE.caption,
-      fontWeight: TYPE_WEIGHT.strong,
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.semibold,
     },
     labelActive: {
       color: C.primary,
     },
     homeLabel: {
-      fontSize: TYPE_SIZE.captionLarge,
-      fontWeight: TYPE_WEIGHT.heavy,
+      fontSize: TYPE_SIZE.label,
+      fontWeight: TYPE_WEIGHT.bold,
     },
   });

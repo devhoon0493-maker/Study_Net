@@ -26,7 +26,9 @@ StudyNet is a cross-platform study management app built with React Native, Expo,
 - Subject picker and custom subject storage
 - Calendar and statistics screens
 - Firebase-backed group rooms, invite codes, member profiles, and presence sync
+- Group study privacy that exposes only a coarse studying state when detailed status sharing is off
 - Firebase-backed community feed, comments, cheers, notifications, and profile preview
+- Public profile screen linked from group members and community comments
 - Profile image flow using Firebase Storage
 - Privacy and public-profile settings
 - Notification settings and scheduler helpers
@@ -36,12 +38,13 @@ StudyNet is a cross-platform study management app built with React Native, Expo,
 
 ## Current Quality Status
 
-Local verification on 2026-09-08:
+Latest release validation on 2026-10-28:
 
 - `npm.cmd run lint`: pass
 - `npm.cmd run typecheck`: pass
 - `npm.cmd run validate:config`: pass
-- `npm.cmd test`: 50 test suites passed, 293 tests passed
+
+The latest full Jest run was on 2026-10-28: 54 test suites and 313 tests passed. Lint, TypeScript, and Firebase configuration validation also passed.
 
 The automated tests cover utilities, Firebase config guards, auth screen flows, study timer flows, home session context, record screens, group hooks/actions, community hooks/actions/components, settings hooks/screens, notification scheduling, privacy settings, and account cleanup logic.
 

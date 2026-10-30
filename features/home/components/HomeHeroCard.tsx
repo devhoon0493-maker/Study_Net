@@ -15,6 +15,7 @@ export function HomeHeroCard({
   todaySeconds,
   dailyGoal,
   streak,
+  streakGoal,
   isStudying,
   styles,
   C,
@@ -29,6 +30,7 @@ export function HomeHeroCard({
   todaySeconds: number;
   dailyGoal: number;
   streak: number;
+  streakGoal: number;
   isStudying: boolean;
   styles: HomeStyles;
   C: HomeTheme;
@@ -97,7 +99,13 @@ export function HomeHeroCard({
           />
           <View style={styles.streakBadge}>
             <Ionicons name="flame" size={15} color={C.live} />
-            <Text style={styles.streakBadgeText}>연속 {streak}일째!</Text>
+            <Text
+              style={styles.streakBadgeText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              연속 {streak}/{streakGoal}일
+            </Text>
           </View>
         </View>
       </View>

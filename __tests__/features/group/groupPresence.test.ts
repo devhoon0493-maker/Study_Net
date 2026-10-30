@@ -105,16 +105,17 @@ describe("group presence sync", () => {
       "rooms/joined/members/member-1": {
         joinedAt: 100,
         speaking: true,
-        status: "Math",
+        status: "공부 중",
         name: "Local Member",
         color: "#111111",
         image: "local.jpg",
         userType: "Student",
         bio: "bio",
         studyStatusPublic: false,
+        isStudying: true,
         online: true,
         lastSeenAt: 10_000,
-        studyStartEpoch: 1_000,
+        studyStartEpoch: null,
       },
     });
 
@@ -226,7 +227,9 @@ describe("group presence sync", () => {
       }),
     );
 
-    jest.mocked(get).mockResolvedValueOnce({ val: () => null } as never);
+    jest.mocked(get)
+      .mockResolvedValueOnce({ val: () => null } as never)
+      .mockResolvedValueOnce({ val: () => null } as never);
     await syncCurrentMemberToJoinedRooms();
     expect(update).not.toHaveBeenCalled();
 

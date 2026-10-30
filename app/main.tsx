@@ -45,6 +45,7 @@ import {
   buildCommunityNotifications,
   countUnreadCommunityNotifications,
   loadCommunityNotificationsReadAt,
+  loadCommunityNotificationsReadIds,
   type CommunityNotificationSources,
   subscribeCommunityNotificationSources,
 } from "../utils/communityNotifications";
@@ -71,6 +72,8 @@ function MainScreenInner() {
   const [savedSeconds, setSavedSeconds] = useState(0);
   const [streak, setStreak] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(60 * 60 * 3);
+  const [weeklyGoal, setWeeklyGoal] = useState(60 * 60 * 10);
+  const [streakGoal, setStreakGoal] = useState(7);
   const [ddayGoal, setDdayGoal] = useState<DdayGoal>(DEFAULT_DDAY_GOAL);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -80,9 +83,22 @@ function MainScreenInner() {
     try {
       setLoadError(null);
 
-      const savedGoal = Number(await AsyncStorage.getItem("daily_goal_seconds"));
+      const [dailyGoalRaw, weeklyGoalRaw, streakGoalRaw] = await Promise.all([
+        AsyncStorage.getItem("daily_goal_seconds"),
+        AsyncStorage.getItem("weekly_goal_seconds"),
+        AsyncStorage.getItem("streak_goal_days"),
+      ]);
+      const savedGoal = Number(dailyGoalRaw);
+      const savedWeeklyGoal = Number(weeklyGoalRaw);
+      const savedStreakGoal = Number(streakGoalRaw);
       if (Number.isFinite(savedGoal) && savedGoal > 0) {
         setDailyGoal(savedGoal);
+      }
+      if (Number.isFinite(savedWeeklyGoal) && savedWeeklyGoal > 0) {
+        setWeeklyGoal(savedWeeklyGoal);
+      }
+      if (Number.isFinite(savedStreakGoal) && savedStreakGoal > 0) {
+        setStreakGoal(savedStreakGoal);
       }
 
       setDdayGoal(await loadPrimaryDdayGoal());
@@ -106,6 +122,9 @@ function MainScreenInner() {
 
       let count = 0;
       const cursor = new Date();
+      if (!uniqueDays.includes(todayKey)) {
+        cursor.setDate(cursor.getDate() - 1);
+      }
       for (const day of uniqueDays) {
         if (day === toDateKey(cursor)) {
           count++;
@@ -141,6 +160,8 @@ function MainScreenInner() {
       }
 
       let readAt = 0;
+      let readIds: string[] = [];
+      let readStateLoaded = false;
       let active = true;
       let lastSources: CommunityNotificationSources = {
         posts: null,
@@ -155,7 +176,11 @@ function MainScreenInner() {
           ...lastSources,
           uid,
         });
-        setNotificationCount(countUnreadCommunityNotifications(notifications, readAt));
+        if (readStateLoaded) {
+          setNotificationCount(
+            countUnreadCommunityNotifications(notifications, readAt, readIds),
+          );
+        }
       };
 
       const unsubscribe = subscribeCommunityNotificationSources(uid, (sources) => {
@@ -163,8 +188,13 @@ function MainScreenInner() {
         sync();
       });
 
-      loadCommunityNotificationsReadAt(uid).then((value) => {
+      Promise.all([
+        loadCommunityNotificationsReadAt(uid),
+        loadCommunityNotificationsReadIds(uid),
+      ]).then(([value, ids]) => {
         readAt = value;
+        readIds = ids;
+        readStateLoaded = true;
         sync();
       });
 
@@ -286,6 +316,7 @@ function MainScreenInner() {
           percent={percent}
           todaySeconds={todaySeconds}
           dailyGoal={safeDailyGoal}
+          streakGoal={streakGoal}
           streak={streak}
           isStudying={hasActiveSession}
           styles={styles}
@@ -314,6 +345,7 @@ function MainScreenInner() {
         <WeeklyStatsCard
           weeklyStats={weeklyStats}
           weeklyMax={weeklyMax}
+          weeklyGoal={weeklyGoal}
           subjectShares={subjectShares}
           subjectTotal={subjectTotal}
           styles={styles}

@@ -31,7 +31,8 @@ Implemented user-facing areas:
 - Calendar and statistics screens backed by the same local study data.
 - Subject selection with custom subject add/remove support.
 - Public/private group study rooms with invite-code entry.
-- Group member presence, profile preview, and study status sync through Firebase Realtime Database.
+- Group member presence and public profile screens, with profile links from group members and community authors/comments.
+- Group study-status privacy: when sharing is off, group members see only whether the user is studying; subject and start time are not written to room presence data.
 - Community feed with post creation, image attachment, cheers, comments, bookmarks, notifications, deletion, and profile preview.
 - Community recruitment posts that can route directly into matching group rooms by invite code.
 - Settings for profile, public profile, privacy, notifications, goals, D-Day, storage status, contact, password change, reset-study-data, logout, and account deletion.
@@ -44,6 +45,7 @@ Implemented user-facing areas:
 - Running sessions store `startEpoch`; elapsed time is recalculated from the current clock so navigation and background transitions do not lose time.
 - Paused sessions store `savedSeconds`; time does not accidentally increase while paused.
 - Firebase Auth owns authentication and verified email state.
+- Native Firebase Auth uses AsyncStorage-backed persistence; web uses the platform Firebase Auth default.
 - Firebase Realtime Database stores account profiles, public profiles, group rooms, invite codes, community posts, comments, cheers, and notification-related community activity.
 - Firebase Storage stores profile avatar images.
 
@@ -51,11 +53,11 @@ Implemented user-facing areas:
 
 The rules separate private and public data:
 
-- `users/{uid}` is owner-only.
+- `users/{uid}` is readable and writable only by its owner; public display data lives separately under `publicProfiles/{uid}`.
 - `publicProfiles/{uid}` is readable by signed-in users and writable only by the owner.
 - `rooms/{roomId}` uses owner-controlled room updates and member-controlled membership writes.
 - `roomCodes/{code}` maps invite codes to rooms and is constrained by room ownership.
-- `communityPosts`, `communityPostComments`, and `communityPostCheers` enforce author-owned writes and cleanup boundaries.
+- `communityPosts`, `communityPostComments`, and `communityPostCheers` enforce author-owned writes and let post authors clean up related activity.
 - `profileImages/{uid}/avatar.jpg` is writable only by the signed-in owner and limited to images under 2 MB.
 
 The detailed contract is maintained in `docs/DATA_SCHEMA.md`.
@@ -70,12 +72,13 @@ The detailed contract is maintained in `docs/DATA_SCHEMA.md`.
 
 ## Testing
 
-Current local result on 2026-09-08:
+Current release validation on 2026-10-28:
 
 - `npm.cmd run lint`: pass
 - `npm.cmd run typecheck`: pass
 - `npm.cmd run validate:config`: pass
-- `npm.cmd test`: 50 suites, 293 tests passed
+
+The latest full Jest run was on 2026-10-28: 54 suites and 313 tests passed. Lint, TypeScript, and Firebase configuration validation also passed.
 
 Coverage focus:
 
@@ -100,7 +103,8 @@ A 60-90 second portfolio video should show:
 4. Finished session reflected in home, calendar, and statistics.
 5. Group room join or creation with member presence.
 6. Community post, cheer/comment/bookmark, notification, and recruitment-to-group path.
-7. Settings for goals, D-Day, notifications, privacy, storage, and account management.
+7. Open a member's public profile from a group or community comment, and show group study privacy hiding subject and elapsed time.
+8. Settings for goals, D-Day, notifications, privacy, storage, and account management.
 
 The full script is in `docs/DEMO_SCRIPT.md`.
 

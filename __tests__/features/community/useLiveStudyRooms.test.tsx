@@ -24,7 +24,7 @@ describe("useLiveStudyRooms", () => {
             code: "ABC123",
             createdAt: 10,
             members: {
-              visible: {},
+              visible: { online: true, studyStartEpoch: 1 },
               hidden: { studyStatusPublic: false },
             },
           },

@@ -28,6 +28,8 @@ jest.mock("firebase/auth", () => ({
     providerId,
   })),
   getAuth: jest.fn(() => ({ currentUser: null })),
+  getReactNativePersistence: jest.fn(() => ({})),
+  initializeAuth: jest.fn(() => ({ currentUser: null })),
   signInWithCredential: mockSignInWithCredential,
 }));
 

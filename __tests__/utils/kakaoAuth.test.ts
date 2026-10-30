@@ -17,6 +17,8 @@ jest.mock("firebase/auth", () => ({
     providerId,
   })),
   getAuth: jest.fn(() => ({ currentUser: null })),
+  getReactNativePersistence: jest.fn(() => ({})),
+  initializeAuth: jest.fn(() => ({ currentUser: null })),
   signInWithCredential: mockSignInWithCredential,
 }));
 
@@ -64,7 +66,9 @@ describe("kakao auth helpers", () => {
 
   it("exchanges Kakao auth codes when the REST API key is configured", async () => {
     const originalKey = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
+    const originalRedirect = process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI;
     process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY = " kakao-client-id ";
+    process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI = "studynet://oauth/kakao";
     let configured: typeof import("../../utils/kakaoAuth");
 
     jest.isolateModules(() => {
@@ -100,11 +104,18 @@ describe("kakao auth helpers", () => {
     } else {
       process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY = originalKey;
     }
+    if (originalRedirect === undefined) {
+      delete process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI;
+    } else {
+      process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI = originalRedirect;
+    }
   });
 
   it("rejects configured Kakao sign-in when the id token is missing", async () => {
     const originalKey = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
+    const originalRedirect = process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI;
     process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY = "kakao-client-id";
+    process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI = "studynet://oauth/kakao";
     mockExchangeCodeAsync.mockResolvedValueOnce({});
     let configured: typeof import("../../utils/kakaoAuth");
 
@@ -121,6 +132,11 @@ describe("kakao auth helpers", () => {
       delete process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY;
     } else {
       process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY = originalKey;
+    }
+    if (originalRedirect === undefined) {
+      delete process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI;
+    } else {
+      process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI = originalRedirect;
     }
   });
 

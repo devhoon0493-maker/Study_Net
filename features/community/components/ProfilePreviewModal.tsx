@@ -51,6 +51,8 @@ export function ProfilePreviewModal({
               style={s.profileModalClose}
               onPress={onClose}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="프로필 닫기"
             >
               <Ionicons name="close" size={16} color={C.text} />
             </TouchableOpacity>

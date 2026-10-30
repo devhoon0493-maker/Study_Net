@@ -25,14 +25,18 @@ describe("firebase config", () => {
     const { initializeApp } = require("firebase/app") as {
       initializeApp: jest.Mock;
     };
-    const { getAuth } = require("firebase/auth") as { getAuth: jest.Mock };
+    const {
+      getAuth,
+      getReactNativePersistence,
+      initializeAuth,
+    } = require("firebase/auth") as {
+      getAuth: jest.Mock;
+      getReactNativePersistence: jest.Mock;
+      initializeAuth: jest.Mock;
+    };
     const { getDatabase } = require("firebase/database") as {
       getDatabase: jest.Mock;
     };
-    const { getStorage } = require("firebase/storage") as {
-      getStorage: jest.Mock;
-    };
-
     const { app, firebaseConfig } = require("../../utils/firebaseConfig") as typeof import("../../utils/firebaseConfig");
 
     expect(firebaseConfig).toEqual({
@@ -46,8 +50,13 @@ describe("firebase config", () => {
     });
     expect(initializeApp).toHaveBeenCalledWith(firebaseConfig);
     expect(getDatabase).toHaveBeenCalledWith(app);
-    expect(getAuth).toHaveBeenCalledWith(app);
-    expect(getStorage).toHaveBeenCalledWith(app);
+    expect(getReactNativePersistence).toHaveBeenCalledWith(
+      expect.objectContaining({ getItem: expect.any(Function) }),
+    );
+    expect(initializeAuth).toHaveBeenCalledWith(app, {
+      persistence: expect.objectContaining({ storage: expect.any(Object) }),
+    });
+    expect(getAuth).not.toHaveBeenCalled();
   });
 
   it("fails fast when a required Firebase environment variable is missing or blank", () => {

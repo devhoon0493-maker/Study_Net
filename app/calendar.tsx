@@ -1,4 +1,4 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -16,7 +16,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
-import { getScreenTopPadding } from "../constants/layout";
+import {
+  getScreenTopPadding,
+  RESPONSIVE_CONTENT_STYLE,
+} from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import {
   loadStudySessions,
@@ -652,20 +655,20 @@ const createStyles = (C: MonoTheme) =>
       paddingHorizontal: 18,
     },
     header: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: SPACE.lg,
     },
     iconButton: {
-      width: 40,
-      height: 40,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.chip,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: C.surface,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
     },
     title: {
@@ -674,7 +677,7 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: TYPE_WEIGHT.heavy,
     },
     todayButton: {
-      height: 40,
+      minHeight: CONTROL.icon,
       minWidth: 56,
       borderRadius: RADIUS.chip,
       alignItems: "center",
@@ -688,6 +691,7 @@ const createStyles = (C: MonoTheme) =>
       fontWeight: TYPE_WEIGHT.heavy,
     },
     content: {
+      ...RESPONSIVE_CONTENT_STYLE,
       gap: 14,
     },
     summaryPanel: {
@@ -1014,8 +1018,10 @@ const createStyles = (C: MonoTheme) =>
       opacity: 0.34,
     },
     dayBox: {
-      width: 42,
-      height: 48,
+      width: "100%",
+      maxWidth: 42,
+      maxHeight: 48,
+      aspectRatio: 0.875,
       borderRadius: RADIUS.control,
       borderWidth: 1.5,
       borderColor: "transparent",

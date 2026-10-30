@@ -6,7 +6,7 @@ import { getErrorMessage } from "../../utils/errorMessages";
 import { db } from "../../utils/firebaseConfig";
 import { loadStudyStatusPublic } from "../../utils/privacySettings";
 import type { Room, Screen, StoredMember } from "./groupTypes";
-import { getCurrentStudySession } from "./groupUtils";
+import { getCurrentStudySession, getVisibleStudySession } from "./groupUtils";
 
 type UseGroupPresenceSyncParams = {
   member: StoredMember | null;
@@ -56,7 +56,7 @@ export function useGroupPresenceSync({
           online: true,
           lastSeenAt: nowMs,
           joinedAt: previousMember?.joinedAt ?? nowMs,
-          ...session,
+          ...getVisibleStudySession(session, studyStatusPublic),
         });
       } catch (error) {
         /* istanbul ignore next -- prevents error callbacks after an unmount race. */
@@ -93,7 +93,7 @@ export function useGroupPresenceSync({
       studyStatusPublic,
       online: true,
       lastSeenAt: nowMs,
-      ...session,
+      ...getVisibleStudySession(session, studyStatusPublic),
     };
 
     const updates: Record<string, unknown> = {};

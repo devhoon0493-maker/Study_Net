@@ -8,7 +8,7 @@ StudyNet is built as a product-style mobile app rather than a single timer scree
 
 - Role: planning, screen design, React Native implementation, Firebase integration, testing, and documentation
 - Core flow: signup -> email verification -> subject selection -> study timer -> records/statistics -> group/community participation
-- Quality signal: 50 Jest test suites and 293 automated tests passing locally
+- Quality signal: automated Jest coverage and release validation are included; latest full Jest result is recorded separately from release validation
 - Operations docs: data schema, failure cases, QA, release, testing, and migration notes
 
 Detailed portfolio material is in `docs/PORTFOLIO.md`, and the demo-video flow is in `docs/DEMO_SCRIPT.md`.
@@ -35,6 +35,8 @@ Detailed portfolio material is in `docs/PORTFOLIO.md`, and the demo-video flow i
 - Home dashboard with today progress, active session banner, recent sessions, and weekly stats
 - Public/private group study rooms with invite-code entry
 - Live group member presence and study-status sync through Firebase Realtime Database
+- Group study privacy that hides subject and elapsed time while showing only the coarse studying state
+- Public profile screen opened from group members and community comments; community post authors have a profile preview
 - Firebase-backed community feed with posts, comments, cheers, images, bookmarks, notifications, and profile preview
 - Recruitment posts that can open matching group rooms by invite code
 - Profile/public profile, privacy, notification, storage, contact, password, reset-study-data, and account-deletion settings
@@ -135,12 +137,13 @@ Run the config validator:
 npm.cmd run validate:config
 ```
 
-Current local result:
+Latest release validation on 2026-10-28:
 
 - `npm.cmd run lint`: pass
 - `npm.cmd run typecheck`: pass
 - `npm.cmd run validate:config`: pass
-- `npm.cmd test`: 50 suites, 293 tests passed
+
+The latest full Jest run was on 2026-10-28: 54 suites and 313 tests passed. Lint, TypeScript, and Firebase configuration validation also passed.
 
 ## Firebase Environment
 

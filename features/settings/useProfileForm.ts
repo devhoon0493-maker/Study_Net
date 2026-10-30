@@ -195,6 +195,12 @@ export function useProfileForm({ onSaved }: UseProfileFormParams = {}) {
               "사진 크기를 줄여 다시 선택해 주세요.",
             );
           }
+          if (!(error instanceof Error && error.message === "profile-image-too-large")) {
+            Alert.alert(
+              "프로필을 저장할 수 없어요",
+              "프로필 정보를 저장하는 중에 실패했어요. 다시 시도해 주세요.",
+            );
+          }
           setSaveState("error");
         }
       });

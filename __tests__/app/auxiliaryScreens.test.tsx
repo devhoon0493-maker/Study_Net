@@ -32,6 +32,7 @@ jest.mock("expo-router", () => ({
 jest.mock("../../utils/communityNotifications", () => ({
   buildCommunityNotifications: jest.fn(),
   saveCommunityNotificationsReadAt: jest.fn(() => Promise.resolve()),
+  saveCommunityNotificationsReadIds: jest.fn(() => Promise.resolve()),
   subscribeCommunityNotificationSources: jest.fn(),
 }));
 

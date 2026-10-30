@@ -6,7 +6,7 @@ import { db } from "../../utils/firebaseConfig";
 import { loadStudyStatusPublic } from "../../utils/privacySettings";
 import { CODE_LENGTH } from "./groupConstants";
 import type { Room, StoredMember } from "./groupTypes";
-import { getCurrentStudySession, snapshotToRoom } from "./groupUtils";
+import { getCurrentStudySession, getVisibleStudySession, snapshotToRoom } from "./groupUtils";
 
 type UseGroupJoinActionsParams = {
   member: StoredMember | null;
@@ -55,7 +55,7 @@ export function useGroupJoinActions({
         bio: member.bio ?? "",
         studyStatusPublic,
         speaking: false,
-        ...session,
+        ...getVisibleStudySession(session, studyStatusPublic),
         online: true,
         lastSeenAt: nowMs,
         joinedAt: nowMs,

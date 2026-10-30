@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import PublicProfileModal from "../components/PublicProfileModal";
 import { getScreenTopPadding } from "../constants/layout";
 import { useMonoTheme } from "../constants/mono";
 import {
@@ -51,6 +52,7 @@ export default function CommunityScreen() {
   const topPadding = getScreenTopPadding(insets.top);
 
   const [composeVisible, setComposeVisible] = useState(false);
+  const [commentProfileUid, setCommentProfileUid] = useState<string | null>(null);
   const uid = auth.currentUser?.uid;
   const { authorProfile, loadAuthorProfile } = useCommunityAuthorProfile();
   const moderation = useCommunityModeration();
@@ -286,10 +288,15 @@ export default function CommunityScreen() {
         topInset={insets.top}
         s={s}
         C={C}
-        onClose={commentsSheet.closeComments}
+        onClose={() => {
+          if (commentProfileUid) setCommentProfileUid(null);
+          else commentsSheet.closeComments();
+        }}
         onChangeComment={commentsSheet.setDraftComment}
         onSubmit={submitComment}
         onDeleteComment={deleteComment}
+        onOpenProfile={setCommentProfileUid}
+        profileOverlay={<PublicProfileModal inline uid={commentProfileUid} onClose={() => setCommentProfileUid(null)} />}
         onMoreComment={(comment) => openModerationMenu({ uid: comment.authorId, name: comment.author, image: comment.authorImage }, "comment", comment.id)}
       />
 

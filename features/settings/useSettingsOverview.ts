@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
-import { ref, update } from "firebase/database";
+import { get, ref, update } from "firebase/database";
 
 import { auth, db } from "../../utils/firebaseConfig";
 import { publicProfileUpdate } from "../../utils/publicProfile";
@@ -18,6 +18,7 @@ import {
   saveStudyStatusPublic,
 } from "../../utils/privacySettings";
 import { loadStoredUserProfile } from "../../utils/userProfileStorage";
+import { syncCurrentMemberToJoinedRooms } from "../group/groupPresence";
 
 export type SettingsProfileSummary = {
   name: string;
@@ -47,8 +48,24 @@ export function useSettingsOverview() {
           STUDY_STATUS_PUBLIC_KEY,
           COMMUNITY_ACTIVITY_PUBLIC_KEY,
         ]);
-      const parsed = await loadStoredUserProfile();
-      const notificationSettings = await loadNotificationSettings();
+      const uid = auth.currentUser?.uid;
+      const [parsed, notificationSettings, remoteProfileSnapshot] =
+        await Promise.all([
+          loadStoredUserProfile(),
+          loadNotificationSettings(),
+          uid
+            ? get(ref(db, `users/${uid}`)).catch(() => null)
+            : Promise.resolve(null),
+        ]);
+      const remoteProfile = remoteProfileSnapshot?.val() ?? {};
+      const resolvedStudyStatusPublic =
+        typeof remoteProfile.studyStatusPublic === "boolean"
+          ? remoteProfile.studyStatusPublic
+          : studyStatusEntry[1] !== "false";
+      const resolvedCommunityActivityPublic =
+        typeof remoteProfile.communityActivityPublic === "boolean"
+          ? remoteProfile.communityActivityPublic
+          : communityActivityEntry[1] === "true";
 
       setProfile({
         name: parsed?.name || fallbackProfile.name,
@@ -58,8 +75,12 @@ export function useSettingsOverview() {
       });
       setNotifications(notificationSettings.enabled);
       setNotificationSummary(formatNotificationSummary(notificationSettings));
-      setStudyStatusPublic(studyStatusEntry[1] !== "false");
-      setCommunityActivityPublic(communityActivityEntry[1] === "true");
+      setStudyStatusPublic(resolvedStudyStatusPublic);
+      setCommunityActivityPublic(resolvedCommunityActivityPublic);
+      await Promise.all([
+        saveStudyStatusPublic(resolvedStudyStatusPublic),
+        saveCommunityActivityPublic(resolvedCommunityActivityPublic),
+      ]);
     } catch {
       setProfile(fallbackProfile);
     }
@@ -80,34 +101,49 @@ export function useSettingsOverview() {
   }, []);
 
   const updateStudyStatusPublic = useCallback(async (value: boolean) => {
+    const previous = studyStatusPublic;
     setStudyStatusPublic(value);
     await saveStudyStatusPublic(value);
     const uid = auth.currentUser?.uid;
     if (uid) {
       const updatedAt = Date.now();
       const profile = { ...((await loadStoredUserProfile()) ?? {}), studyStatusPublic: value, updatedAt };
-      await update(ref(db), {
-        [`users/${uid}/studyStatusPublic`]: value,
-        [`users/${uid}/updatedAt`]: updatedAt,
-        ...publicProfileUpdate(uid, profile),
-      });
+      try {
+        await update(ref(db), {
+          [`users/${uid}/studyStatusPublic`]: value,
+          [`users/${uid}/updatedAt`]: updatedAt,
+          ...publicProfileUpdate(uid, profile),
+        });
+        await syncCurrentMemberToJoinedRooms().catch(() => {});
+      } catch {
+        setStudyStatusPublic(previous);
+        await saveStudyStatusPublic(previous).catch(() => {});
+        Alert.alert("저장 실패", "공부 상태 공개 설정을 저장하지 못했어요.");
+      }
     }
-  }, []);
+  }, [studyStatusPublic]);
 
   const updateCommunityActivityPublic = useCallback(async (value: boolean) => {
+    const previous = communityActivityPublic;
     setCommunityActivityPublic(value);
     await saveCommunityActivityPublic(value);
     const uid = auth.currentUser?.uid;
     if (uid) {
       const updatedAt = Date.now();
       const profile = { ...((await loadStoredUserProfile()) ?? {}), communityActivityPublic: value, updatedAt };
-      await update(ref(db), {
-        [`users/${uid}/communityActivityPublic`]: value,
-        [`users/${uid}/updatedAt`]: updatedAt,
-        ...publicProfileUpdate(uid, profile),
-      });
+      try {
+        await update(ref(db), {
+          [`users/${uid}/communityActivityPublic`]: value,
+          [`users/${uid}/updatedAt`]: updatedAt,
+          ...publicProfileUpdate(uid, profile),
+        });
+      } catch {
+        setCommunityActivityPublic(previous);
+        await saveCommunityActivityPublic(previous).catch(() => {});
+        Alert.alert("저장 실패", "커뮤니티 활동 공개 설정을 저장하지 못했어요.");
+      }
     }
-  }, []);
+  }, [communityActivityPublic]);
 
   return {
     profile,

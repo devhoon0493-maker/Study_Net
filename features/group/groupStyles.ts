@@ -1,4 +1,5 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { RESPONSIVE_CONTENT_STYLE } from "../../constants/layout";
 import { StyleSheet } from "react-native";
 
 import type { GroupTheme } from "./groupTheme";
@@ -6,11 +7,15 @@ import { withAlpha } from "./groupUtils";
 
 export type GroupStyles = ReturnType<typeof createStyles>;
 
-export const createStyles = (C: GroupTheme) =>
+export const createStyles = (
+  C: GroupTheme,
+  options: { compact?: boolean } = {},
+) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
     center: { justifyContent: "center", alignItems: "center" },
     header: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -18,8 +23,8 @@ export const createStyles = (C: GroupTheme) =>
       paddingBottom: 14,
     },
     backBtn: {
-      width: 34,
-      height: 34,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       justifyContent: "center",
@@ -52,7 +57,12 @@ export const createStyles = (C: GroupTheme) =>
       paddingVertical: 5,
     },
     roomCountText: { color: C.textSecondary, fontSize: TYPE_SIZE.caption, fontWeight: TYPE_WEIGHT.semibold },
-    lobbyContent: { paddingHorizontal: 18, paddingBottom: 104, gap: SPACE.md },
+    lobbyContent: {
+      ...RESPONSIVE_CONTENT_STYLE,
+      paddingHorizontal: 18,
+      paddingBottom: 104,
+      gap: SPACE.md,
+    },
     lobbyHeaderBlock: {
       paddingTop: 2,
       paddingBottom: 6,
@@ -79,9 +89,9 @@ export const createStyles = (C: GroupTheme) =>
       elevation: 2,
     },
     groupHeroTop: {
-      flexDirection: "row",
+      flexDirection: options.compact ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: options.compact ? "stretch" : "center",
       gap: SPACE.md,
     },
     heroCopy: { flex: 1, minWidth: 0 },
@@ -108,7 +118,11 @@ export const createStyles = (C: GroupTheme) =>
       paddingVertical: 5,
     },
     heroLiveText: { color: C.live, fontSize: TYPE_SIZE.captionLarge, fontWeight: TYPE_WEIGHT.bold },
-    heroPeoplePanel: { minWidth: 90, alignItems: "flex-end" },
+    heroPeoplePanel: {
+      minWidth: options.compact ? 0 : 90,
+      alignSelf: options.compact ? "stretch" : "auto",
+      alignItems: options.compact ? "flex-start" : "flex-end",
+    },
     heroMetricRow: { flexDirection: "row", gap: SPACE.sm, marginTop: 13 },
     heroMetricItem: {
       flex: 1,
@@ -259,7 +273,7 @@ export const createStyles = (C: GroupTheme) =>
     },
     publicJoinPill: {
       minWidth: 58,
-      height: 30,
+      minHeight: CONTROL.icon,
       borderRadius: RADIUS.pill,
       backgroundColor: C.primarySoft,
       flexDirection: "row",
@@ -410,8 +424,8 @@ export const createStyles = (C: GroupTheme) =>
       alignItems: "center",
     },
     modalCloseBtn: {
-      width: 30,
-      height: 30,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.badge,
       backgroundColor: C.surfaceAlt,
       justifyContent: "center",
@@ -593,7 +607,13 @@ export const createStyles = (C: GroupTheme) =>
       letterSpacing: 0.2,
     },
     roomScroll: { flex: 1 },
-    roomContent: { paddingHorizontal: 14, paddingBottom: SPACE.xl, gap: SPACE.md },
+    roomContent: {
+      ...RESPONSIVE_CONTENT_STYLE,
+      maxWidth: 900,
+      paddingHorizontal: 14,
+      paddingBottom: SPACE.xl,
+      gap: SPACE.md,
+    },
     roomHero: {
       backgroundColor: C.primarySoft,
       borderRadius: RADIUS.xxl,
@@ -783,7 +803,7 @@ export const createStyles = (C: GroupTheme) =>
       marginTop: 3,
     },
     copyCodeButton: {
-      height: 36,
+      minHeight: CONTROL.icon,
       borderRadius: RADIUS.md,
       backgroundColor: C.primarySoft,
       flexDirection: "row",
@@ -918,7 +938,7 @@ export const createStyles = (C: GroupTheme) =>
     },
     meTagText: {
       color: C.textPrimary,
-      fontSize: TYPE_SIZE.tiny,
+      fontSize: TYPE_SIZE.captionLarge,
       fontWeight: TYPE_WEIGHT.bold,
       letterSpacing: 0.5,
     },

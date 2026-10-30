@@ -17,6 +17,7 @@ import type { PostCategory } from "../features/community/communityConstants";
 import { db } from "./firebaseConfig";
 
 export const COMMUNITY_NOTIFICATIONS_READ_KEY = "community_notifications_read_at";
+const COMMUNITY_NOTIFICATIONS_READ_IDS_KEY = "community_notifications_read_ids";
 
 export type CommunityCheerRecord =
   | boolean
@@ -69,6 +70,33 @@ export const saveCommunityNotificationsReadAt = async (
   await AsyncStorage.setItem(
     getCommunityNotificationsReadKey(uid),
     String(value),
+  );
+};
+
+const getCommunityNotificationsReadIdsKey = (uid: string) =>
+  `${COMMUNITY_NOTIFICATIONS_READ_IDS_KEY}_${uid}`;
+
+export const loadCommunityNotificationsReadIds = async (uid: string) => {
+  const raw = await AsyncStorage.getItem(getCommunityNotificationsReadIdsKey(uid));
+  if (!raw) return [] as string[];
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [] as string[];
+  }
+};
+
+export const saveCommunityNotificationsReadIds = async (
+  uid: string,
+  ids: string[],
+) => {
+  const existing = await loadCommunityNotificationsReadIds(uid);
+  await AsyncStorage.setItem(
+    getCommunityNotificationsReadIdsKey(uid),
+    JSON.stringify([...new Set([...existing, ...ids])]),
   );
 };
 
@@ -242,8 +270,10 @@ export const subscribeCommunityNotificationSources = (
 export const countUnreadCommunityNotifications = (
   notifications: CommunityNotification[],
   readAt: number,
+  readIds: string[] = [],
 ) =>
   notifications.filter((item) => {
+    if (readIds.includes(item.id)) return false;
     if (item.legacy && readAt === 0) return true;
     return item.createdAt > readAt;
   }).length;

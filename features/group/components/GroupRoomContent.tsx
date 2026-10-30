@@ -22,6 +22,7 @@ type GroupRoomContentProps = {
   canReviewJoinRequests: boolean;
   onReviewJoinRequest: (request: RoomJoinRequest, approve: boolean) => void;
   currentMemberId?: string;
+  onOpenProfile: (memberId: string) => void;
   myMember?: Member;
   memberCountText: string;
   livePulse: Animated.Value;
@@ -44,6 +45,7 @@ export function GroupRoomContent({
   canReviewJoinRequests,
   onReviewJoinRequest,
   currentMemberId,
+  onOpenProfile,
   myMember,
   memberCountText,
   livePulse,
@@ -108,6 +110,7 @@ export function GroupRoomContent({
         emptyTitle="아직 공부 중인 멤버가 없어요."
         emptyDescription="공부를 시작하면 이곳에 실시간으로 표시돼요."
         currentMemberId={currentMemberId}
+        onOpenProfile={onOpenProfile}
         now={now}
         s={s}
         C={C}
@@ -121,6 +124,7 @@ export function GroupRoomContent({
         emptyTitle="모두 공부 중이에요."
         emptyDescription="현재 접속중인 멤버가 없습니다."
         currentMemberId={currentMemberId}
+        onOpenProfile={onOpenProfile}
         now={now}
         s={s}
         C={C}
@@ -131,6 +135,7 @@ export function GroupRoomContent({
         count={offlineMembers}
         members={offlineMemberList}
         emptyIcon="moon-outline"
+        onOpenProfile={onOpenProfile}
         emptyTitle="오프라인 멤버가 없어요."
         emptyDescription="앱을 닫은 멤버가 생기면 이곳에 표시돼요."
         currentMemberId={currentMemberId}
@@ -142,7 +147,7 @@ export function GroupRoomContent({
       <View style={s.myStatusCard}>
         <View style={s.myStatusIcon}>
           <Ionicons
-            name={myMember?.studyStartEpoch ? "book-outline" : "time-outline"}
+            name={myMember?.isStudying || myMember?.studyStartEpoch ? "book-outline" : "time-outline"}
             size={18}
             color={C.textPrimary}
           />
@@ -150,8 +155,10 @@ export function GroupRoomContent({
         <View style={s.myStatusTextWrap}>
           <Text style={s.myStatusLabel}>내 상태</Text>
           <Text style={s.myStatusText} numberOfLines={1}>
-            {myMember?.studyStartEpoch
-              ? `${myMember.status ?? "공부중"} · ${formatTimer(myMember.studyStartEpoch, now)}`
+            {myMember?.isStudying || myMember?.studyStartEpoch
+              ? myMember?.studyStartEpoch
+                ? `${myMember?.status ?? "공부중"} · ${formatTimer(myMember?.studyStartEpoch, now)}`
+                : "공부 중"
               : "공부를 시작하면 그룹에 실시간으로 표시돼요."}
           </Text>
         </View>

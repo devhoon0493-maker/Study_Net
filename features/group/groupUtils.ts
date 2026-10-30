@@ -50,7 +50,30 @@ export const formatTimer = (joinedAt?: number, now = Date.now()) => {
   return `${h}:${m}:${s}`;
 };
 
-export const isMemberStudying = (member: Member) => !!member.studyStartEpoch;
+export const isMemberStudying = (member: Member) =>
+  member.studyStatusPublic === false
+    ? member.isStudying ?? !!member.studyStartEpoch
+    : !!member.studyStartEpoch;
+
+export const getVisibleStudySession = <
+  T extends { status: string; studyStartEpoch: number | null },
+>(
+  session: T,
+  isPublic: boolean,
+): T & { isStudying: boolean } =>
+  {
+    const isStudying = !!session.studyStartEpoch;
+    return {
+      ...session,
+      status: isPublic
+        ? session.status
+        : isStudying
+          ? "공부 중"
+          : "아직 공부를 시작하지 않았어요",
+      studyStartEpoch: isPublic ? session.studyStartEpoch : null,
+      isStudying,
+    };
+  };
 
 export const isMemberOnline = (member: Member, now = Date.now()) => {
   if (member.online === false) return false;
@@ -104,6 +127,8 @@ export const snapshotToRoom = (id: string, raw: RoomRecord): Room => ({
       status: m.status ?? "공부 중",
       joinedAt: m.joinedAt,
       studyStartEpoch: m.studyStartEpoch ?? null,
+      isStudying: m.isStudying ?? undefined,
+      studyStatusPublic: m.studyStatusPublic ?? true,
       online: m.online ?? false,
       lastSeenAt:
         typeof m.lastSeenAt === "number" ? m.lastSeenAt : undefined,

@@ -1,4 +1,5 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { RESPONSIVE_CONTENT_STYLE } from "../../constants/layout";
 import { StyleSheet } from "react-native";
 
 import type { MonoTheme } from "../../constants/mono";
@@ -6,6 +7,7 @@ import type { MonoTheme } from "../../constants/mono";
 export const createSettingsStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
       paddingHorizontal: 18,
@@ -17,15 +19,14 @@ export const createSettingsStyles = (C: MonoTheme) =>
       marginBottom: SPACE.lg,
     },
     headerSpacer: {
-      width: 40,
-      height: 40,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
     },
     backBtn: {
-      width: 40,
-      height: 40,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.chip,
       borderWidth: 1,
-      borderBottomWidth: 3,
       borderColor: C.border,
       backgroundColor: C.surface,
       justifyContent: "center",
@@ -103,8 +104,8 @@ export const createSettingsStyles = (C: MonoTheme) =>
       fontWeight: TYPE_WEIGHT.strong,
     },
     editBtn: {
-      width: 38,
-      height: 38,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.chip,
       backgroundColor: C.primarySoft,
       alignItems: "center",
@@ -174,8 +175,9 @@ export const createSettingsStyles = (C: MonoTheme) =>
     },
     rowDesc: {
       color: C.muted,
-      fontSize: TYPE_SIZE.captionLarge,
-      fontWeight: TYPE_WEIGHT.bold,
+      fontSize: TYPE_SIZE.label,
+      lineHeight: 18,
+      fontWeight: TYPE_WEIGHT.regular,
       marginTop: 3,
     },
     infoValue: {

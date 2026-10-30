@@ -59,6 +59,8 @@ jest.mock("firebase/auth", () => ({
   ),
   deleteUser: jest.fn(() => Promise.resolve()),
   getAuth: jest.fn(() => ({ currentUser: null })),
+  getReactNativePersistence: jest.fn((storage: unknown) => ({ storage })),
+  initializeAuth: jest.fn(() => ({ currentUser: null })),
   GoogleAuthProvider: {
     credential: jest.fn((idToken: string) => ({ idToken })),
   },

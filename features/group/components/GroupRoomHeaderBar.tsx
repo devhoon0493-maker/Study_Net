@@ -25,7 +25,7 @@ export function GroupRoomHeaderBar({
 }: GroupRoomHeaderBarProps) {
   return (
     <View style={s.header}>
-      <TouchableOpacity style={s.backBtn} onPress={onBack}>
+      <TouchableOpacity style={s.backBtn} onPress={onBack} activeOpacity={0.75} accessibilityRole="button" accessibilityLabel="그룹 나가기 옵션">
         <Ionicons name="chevron-down" size={18} color={C.textSecondary} />
       </TouchableOpacity>
       <View style={s.headerCenter}>

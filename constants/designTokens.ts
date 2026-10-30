@@ -59,6 +59,12 @@ export const SPACE = {
   xxl: 32,
 } as const;
 
+/** Shared minimum sizes for interactive controls, in logical pixels. */
+export const CONTROL = {
+  icon: 44,
+  button: 48,
+} as const;
+
 export const RADIUS = {
   sm: 8,
   compact: 10,

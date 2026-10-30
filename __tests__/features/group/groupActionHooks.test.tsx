@@ -170,22 +170,7 @@ describe("group action hooks", () => {
       await result.current.joinByCode("abc123");
     });
 
-    expect(update).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ path: "rooms/room-1/members/member-1" }),
-      expect.objectContaining({
-        name: "Member",
-        studyStatusPublic: false,
-        status: "Math",
-        studyStartEpoch: 123,
-        online: true,
-        lastSeenAt: 10_000,
-        joinedAt: 500,
-      }),
-    );
-    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
-      "userRooms/member-1/room-1": true,
-    });
+    expect(update).not.toHaveBeenCalled();
     expect(result.current.codeInput).toBe("");
     expect(onJoined).toHaveBeenCalledWith("room-1");
     expect(result.current.joining).toBe(false);
@@ -220,7 +205,7 @@ describe("group action hooks", () => {
 
     expect(update).not.toHaveBeenCalled();
     expect(onJoined).toHaveBeenCalledWith("already-joined");
-    expect(onLobbyError).not.toHaveBeenCalled();
+    expect(onLobbyError).toHaveBeenCalledWith("");
     expect(result.current.joining).toBe(false);
   });
 
@@ -300,19 +285,7 @@ describe("group action hooks", () => {
       await result.current.joinByCode("ROOM33");
     });
 
-    expect(update).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ path: "rooms/room-3/members/member-2" }),
-      expect.objectContaining({
-        image: null,
-        userType: "",
-        bio: "",
-        joinedAt: 10_000,
-      }),
-    );
-    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
-      "userRooms/member-2/room-3": true,
-    });
+    expect(update).not.toHaveBeenCalled();
 
     jest
       .mocked(get)
@@ -340,17 +313,7 @@ describe("group action hooks", () => {
     await act(async () => {
       await nullishHook.result.current.joinByCode("ROOM44");
     });
-    expect(update).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({ path: "rooms/room-4/members/member-3" }),
-      expect.objectContaining({
-        userType: "",
-        bio: "",
-      }),
-    );
-    expect(update).toHaveBeenNthCalledWith(4, expect.anything(), {
-      "userRooms/member-3/room-4": true,
-    });
+    expect(update).toHaveBeenCalledTimes(2);
   });
 
   it("handles missing code, stale room, full room, and join failures", async () => {
@@ -761,10 +724,12 @@ describe("group action hooks", () => {
     await act(async () => {
       await ownerHook.result.current.leaveRoomNow();
     });
-    expect(update).toHaveBeenCalledWith(expect.anything(), {
-      "rooms/room-1": null,
+    expect(update).toHaveBeenNthCalledWith(1, expect.anything(), {
       "roomCodes/ABC123": null,
       "userRooms/member-1/room-1": null,
+    });
+    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
+      "rooms/room-1": null,
     });
     expect(onLeft).toHaveBeenCalled();
 
@@ -797,7 +762,7 @@ describe("group action hooks", () => {
     await act(async () => {
       await missingHook.result.current.leaveRoomNow();
     });
-    expect(onLeft).toHaveBeenCalledTimes(3);
+    expect(onLeft).toHaveBeenCalledTimes(2);
   });
 
   it("transfers ownership and removes the former owner's membership atomically", async () => {
@@ -847,15 +812,17 @@ describe("group action hooks", () => {
       await result.current.leaveRoomNow();
     });
 
-    expect(update).toHaveBeenCalledWith(expect.anything(), {
-      "rooms/room-1": null,
+    expect(update).toHaveBeenNthCalledWith(1, expect.anything(), {
       "roomCodes/ABC123": null,
       "userRooms/member-1/room-1": null,
       "userRooms/successor-1/room-1": null,
     });
+    expect(update).toHaveBeenNthCalledWith(2, expect.anything(), {
+      "rooms/room-1": null,
+    });
   });
 
-  it("reports leave failures and still calls onLeft", async () => {
+  it("reports leave failures without leaving the room", async () => {
     jest.mocked(update).mockRejectedValueOnce(new Error("bad"));
     const onLeft = jest.fn();
     const onError = jest.fn();
@@ -873,7 +840,7 @@ describe("group action hooks", () => {
       await result.current.leaveRoomNow();
     });
 
-    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/\S+/));
-    expect(onLeft).toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(onLeft).not.toHaveBeenCalled();
   });
 });

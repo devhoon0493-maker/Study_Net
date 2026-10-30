@@ -19,8 +19,8 @@ export function GroupLobbyHeaderBar({
 }: GroupLobbyHeaderBarProps) {
   return (
     <View style={s.header}>
-      <TouchableOpacity style={s.backBtn} onPress={onBack}>
-        <Ionicons name="chevron-down" size={18} color={C.textSecondary} />
+      <TouchableOpacity style={s.backBtn} onPress={onBack} activeOpacity={0.75} accessibilityRole="button" accessibilityLabel="홈으로 돌아가기">
+        <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
       </TouchableOpacity>
       <View style={s.roomCountBadge}>
         <Text style={s.roomCountText}>{roomsCount}개 그룹</Text>

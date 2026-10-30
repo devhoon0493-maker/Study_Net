@@ -3,8 +3,9 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth != null",
+      ".read": false,
       "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'name', 'email']) && newData.child('uid').val() === $uid)",
         "uid": {
@@ -169,6 +170,9 @@
             "studyStartEpoch": {
               ".validate": "!newData.exists() || newData.val() === null || (newData.isNumber() && newData.val() > 0 && newData.val() <= now + 300000)"
             },
+            "isStudying": {
+              ".validate": "!newData.exists() || newData.isBoolean()"
+            },
             "goalSeconds": {
               ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 60 && newData.val() <= 86400)"
             },
@@ -194,7 +198,7 @@
     "roomCodes": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid) || (data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid))",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && (!root.child('rooms').child(data.val()).exists() || root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid)) || (data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid))",
         ".validate": "!newData.exists() || newData.isString()"
       }
     },
@@ -255,6 +259,7 @@
     "communityPostCheers": {
       ".read": "auth != null",
       "$postId": {
+        ".write": "auth != null && !newData.exists() && (!data.exists() || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)",
         "$uid": {
           ".write": "auth != null && ((auth.uid === $uid && (!newData.exists() || root.child('communityPosts').child($postId).exists())) || (data.exists() && !newData.exists() && root.child('communityPosts').child($postId).child('authorId').val() === auth.uid))",
           ".validate": "!newData.exists() || newData.val() === true || (newData.hasChildren(['authorId', 'createdAt']) && newData.child('authorId').val() === $uid)",
@@ -273,6 +278,7 @@
     "communityPostComments": {
       ".read": "auth != null",
       "$postId": {
+        ".write": "auth != null && !newData.exists() && (!data.exists() || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)",
         "$commentId": {
           ".write": "auth != null && ((!data.exists() && newData.exists() && root.child('communityPosts').child($postId).exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && !newData.exists() && (data.child('authorId').val() === auth.uid || root.child('communityPosts').child($postId).child('authorId').val() === auth.uid)) || (data.exists() && newData.exists() && root.child('communityPosts').child($postId).exists() && data.child('authorId').val() === auth.uid && newData.child('authorId').val() === auth.uid))",
           ".validate": "!newData.exists() || newData.hasChildren(['authorId', 'author', 'body', 'createdAt'])",

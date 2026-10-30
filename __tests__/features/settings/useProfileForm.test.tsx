@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import * as FileSystem from "expo-file-system/legacy";
+import { manipulateAsync } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { updateProfile } from "firebase/auth";
 import { update } from "firebase/database";
@@ -15,9 +15,9 @@ import { useProfileForm } from "../../../features/settings/useProfileForm";
 import { auth } from "../../../utils/firebaseConfig";
 import { USER_PROFILE_KEY } from "../../../utils/userProfileStorage";
 
-jest.mock("expo-file-system/legacy", () => ({
-  EncodingType: { Base64: "base64" },
-  readAsStringAsync: jest.fn(() => Promise.resolve("file-base64")),
+jest.mock("expo-image-manipulator", () => ({
+  SaveFormat: { JPEG: "jpeg" },
+  manipulateAsync: jest.fn(() => Promise.resolve({ base64: "processed-base64" })),
 }));
 
 jest.mock("expo-image-picker", () => ({
@@ -130,7 +130,7 @@ describe("useProfileForm", () => {
     expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled();
   });
 
-  it("stores a picked image as an embedded base64 URI", async () => {
+  it("keeps a picked local image until the profile is saved", async () => {
     jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValueOnce({
       canceled: false,
       assets: [{ uri: "file:///avatar.jpg", base64: "picked-base64" }],
@@ -145,7 +145,7 @@ describe("useProfileForm", () => {
       await result.current.pickImage();
     });
 
-    expect(result.current.image).toBe("data:image/jpeg;base64,picked-base64");
+    expect(result.current.image).toBe("file:///avatar.jpg");
   });
 
   it("keeps the current image when image picking is canceled", async () => {
@@ -229,29 +229,28 @@ describe("useProfileForm", () => {
       await result.current.handleSave();
     });
 
-    expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith(
+    expect(manipulateAsync).toHaveBeenCalledWith(
       "file:///avatar.jpg",
-      { encoding: FileSystem.EncodingType.Base64 },
+      [{ resize: { width: 256, height: 256 } }],
+      expect.objectContaining({ base64: true }),
     );
-    expect(uploadString).toHaveBeenCalledWith(
+    expect(update).toHaveBeenCalledWith(
       expect.anything(),
-      "data:image/jpeg;base64,file-base64",
-      "data_url",
       expect.objectContaining({
-        contentType: "image/jpeg",
-        customMetadata: { owner: "user-1" },
+        "users/user-1": expect.objectContaining({
+          image: "data:image/jpeg;base64,processed-base64",
+        }),
       }),
     );
-    expect(getDownloadURL).toHaveBeenCalled();
     expect(updateProfile).toHaveBeenCalledWith(
       auth.currentUser,
       expect.objectContaining({
-        photoURL: "https://cdn.example.com/avatar.jpg",
+        photoURL: null,
       }),
     );
   });
 
-  it("uploads an embedded image without reading from the file system", async () => {
+  it("normalizes a picked local image before saving", async () => {
     const { result } = await renderHook(() => useProfileForm({ onSaved }));
 
     await waitFor(() => {
@@ -269,17 +268,23 @@ describe("useProfileForm", () => {
     await act(async () => {
       await result.current.pickImage();
     });
-    jest.mocked(FileSystem.readAsStringAsync).mockClear();
+    jest.mocked(manipulateAsync).mockClear();
     await act(async () => {
       await result.current.handleSave();
     });
 
-    expect(FileSystem.readAsStringAsync).not.toHaveBeenCalled();
-    expect(uploadString).toHaveBeenCalledWith(
+    expect(manipulateAsync).toHaveBeenCalledWith(
+      "file:///avatar.jpg",
+      [{ resize: { width: 256, height: 256 } }],
+      expect.objectContaining({ base64: true }),
+    );
+    expect(update).toHaveBeenCalledWith(
       expect.anything(),
-      "data:image/jpeg;base64,picked-base64",
-      "data_url",
-      expect.anything(),
+      expect.objectContaining({
+        "users/user-1": expect.objectContaining({
+          image: "data:image/jpeg;base64,processed-base64",
+        }),
+      }),
     );
   });
 
@@ -331,6 +336,9 @@ describe("useProfileForm", () => {
     });
 
     await act(async () => {
+      result.current.setEmail("changed@example.com");
+    });
+    await act(async () => {
       await result.current.handleSave();
     });
 
@@ -347,7 +355,7 @@ describe("useProfileForm", () => {
     expect(onSaved).toHaveBeenCalled();
   });
 
-  it("deletes a previous remote image when saving with no next image", async () => {
+  it("keeps a previous remote image when it is unchanged", async () => {
     const { result } = await renderHook(() => useProfileForm({ onSaved }));
 
     await waitFor(() => {
@@ -372,7 +380,7 @@ describe("useProfileForm", () => {
       await result.current.handleSave();
     });
 
-    expect(deleteObject).toHaveBeenCalled();
+    expect(deleteObject).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalled();
   });
 
@@ -406,7 +414,7 @@ describe("useProfileForm", () => {
       "storage/retry-limit-exceeded",
       "storage/other",
     ]) {
-      jest.mocked(uploadString).mockRejectedValueOnce({ code });
+      jest.mocked(manipulateAsync).mockRejectedValueOnce({ code });
       await act(async () => {
         await result.current.pickImage();
       });
@@ -415,9 +423,7 @@ describe("useProfileForm", () => {
       });
     }
 
-    jest.mocked(FileSystem.readAsStringAsync).mockRejectedValueOnce(
-      new Error("image-read-failed"),
-    );
+    jest.mocked(manipulateAsync).mockRejectedValueOnce(new Error("image-processing-failed"));
     await act(async () => {
       await result.current.pickImage();
     });

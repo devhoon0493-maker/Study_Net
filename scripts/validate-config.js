@@ -71,6 +71,10 @@ assert(
 
 const databaseRules = JSON.parse(readText("database.rules.json"));
 assert(
+  databaseRules.rules?.users?.[".read"] === false,
+  "database.rules.json users parent must deny broad reads",
+);
+assert(
   databaseRules.rules?.users?.$uid?.[".read"] ===
     "auth != null && auth.uid === $uid",
   "database.rules.json users must be owner-readable only",
@@ -95,6 +99,11 @@ assert(
   roomCodeRules?.[".write"] ===
     "auth != null && ((!data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid) || (data.exists() && !newData.exists() && (!root.child('rooms').child(data.val()).exists() || root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid)) || (data.exists() && newData.exists() && newData.isString() && $code.length === 6 && root.child('rooms').child(data.val()).child('ownerId').val() === auth.uid && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid))",
   "database.rules.json roomCodes must be owner-scoped six-character code maps",
+);
+assert(
+  databaseRules.rules?.rooms?.$roomId?.members?.$uid?.isStudying?.[".validate"] ===
+    "!newData.exists() || newData.isBoolean()",
+  "database.rules.json room member studying presence must be boolean",
 );
 assert(
   roomCodeRules?.[".validate"] === "!newData.exists() || newData.isString()",

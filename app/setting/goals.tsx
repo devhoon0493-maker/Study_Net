@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getScreenBottomPadding,
   getScreenTopPadding,
+  RESPONSIVE_CONTENT_STYLE,
 } from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
 import {
@@ -155,6 +156,7 @@ function GoalSection({
 const createStyles = (C: MonoTheme) => {
   const styles = StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
       paddingHorizontal: 20,

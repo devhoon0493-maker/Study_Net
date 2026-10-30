@@ -7,7 +7,7 @@ import { loadStudyStatusPublic } from "../../utils/privacySettings";
 import { loadStoredUserProfile, type StoredUserProfile } from "../../utils/userProfileStorage";
 import { MEMBER_KEY } from "./groupConstants";
 import type { RoomRecord, StoredMember } from "./groupTypes";
-import { getColorFromId, getCurrentStudySession } from "./groupUtils";
+import { getColorFromId, getCurrentStudySession, getVisibleStudySession } from "./groupUtils";
 
 type StudyPresence = {
   status: string;
@@ -143,7 +143,7 @@ export const syncCurrentMemberToJoinedRooms = async ({
       speaking: previous.speaking ?? false,
       online,
       lastSeenAt: now,
-      ...nextSession,
+      ...getVisibleStudySession(nextSession, studyStatusPublic),
     };
   }
 

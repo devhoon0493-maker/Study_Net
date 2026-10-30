@@ -648,6 +648,9 @@ const createStyles = (C: MonoTheme) =>
   },
   content: {
     flexGrow: 1,
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     paddingHorizontal: 28,
     paddingTop: SPACE.md,
     paddingBottom: 18,

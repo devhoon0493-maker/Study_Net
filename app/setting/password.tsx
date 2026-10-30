@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
+import { RESPONSIVE_CONTENT_STYLE } from "../../constants/layout";
 import { SettingsHeader } from "../../features/settings/SettingsHeader";
 import { useChangePasswordForm } from "../../features/settings/useChangePasswordForm";
 
@@ -141,6 +142,7 @@ function PasswordField({
 const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
       paddingHorizontal: 20,

@@ -2,6 +2,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 
 import { monoLight } from "../../../constants/mono";
 import { CategoryTabs } from "../../../features/community/components/CategoryTabs";
+import { CommentSheet } from "../../../features/community/components/CommentSheet";
 import { PostCard } from "../../../features/community/components/PostCard";
 import { categories } from "../../../features/community/communityConstants";
 import { createStyles } from "../../../features/community/communityStyles";
@@ -47,6 +48,7 @@ describe("community components", () => {
     const onOpenComments = jest.fn();
     const onBookmark = jest.fn();
     const onOpenGroup = jest.fn();
+    const onMore = jest.fn();
 
     const { getAllByLabelText, getByLabelText, getByText } = await render(
       <PostCard
@@ -60,6 +62,7 @@ describe("community components", () => {
         onOpenComments={onOpenComments}
         onBookmark={onBookmark}
         onOpenGroup={onOpenGroup}
+        onMore={onMore}
       />,
     );
 
@@ -103,6 +106,7 @@ describe("community components", () => {
         onOpenComments={jest.fn()}
         onBookmark={onBookmark}
         onOpenGroup={onOpenGroup}
+        onMore={jest.fn()}
       />,
     );
 
@@ -110,5 +114,40 @@ describe("community components", () => {
 
     expect(onOpenGroup).toHaveBeenCalledWith(recruitingPost);
     expect(onBookmark).not.toHaveBeenCalled();
+  });
+
+  it("opens a comment author's public profile", async () => {
+    const onOpenProfile = jest.fn();
+    const comment = {
+      id: "comment-1",
+      postId: basePost.id,
+      authorId: "commenter-1",
+      author: "Commenter",
+      body: "Helpful advice",
+      createdAt: Date.now(),
+    };
+
+    const { getByText } = await render(
+      <CommentSheet
+        selectedPost={basePost}
+        comments={[comment]}
+        draftComment=""
+        uid="user-1"
+        bottomInset={0}
+        topInset={0}
+        s={styles}
+        C={monoLight}
+        onClose={jest.fn()}
+        onChangeComment={jest.fn()}
+        onSubmit={jest.fn()}
+        onDeleteComment={jest.fn()}
+        onMoreComment={jest.fn()}
+        onOpenProfile={onOpenProfile}
+      />,
+    );
+
+    await fireEvent.press(getByText("Commenter"));
+
+    expect(onOpenProfile).toHaveBeenCalledWith("commenter-1");
   });
 });

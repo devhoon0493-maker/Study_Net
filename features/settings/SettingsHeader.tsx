@@ -1,4 +1,4 @@
-import { RADIUS, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { CONTROL, RADIUS, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
@@ -30,6 +30,8 @@ export function SettingsHeader({
         ]}
         onPress={() => router.back()}
         activeOpacity={0.78}
+        accessibilityRole="button"
+        accessibilityLabel="뒤로 가기"
       >
         <Ionicons name="chevron-back" size={20} color={C.text} />
       </TouchableOpacity>
@@ -82,16 +84,15 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   iconButton: {
-    width: 38,
-    height: 38,
+    width: CONTROL.icon,
+    height: CONTROL.icon,
     borderWidth: 1,
-    borderBottomWidth: 3,
     borderRadius: RADIUS.md,
     alignItems: "center",
     justifyContent: "center",
   },
   headerSpacer: {
-    width: 38,
+    width: CONTROL.icon,
   },
   title: {
     flex: 1,

@@ -1,4 +1,5 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../../constants/designTokens";
+import { RESPONSIVE_CONTENT_STYLE } from "../../constants/layout";
 import { StyleSheet } from "react-native";
 
 import type { MonoTheme } from "../../constants/mono";
@@ -8,6 +9,7 @@ export type CommunityStyles = ReturnType<typeof createStyles>;
 export const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
     },
@@ -19,8 +21,8 @@ export const createStyles = (C: MonoTheme) =>
       paddingBottom: SPACE.md,
     },
     backButton: {
-      width: 36,
-      height: 36,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: RADIUS.compact,
@@ -47,7 +49,7 @@ export const createStyles = (C: MonoTheme) =>
       alignItems: "center",
       gap: 5,
       paddingHorizontal: SPACE.md,
-      height: 36,
+      minHeight: CONTROL.icon,
       borderRadius: RADIUS.compact,
       backgroundColor: C.primary,
     },
@@ -372,9 +374,9 @@ export const createStyles = (C: MonoTheme) =>
       marginBottom: 3,
     },
     cardIconButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 9,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
+      borderRadius: RADIUS.md,
       backgroundColor: C.surfaceAlt,
       alignItems: "center",
       justifyContent: "center",
@@ -431,6 +433,7 @@ export const createStyles = (C: MonoTheme) =>
 
     cardActions: {
       flexDirection: "row",
+      flexWrap: "wrap",
       alignItems: "center",
       gap: 6,
       paddingTop: 10,
@@ -438,6 +441,7 @@ export const createStyles = (C: MonoTheme) =>
       borderTopColor: C.border,
     },
     actionBtn: {
+      minHeight: CONTROL.icon,
       flexDirection: "row",
       alignItems: "center",
       gap: SPACE.xs,
@@ -487,6 +491,14 @@ export const createStyles = (C: MonoTheme) =>
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: SPACE.lg,
+    },
+    sheetCloseButton: {
+      width: CONTROL.icon,
+      height: CONTROL.icon,
+      borderRadius: RADIUS.md,
+      backgroundColor: C.surfaceAlt,
+      alignItems: "center",
+      justifyContent: "center",
     },
     sheetTitle: {
       color: C.text,
@@ -591,8 +603,8 @@ export const createStyles = (C: MonoTheme) =>
       position: "absolute",
       top: 10,
       right: 10,
-      width: 30,
-      height: 30,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.badge,
       alignItems: "center",
       justifyContent: "center",
@@ -726,8 +738,8 @@ export const createStyles = (C: MonoTheme) =>
     },
     commentDeleteButton: {
       marginLeft: "auto",
-      width: 24,
-      height: 24,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -808,8 +820,8 @@ export const createStyles = (C: MonoTheme) =>
       letterSpacing: 0,
     },
     profileModalClose: {
-      width: 32,
-      height: 32,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: 9,
       borderWidth: 1,
       borderColor: C.border,

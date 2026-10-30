@@ -13,7 +13,7 @@ All Firebase database paths require `auth != null` for reads unless noted otherw
 Purpose: private account profile cache and privacy flags.
 
 Reader:
-- Only the signed-in user whose `auth.uid === uid`.
+- Only the signed-in user whose `auth.uid === uid`. The parent `users` path denies reads; the per-user rule grants the owner access.
 
 Writer:
 - Only the signed-in user whose `auth.uid === uid`.
@@ -62,7 +62,7 @@ Fields:
 
 Used by:
 - Community feed author hydration.
-- Community profile preview.
+- Community profile preview and the full public profile screen linked from group members and community authors/comments.
 - Community reaction/comment notifications.
 
 ### `userRooms/{uid}/{roomId}`
@@ -123,10 +123,16 @@ Optional fields:
 - `userType`: string, max 40 chars.
 - `bio`: string, max 80 chars.
 - `studyStatusPublic`: boolean.
+- `isStudying`: boolean. Coarse presence used when study-status sharing is off.
 - `speaking`: boolean.
 - `status`: string, max 40 chars.
 - `studyStartEpoch`: null or number.
 - `goalSeconds`: number, 60-86400.
+
+Privacy behavior:
+- When `studyStatusPublic` is true, the room member record may contain the current subject in `status` and the session start timestamp in `studyStartEpoch`.
+- When it is false, the room member record contains a generic studying/not-started status and `isStudying`; `studyStartEpoch` is null, so other members cannot derive elapsed study time from room data.
+- Public community live-room counts exclude members whose `studyStatusPublic` is false.
 
 Operational note:
 - `createdAt`, `lastSeenAt`, `joinedAt`, and `studyStartEpoch` allow a small future skew of 5 minutes to tolerate device/server clock drift.
@@ -247,6 +253,7 @@ Settings:
 
 Community:
 - `community_notifications_read_at:{uid}`: notification read timestamp.
+- `community_notifications_read_ids_{uid}`: IDs of read notifications, retained so the same activity does not become unread after logout/login.
 - `community_bookmarked_posts:{uid}`: saved community post ids.
 
 Subjects:

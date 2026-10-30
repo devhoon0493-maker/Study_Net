@@ -8,6 +8,7 @@ import { SubjectDonut } from "./SubjectDonut";
 export function WeeklyStatsCard({
   weeklyStats,
   weeklyMax,
+  weeklyGoal,
   subjectShares,
   subjectTotal,
   styles,
@@ -15,11 +16,15 @@ export function WeeklyStatsCard({
 }: {
   weeklyStats: WeeklyDay[];
   weeklyMax: number;
+  weeklyGoal: number;
   subjectShares: SubjectShare[];
   subjectTotal: number;
   styles: HomeStyles;
   C: HomeTheme;
 }) {
+  const weeklyTotal = weeklyStats.reduce((sum, day) => sum + day.seconds, 0);
+  const goalProgress = Math.min((weeklyTotal / Math.max(weeklyGoal, 1)) * 100, 100);
+
   return (
     <View style={styles.weeklyCard}>
       <View style={styles.sectionHeader}>
@@ -29,6 +34,19 @@ export function WeeklyStatsCard({
       <View style={styles.weeklyBody}>
         <View style={styles.weeklyPanel}>
           <Text style={styles.chartTitle}>요일별 공부 시간 (시간)</Text>
+          <View style={styles.weeklyGoalSummary}>
+            <Text style={styles.weeklyGoalText}>
+              주간 목표 {formatGoalTime(weeklyTotal)} / {formatGoalTime(weeklyGoal)}
+            </Text>
+          </View>
+          <View style={styles.weeklyGoalTrack}>
+            <View
+              style={[
+                styles.weeklyGoalFill,
+                { width: `${goalProgress}%` },
+              ]}
+            />
+          </View>
           <View style={styles.barChart}>
             {weeklyStats.map((item) => {
               const ratio = item.seconds / weeklyMax;
@@ -88,3 +106,8 @@ export function WeeklyStatsCard({
     </View>
   );
 }
+
+const formatGoalTime = (seconds: number) => {
+  const hours = seconds / 3600;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}시간`;
+};

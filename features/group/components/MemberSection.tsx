@@ -15,6 +15,7 @@ type MemberSectionProps = {
   emptyTitle: string;
   emptyDescription: string;
   currentMemberId?: string;
+  onOpenProfile: (memberId: string) => void;
   now: number;
   s: GroupStyles;
   C: GroupTheme;
@@ -28,6 +29,7 @@ export function MemberSection({
   emptyTitle,
   emptyDescription,
   currentMemberId,
+  onOpenProfile,
   now,
   s,
   C,
@@ -54,6 +56,7 @@ export function MemberSection({
               member={member}
               isMe={member.id === currentMemberId}
               now={now}
+              onOpenProfile={onOpenProfile}
               s={s}
             />
           ))}

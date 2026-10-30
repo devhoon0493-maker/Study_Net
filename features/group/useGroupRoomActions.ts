@@ -7,7 +7,7 @@ import { db } from "../../utils/firebaseConfig";
 import { loadStudyStatusPublic } from "../../utils/privacySettings";
 import { COLORS, ROOM_EMOJIS } from "./groupConstants";
 import type { Room, RoomVisibility, StoredMember } from "./groupTypes";
-import { getCurrentStudySession, makeCode } from "./groupUtils";
+import { getCurrentStudySession, getVisibleStudySession, makeCode } from "./groupUtils";
 
 type CreateRoomInput = {
   roomName: string;
@@ -87,7 +87,7 @@ export function useGroupRoomActions({
               bio: member.bio ?? "",
               studyStatusPublic,
               speaking: false,
-              ...session,
+              ...getVisibleStudySession(session, studyStatusPublic),
               online: true,
               lastSeenAt: createdAt,
               joinedAt: createdAt,
@@ -129,7 +129,6 @@ export function useGroupRoomActions({
 
   const deleteRoom = useCallback(async (room: Room) => {
     await update(ref(db), {
-      [`rooms/${room.id}`]: null,
       [`roomCodes/${room.code}`]: null,
       ...Object.fromEntries(
         room.members.map((roomMember) => [
@@ -137,6 +136,9 @@ export function useGroupRoomActions({
           null,
         ]),
       ),
+    });
+    await update(ref(db), {
+      [`rooms/${room.id}`]: null,
     });
   }, []);
 

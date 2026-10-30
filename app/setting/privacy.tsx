@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getScreenBottomPadding,
   getScreenTopPadding,
+  RESPONSIVE_CONTENT_STYLE,
 } from "../../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../../constants/mono";
 import { SettingsHeader } from "../../features/settings/SettingsHeader";
@@ -82,6 +83,7 @@ export default function PrivacyPolicyScreen() {
 const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
       paddingHorizontal: 20,

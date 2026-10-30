@@ -1,4 +1,4 @@
-import { RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
+import { CONTROL, RADIUS, SPACE, TYPE_SIZE, TYPE_WEIGHT } from "../constants/designTokens";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getScreenBottomPadding,
   getScreenTopPadding,
+  RESPONSIVE_CONTENT_STYLE,
 } from "../constants/layout";
 import { useMonoTheme, type MonoTheme } from "../constants/mono";
 import { categoryEmoji } from "../features/community/communityConstants";
@@ -24,6 +25,7 @@ import { auth } from "../utils/firebaseConfig";
 import {
   buildCommunityNotifications,
   saveCommunityNotificationsReadAt,
+  saveCommunityNotificationsReadIds,
   subscribeCommunityNotificationSources,
   type CommunityNotification,
 } from "../utils/communityNotifications";
@@ -45,12 +47,14 @@ export default function NotificationsScreen() {
     }
 
     const unsubscribe = subscribeCommunityNotificationSources(uid, (sources) => {
-      setNotifications(
-        buildCommunityNotifications({
-          ...sources,
+      const nextNotifications = buildCommunityNotifications({ ...sources, uid });
+      setNotifications(nextNotifications);
+      if (nextNotifications.length > 0) {
+        saveCommunityNotificationsReadIds(
           uid,
-        }),
-      );
+          nextNotifications.map((item) => item.id),
+        ).catch(() => {});
+      }
     });
 
     saveCommunityNotificationsReadAt(uid).catch(() => {});
@@ -188,6 +192,7 @@ export default function NotificationsScreen() {
 const createStyles = (C: MonoTheme) =>
   StyleSheet.create({
     container: {
+      ...RESPONSIVE_CONTENT_STYLE,
       flex: 1,
       backgroundColor: C.bg,
     },
@@ -199,8 +204,8 @@ const createStyles = (C: MonoTheme) =>
       gap: SPACE.md,
     },
     iconButton: {
-      width: 38,
-      height: 38,
+      width: CONTROL.icon,
+      height: CONTROL.icon,
       borderRadius: RADIUS.compact,
       alignItems: "center",
       justifyContent: "center",

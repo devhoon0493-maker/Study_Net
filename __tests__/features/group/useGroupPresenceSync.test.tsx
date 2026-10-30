@@ -140,8 +140,9 @@ describe("useGroupPresenceSync", () => {
         expect.objectContaining({
           name: "Member",
           studyStatusPublic: false,
-          status: "Math",
-          studyStartEpoch: 123,
+          status: "공부 중",
+          isStudying: true,
+          studyStartEpoch: null,
           online: true,
           lastSeenAt: 10_000,
           joinedAt: 777,

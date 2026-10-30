@@ -10,10 +10,12 @@ import {
   StatusBar,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomNav, { getBottomNavSpace } from "../components/BottomNav";
+import PublicProfileModal from "../components/PublicProfileModal";
 import { getScreenTopPadding } from "../constants/layout";
 import { useMonoTheme } from "../constants/mono";
 import {
@@ -49,13 +51,18 @@ export default function GroupScreen() {
   const router = useRouter();
   const { code: initialCodeParam } = useLocalSearchParams<{ code?: string }>();
   const { theme } = useMonoTheme();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const C = useMemo(() => createGroupTheme(theme), [theme]);
-  const s = useMemo(() => createStyles(C), [C]);
+  const s = useMemo(
+    () => createStyles(C, { compact: width < 380 }),
+    [C, width],
+  );
   const bottomSpace = getBottomNavSpace(insets.bottom);
   const topPadding = getScreenTopPadding(insets.top);
   const [screen, setScreen] = useState<Screen>("lobby");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [profileUid, setProfileUid] = useState<string | null>(null);
   const member = useGroupMemberProfile();
   const [loadError, setLoadError] = useState("");
   const rooms = useGroupRooms(member?.id, setLoadError);
@@ -286,6 +293,7 @@ export default function GroupScreen() {
         canReviewJoinRequests={canReview}
         onReviewJoinRequest={reviewRequest}
         currentMemberId={member?.id}
+        onOpenProfile={setProfileUid}
         myMember={myMember}
         memberCountText={memberCountText}
         livePulse={livePulse}
@@ -323,6 +331,7 @@ export default function GroupScreen() {
         s={s}
         C={C}
       />
+      <PublicProfileModal uid={profileUid} onClose={() => setProfileUid(null)} />
       <BottomNav />
     </View>
   );

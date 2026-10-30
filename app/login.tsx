@@ -8,10 +8,12 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -116,7 +118,8 @@ const persistUserProfile = async (user: User, userType = "일반 회원") => {
 export default function LoginScreen() {
   const router = useRouter();
   const { theme: C } = useMonoTheme();
-  const s = useMemo(() => createStyles(C), [C]);
+  const { height } = useWindowDimensions();
+  const s = useMemo(() => createStyles(C, { compact: height < 700 }), [C, height]);
   const socialStyles = useMemo(() => createSocialStyles(C), [C]);
   const [emailFocused, setEmailFocused] = useState(false);
   const [pwFocused, setPwFocused] = useState(false);
@@ -295,12 +298,18 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={s.kav}
       >
-        <Animated.View
-          style={[
-            s.inner,
-            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-          ]}
+        <ScrollView
+          style={s.scroll}
+          contentContainerStyle={s.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
+          <Animated.View
+            style={[
+              s.inner,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
           {/* ── 헤더 ── */}
           <View style={s.header}>
             <View style={s.badgeRow}>
@@ -468,7 +477,8 @@ export default function LoginScreen() {
               <Text style={s.signupLink}>  회원가입</Text>
             </TouchableOpacity>
           </View>
-        </Animated.View>
+          </Animated.View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -534,21 +544,27 @@ const createSocialStyles = (C: MonoTheme) =>
 /* ─────────────────────────────────────────────
    스타일
 ───────────────────────────────────────────── */
-const createStyles = (C: MonoTheme) =>
+const createStyles = (C: MonoTheme, options: { compact?: boolean } = {}) =>
   StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: C.bg,
   },
   kav: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   inner: {
-    flex: 1,
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: 520,
+    alignSelf: "center",
     paddingHorizontal: SPACE.xl,
+    paddingVertical: options.compact ? SPACE.md : SPACE.xl,
     justifyContent: "center",
   },
 
   /* 헤더 */
-  header: { marginBottom: SPACE.xxl },
+  header: { marginBottom: options.compact ? SPACE.lg : SPACE.xxl },
   badgeRow: { flexDirection: "row", marginBottom: 14 },
   badge: {
     backgroundColor: C.surface,
@@ -581,7 +597,7 @@ const createStyles = (C: MonoTheme) =>
   card: {
     backgroundColor: C.surface,
     borderRadius: 28,
-    padding: SPACE.xl,
+    padding: options.compact ? SPACE.lg : SPACE.xl,
     borderWidth: 1,
     borderColor: C.border,
     shadowColor: C.shadow,
@@ -686,7 +702,7 @@ const createStyles = (C: MonoTheme) =>
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 22,
+    marginVertical: options.compact ? 12 : 22,
   },
   divLine: { flex: 1, height: 1, backgroundColor: C.border },
   divText: {
@@ -709,7 +725,7 @@ const createStyles = (C: MonoTheme) =>
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 28,
+    marginTop: options.compact ? 16 : 28,
   },
   signupText: { color: C.muted, fontSize: TYPE_SIZE.body },
   signupLink: {

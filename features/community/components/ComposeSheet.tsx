@@ -73,7 +73,7 @@ export function ComposeSheet({
           <View style={s.sheetHeader}>
             <Text style={s.sheetTitle}>새 글 작성</Text>
 
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity style={s.sheetCloseButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="글쓰기 닫기" activeOpacity={0.75}>
               <Ionicons name="close" size={22} color={C.text} />
             </TouchableOpacity>
           </View>

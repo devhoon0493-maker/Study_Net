@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -30,6 +31,8 @@ export function CommentSheet({
   onSubmit,
   onDeleteComment,
   onMoreComment,
+  onOpenProfile,
+  profileOverlay,
 }: {
   selectedPost: CommunityPost | null;
   comments: CommunityComment[];
@@ -44,6 +47,8 @@ export function CommentSheet({
   onSubmit: () => void;
   onDeleteComment: (comment: CommunityComment) => void;
   onMoreComment: (comment: CommunityComment) => void;
+  onOpenProfile: (uid: string) => void;
+  profileOverlay?: ReactNode;
 }) {
   const submitDisabled = !draftComment.trim();
 
@@ -70,7 +75,7 @@ export function CommentSheet({
               </Text>
             </View>
 
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity style={s.sheetCloseButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="댓글 닫기" activeOpacity={0.75}>
               <Ionicons name="close" size={22} color={C.text} />
             </TouchableOpacity>
           </View>
@@ -85,7 +90,7 @@ export function CommentSheet({
             ) : (
               comments.map((comment) => (
                 <View key={comment.id} style={s.commentItem}>
-                  <TouchableOpacity style={s.commentAvatar} activeOpacity={0.8}>
+                  <TouchableOpacity style={s.commentAvatar} activeOpacity={0.8} onPress={() => onOpenProfile(comment.authorId)}>
                     {comment.authorImage ? (
                       <Image source={{ uri: comment.authorImage }} style={s.commentAvatarImage} />
                     ) : (
@@ -95,7 +100,7 @@ export function CommentSheet({
 
                   <View style={s.commentBubble}>
                     <View style={s.commentHeader}>
-                      <Text style={s.commentAuthor}>{comment.author}</Text>
+                      <Text style={s.commentAuthor} onPress={() => onOpenProfile(comment.authorId)} accessibilityRole="button">{comment.author}</Text>
                       <Text style={s.commentTime}>{formatRelativeTime(comment.createdAt)}</Text>
                       {comment.authorId === uid ? (
                         <TouchableOpacity
@@ -142,6 +147,7 @@ export function CommentSheet({
             </TouchableOpacity>
           </View>
         </View>
+        {profileOverlay}
       </KeyboardAvoidingView>
     </Modal>
   );

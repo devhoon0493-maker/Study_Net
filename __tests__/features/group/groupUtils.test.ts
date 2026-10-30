@@ -9,6 +9,7 @@ import {
   formatTimer,
   getColorFromId,
   getCurrentStudySession,
+  getVisibleStudySession,
   getInitial,
   getMemberSliderRatio,
   isMemberOnline,
@@ -54,12 +55,59 @@ describe("group utils", () => {
   it("detects member study and online states", () => {
     expect(isMemberStudying({ studyStartEpoch: 123 } as never)).toBe(true);
     expect(isMemberStudying({ studyStartEpoch: null } as never)).toBe(false);
+    expect(
+      isMemberStudying({
+        studyStatusPublic: false,
+        studyStartEpoch: null,
+        isStudying: true,
+      } as never),
+    ).toBe(true);
+    expect(
+      isMemberStudying({
+        studyStatusPublic: false,
+        studyStartEpoch: null,
+        isStudying: false,
+      } as never),
+    ).toBe(false);
     expect(isMemberOnline({ online: false } as never)).toBe(false);
     expect(isMemberOnline({ online: true } as never)).toBe(true);
     expect(isMemberOnline({ lastSeenAt: 10_000 } as never, 20_000)).toBe(true);
     expect(isMemberOnline({ lastSeenAt: 10_000 } as never, 50_001)).toBe(false);
     expect(isMemberOnline({ studyStartEpoch: 123 } as never)).toBe(true);
     expect(isMemberOnline({} as never)).toBe(false);
+  });
+
+  it("keeps study visibility coarse when study status is private", () => {
+    expect(
+      getVisibleStudySession(
+        { status: "Biology", studyStartEpoch: 123 },
+        false,
+      ),
+    ).toEqual({
+      status: "공부 중",
+      studyStartEpoch: null,
+      isStudying: true,
+    });
+    expect(
+      getVisibleStudySession(
+        { status: "Biology", studyStartEpoch: null },
+        false,
+      ),
+    ).toEqual({
+      status: "아직 공부를 시작하지 않았어요",
+      studyStartEpoch: null,
+      isStudying: false,
+    });
+    expect(
+      getVisibleStudySession(
+        { status: "Biology", studyStartEpoch: 123 },
+        true,
+      ),
+    ).toEqual({
+      status: "Biology",
+      studyStartEpoch: 123,
+      isStudying: true,
+    });
   });
 
   it("loads the active study session with fallback values", async () => {
