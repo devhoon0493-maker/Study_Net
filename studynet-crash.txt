@@ -1,0 +1,40 @@
+--------- beginning of crash
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: FATAL EXCEPTION: mqt_v_native
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: Process: com.parkhun.StudyNet, PID: 7786
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: com.facebook.react.common.JavascriptException: Error: Missing required environment variable: EXPO_PUBLIC_FIREBASE_API_KEY, stack:
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: requireEnv@1:1489092
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: anonymous@1:1488815
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: loadModuleImplementation@1:48023
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: guardedLoadModule@1:47546
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: metroRequire@1:47056
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: anonymous@1:1704621
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: loadModuleImplementation@1:48023
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: guardedLoadModule@1:47502
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: metroRequire@1:47056
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: get@1:807438
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: metroContext@1:807305
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: loadRoute@1:1106177
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: getQualifiedRouteComponent@1:935695
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: getComponent@1:936698
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: SceneView@1:898538
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: renderWithHooks@1:235920
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: updateFunctionComponent@1:254700
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: beginWork@1:262535
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: performUnitOfWork@1:281175
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: workLoopSync@1:280183
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: renderRootSync@1:280015
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: performWorkOnRoot@1:277441
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: performWorkOnRootViaSchedulerTask@1:231380
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(ExceptionsManagerModule.kt:52)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.jni.NativeRunnable.run(Native Method)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:1095)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at android.os.Handler.dispatchMessageImpl(Handler.java:135)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.kt:21)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:321)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:422)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(MessageQueueThreadImpl.kt:175)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4(MessageQueueThreadImpl.kt:0)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+10-23 17:51:37.941  7786  7838 E AndroidRuntime: 	at java.lang.Thread.run(Thread.java:1571)
